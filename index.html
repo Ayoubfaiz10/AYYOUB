@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مدير مكتب المحامي</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
+  <link rel="stylesheet" href="design-tokens.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body { font-family: 'Inter', sans-serif; margin: 0; background: var(--bg); }
+    #app { display: flex; height: 100vh; }
+  </style>
+</head>
+<body>
+<div id="startupOverlay">
+  <div class="startup-logo">M</div>
+  <div class="startup-name">مدير المكتب</div>
+  <div class="startup-sub">Cabinet Manager — Legal Intelligence Platform</div>
+  <div class="startup-bar"><div class="startup-bar-inner" id="startupBar"></div></div>
+</div>
+
+<!-- Onboarding overlay -->
+<div id="onboardingOverlay">
+  <div class="onboarding-box" id="onboardingBox">
+    <h2 id="onbTitle">مرحباً بك في مدير المكتب</h2>
+    <p id="onbDesc">منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد.</p>
+    <div class="onboarding-steps" id="onbSteps">
+      <div class="onboarding-dot active"></div>
+      <div class="onboarding-dot"></div>
+      <div class="onboarding-dot"></div>
+      <div class="onboarding-dot"></div>
+    </div>
+    <div style="display:flex;gap:var(--space-3);justify-content:center;">
+      <button class="btn btn-secondary" id="onbSkip">تخطي</button>
+      <button class="btn btn-primary" id="onbNext">التالي</button>
+    </div>
+  </div>
+</div>
+
+<div id="loginOverlay" class="login-overlay">
+  <div class="login-box">
+    <div class="login-icon"><i class="ri-shield-keyhole-line"></i></div>
+    <h2>مدير مكتب المحامي</h2>
+    <p class="login-sub">Cabinet Manager v2.0</p>
+    <div class="login-form">
+      <div class="input-group">
+        <i class="ri-user-3-line input-icon"></i>
+        <select id="loginUser" class="input">
+          <option value="">اختر المستخدم...</option>
+        </select>
+      </div>
+      <div class="input-group">
+        <i class="ri-lock-line input-icon"></i>
+        <input type="password" id="loginPassword" placeholder="كلمة السر" class="input">
+      </div>
+      <div id="loginError" class="form-error" style="display:none;">كلمة السر خطأ أو صلاحية منتهية</div>
+      <button id="loginBtn" class="btn btn-primary btn-full">دخول</button>
+      <div class="login-setup-row"><a href="#" id="loginSetupLink">إعداد كلمة سر المدير</a></div>
+      <div id="loginSetupArea" class="login-setup-area" style="display:none;">
+        <div class="input-group"><i class="ri-lock-2-line input-icon"></i><input type="password" id="newPassword" placeholder="كلمة سر جديدة" class="input"></div>
+        <div class="input-group"><i class="ri-lock-2-line input-icon"></i><input type="password" id="confirmPassword" placeholder="تأكيد كلمة السر" class="input"></div>
+        <div id="setupError" class="form-error" style="display:none;"></div>
+        <button id="setupPasswordBtn" class="btn btn-primary btn-full">حفظ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="app">
+  <aside id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-brand">
+        <div class="sidebar-brand-icon">M</div>
+        <div class="sidebar-brand-text">
+          <span class="sidebar-brand-title">مدير المكتب</span>
+          <span class="sidebar-brand-sub">Cabinet Manager</span>
+        </div>
+      </div>
+      <div class="sidebar-actions">
+        <button class="sidebar-btn" id="darkModeToggle" title="الوضع الليلي"><i class="ri-moon-line"></i></button>
+      </div>
+    </div>
+    <nav id="nav">
+      <div class="nav-section-label">الرئيسية</div>
+      <button class="nav-item active" data-section="dashboard"><i class="ri-dashboard-3-line nav-icon"></i><span class="nav-label">الرئيسية</span></button>
+      <button class="nav-item" data-section="search"><i class="ri-search-2-line nav-icon"></i><span class="nav-label">بحث متقدم</span></button>
+      <button class="nav-item" data-section="notifications"><i class="ri-notification-3-line nav-icon"></i><span class="nav-label">الإشعارات</span><span class="nav-badge" id="notifBadge" style="display:none;">0</span></button>
+
+      <div class="nav-section-label">الملفات</div>
+      <button class="nav-item" data-section="clients"><i class="ri-user-3-line nav-icon"></i><span class="nav-label">الموكلين</span></button>
+      <button class="nav-item" data-section="cases"><i class="ri-briefcase-4-line nav-icon"></i><span class="nav-label">القضايا</span></button>
+      <button class="nav-item" data-section="hearings"><i class="ri-scales-3-line nav-icon"></i><span class="nav-label">الجلسات</span></button>
+      <button class="nav-item" data-section="documents"><i class="ri-file-4-line nav-icon"></i><span class="nav-label">الوثائق</span></button>
+
+      <div class="nav-section-label">التنظيم</div>
+      <button class="nav-item" data-section="calendar"><i class="ri-calendar-2-line nav-icon"></i><span class="nav-label">التقويم</span></button>
+      <button class="nav-item" data-section="tasks"><i class="ri-task-line nav-icon"></i><span class="nav-label">المهام</span></button>
+      <button class="nav-item" data-section="expenses"><i class="ri-money-dollar-circle-line nav-icon"></i><span class="nav-label">المصاريف</span></button>
+
+      <div class="nav-section-label">أخرى</div>
+      <button class="nav-item" data-section="reports"><i class="ri-bar-chart-2-line nav-icon"></i><span class="nav-label">التقارير</span></button>
+      <button class="nav-item" data-section="ai"><i class="ri-robot-3-line nav-icon"></i><span class="nav-label">المساعد الذكي</span></button>
+      <button class="nav-item" data-section="archive"><i class="ri-archive-line nav-icon"></i><span class="nav-label">الأرشيف</span></button>
+      <button class="nav-item" data-section="support"><i class="ri-customer-service-line nav-icon"></i><span class="nav-label">الدعم</span></button>
+      <button class="nav-item" data-section="settings"><i class="ri-settings-3-line nav-icon"></i><span class="nav-label">الإعدادات</span></button>
+
+      <div style="flex:1;min-height:8px;"></div>
+      <button class="nav-item" id="lockAppBtn"><i class="ri-lock-line nav-icon"></i><span class="nav-label">قفل</span></button>
+    </nav>
+  </aside>
+
+  <div id="main-area">
+    <header id="topbar">
+      <div class="topbar-search">
+        <i class="ri-search-line"></i>
+        <input type="text" id="globalSearch" placeholder="بحث في القضايا، الموكلين، الوثائق..." autocomplete="off">
+        <div id="globalSearchResults" class="search-results" style="display:none;"></div>
+      </div>
+      <div class="topbar-actions">
+        <span id="currentDate" class="topbar-date"></span>
+        <button class="btn btn-primary btn-sm" id="quickAddBtn"><i class="ri-add-line"></i> إضافة سريعة</button>
+        <button class="topbar-icon-btn" id="notifBtn" title="الإشعارات"><i class="ri-notification-3-line"></i><span class="notif-dot"></span></button>
+        <span id="asGlobalStatus" class="topbar-as-status" title="حالة الحفظ التلقائي" style="display:none;font-size:11px;color:var(--success);margin-left:6px;align-items:center;gap:4px;"><i class="ri-check-line" style="font-size:12px;"></i> <span>تم الحفظ</span></span>
+        <div class="topbar-user">
+          <div class="topbar-avatar">M</div>
+          <span class="topbar-name">محامي</span>
+        </div>
+      </div>
+    </header>
+
+    <main id="content">
+
+      <!-- ═══ DASHBOARD V3 ═══ -->
+      <section id="section-dashboard" class="section active">
+
+        <!-- Empty State -->
+        <div id="dashEmptyState" class="dash-empty-state" style="display:none;">
+          <div class="dash-empty-illustration"><i class="ri-dashboard-3-line"></i></div>
+          <h3>مرحباً بك في مدير المكتب</h3>
+          <p>ابدأ بإضافة موكل أو قضية جديدة للبدء</p>
+          <div class="dash-empty-actions">
+            <button class="btn btn-primary" data-action="client"><i class="ri-user-add-line"></i> إضافة موكل</button>
+            <button class="btn btn-secondary" data-action="case"><i class="ri-briefcase-add-line"></i> إضافة قضية</button>
+          </div>
+        </div>
+
+        <!-- Welcome Section -->
+        <div class="dash-welcome">
+          <div class="dash-welcome-text">
+            <span class="dash-greeting" id="dashGreeting">صباح الخير</span>
+            <h1 id="dashUserName">محامي</h1>
+            <p class="dash-date" id="dashDate"></p>
+            <p class="dash-quote" id="dashQuote">"العدالة أساس الملك"</p>
+          </div>
+          <div class="dash-welcome-avatar">
+            <div class="dash-avatar" id="dashAvatar">M</div>
+          </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="dash-quick-actions">
+          <button class="qa-btn" data-action="client"><i class="ri-user-add-line"></i><span>موكل جديد</span></button>
+          <button class="qa-btn" data-action="case"><i class="ri-briefcase-add-line"></i><span>قضية جديدة</span></button>
+          <button class="qa-btn" data-action="hearing"><i class="ri-scales-line"></i><span>جلسة جديدة</span></button>
+          <button class="qa-btn" data-action="document"><i class="ri-file-add-line"></i><span>وثيقة جديدة</span></button>
+          <button class="qa-btn" data-action="task"><i class="ri-task-add-line"></i><span>مهمة جديدة</span></button>
+          <button class="qa-btn" data-action="report"><i class="ri-bar-chart-line"></i><span>تقرير</span></button>
+          <button class="qa-btn" data-action="ai"><i class="ri-robot-line"></i><span>المساعد الذكي</span></button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="dash-stats-row">
+          <div class="dash-stat-card" id="dashStatActiveCases">
+            <div class="dash-stat-icon" style="background:rgba(30,42,56,0.08);color:var(--navy);"><i class="ri-briefcase-4-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">قضايا نشطة</span><span class="dash-stat-trend up" id="trendCases"></span></div>
+          </div>
+          <div class="dash-stat-card" id="dashStatHearings">
+            <div class="dash-stat-icon" style="background:rgba(198,161,91,0.1);color:var(--gold);"><i class="ri-scales-3-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">جلسات اليوم</span><span class="dash-stat-trend up" id="trendHearings"></span></div>
+          </div>
+          <div class="dash-stat-card" id="dashStatTasks">
+            <div class="dash-stat-icon" style="background:rgba(26,138,92,0.08);color:var(--success);"><i class="ri-task-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">مهام معلقة</span><span class="dash-stat-trend" id="trendTasks"></span></div>
+          </div>
+          <div class="dash-stat-card" id="dashStatClients">
+            <div class="dash-stat-icon" style="background:rgba(139,92,246,0.08);color:#8B5CF6;"><i class="ri-user-3-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">الموكلين</span><span class="dash-stat-trend up" id="trendClients"></span></div>
+          </div>
+          <div class="dash-stat-card" id="dashStatRevenue">
+            <div class="dash-stat-icon" style="background:rgba(16,185,129,0.08);color:#10B981;"><i class="ri-money-dollar-circle-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">الإيرادات</span><span class="dash-stat-trend up" id="trendRevenue"></span></div>
+          </div>
+          <div class="dash-stat-card" id="dashStatDocs">
+            <div class="dash-stat-icon" style="background:rgba(74,139,194,0.08);color:var(--info);"><i class="ri-file-4-line"></i></div>
+            <div class="dash-stat-info"><span class="dash-stat-number">0</span><span class="dash-stat-label">الوثائق</span><span class="dash-stat-trend up" id="trendDocs"></span></div>
+          </div>
+        </div>
+
+        <!-- Three-Zone Layout -->
+        <div class="dash-three-zone">
+
+          <!-- LEFT ZONE: Daily Info & Activity -->
+          <div class="dash-zone dash-zone-left">
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-calendar-todo-line"></i> جدول اليوم</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('hearings')">عرض الكل</button></div>
+              <div id="todayAgenda" class="dash-timeline"><p class="empty-state-sm">لا توجد أحداث اليوم</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-timer-flash-line"></i> الآجال القريبة</h3></div>
+              <div id="dashUpcomingDeadlines" class="dash-timeline"><p class="empty-state-sm">لا توجد آجال</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-history-line"></i> آخر النشاطات</h3></div>
+              <div id="dashActivityTimeline" class="dash-timeline"><p class="empty-state-sm">لا توجد نشاطات</p></div>
+            </div>
+
+          </div>
+
+          <!-- CENTER ZONE: Cases & Work -->
+          <div class="dash-zone dash-zone-center">
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-file-list-3-line"></i> آخر القضايا</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('cases')">عرض الكل</button></div>
+              <div id="recentCases" class="dash-case-list"><p class="empty-state-sm">لا توجد قضايا</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-error-warning-line"></i> القضايا العاجلة</h3></div>
+              <div id="dashPriorityCases" class="dash-case-list"><p class="empty-state-sm">لا توجد قضايا عاجلة</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-task-line"></i> المهام قيد الإنجاز</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('tasks')">عرض الكل</button></div>
+              <div id="dashPendingTasks" class="dash-mini-kanban"><p class="empty-state-sm">لا توجد مهام</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-file-4-line"></i> آخر الوثائق</h3></div>
+              <div id="recentDocs" class="dash-doc-list"><p class="empty-state-sm">لا توجد وثائق</p></div>
+            </div>
+
+          </div>
+
+          <!-- RIGHT ZONE: Calendar, Insights, Notifications -->
+          <div class="dash-zone dash-zone-right">
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-calendar-2-line"></i> التقويم</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('calendar')">عرض الكل</button></div>
+              <div id="dashMiniCalendar" class="dash-mini-calendar"></div>
+              <div id="dashUpcomingEvents" class="dash-upcoming-events"><p class="empty-state-sm">لا توجد أحداث قادمة</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-notification-3-line"></i> الإشعارات</h3><span class="dash-notif-badge" id="dashNotifBadge">0</span></div>
+              <div id="dashNotifications" class="dash-notif-list"><p class="empty-state-sm">لا توجد إشعارات</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-money-dollar-circle-line"></i> الملخص المالي</h3></div>
+              <div id="dashFinancialSummary" class="dash-financial">
+                <div class="dash-financial-chart"><canvas id="dashPieChart" width="100" height="100"></canvas></div>
+                <div class="dash-financial-numbers">
+                  <div class="dash-fin-row"><span class="dash-fin-label">الإيرادات</span><span class="dash-fin-value" id="dashRevenue">0</span></div>
+                  <div class="dash-fin-row"><span class="dash-fin-label">المصروفات</span><span class="dash-fin-value" id="dashExpenses">0</span></div>
+                  <div class="dash-fin-row"><span class="dash-fin-label">المستحق</span><span class="dash-fin-value" id="dashOutstanding">0</span></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card dash-card dash-ai-card">
+              <div class="dash-ai-inside">
+                <i class="ri-robot-3-line"></i>
+                <div>
+                  <p id="dashAiInsight">"لديك 3 جلسات غداً"</p>
+                  <span>المساعد الذكي</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-heart-pulse-line"></i> صحة القضايا</h3></div>
+              <div id="dashHealthScore" class="dash-timeline"><p class="empty-state-sm">يتم تحميل المؤشرات...</p></div>
+            </div>
+
+            <div class="card dash-card">
+              <div class="card-header"><h3><i class="ri-alarm-warning-line"></i> مركز المواعيد الحرجة</h3><span class="badge badge-danger" id="dashCriticalCount">0</span></div>
+              <div id="dashDeadlineCenter" class="dash-timeline"><p class="empty-state-sm">يتم تحميل المواعيد...</p></div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ CLIENTS CRM V5 ═══ -->
+      <section id="section-clients" class="section">
+        <div class="section-header"><h1>الموكلين</h1><p class="section-sub">CRM متكامل — إدارة العلاقات القانونية</p></div>
+        <div class="cases-view-bar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchClients" placeholder="اسم، هاتف، بريد..." class="input"></div>
+            <div class="cases-view-toggle">
+              <button class="view-btn active" data-view="table"><i class="ri-table-line"></i></button>
+              <button class="view-btn" data-view="card"><i class="ri-layout-grid-line"></i></button>
+              <button class="view-btn" data-view="segment"><i class="ri-group-line"></i></button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="clientsFilterBtn" class="btn btn-secondary btn-sm"><i class="ri-filter-3-line"></i> فلاتر</button>
+            <button id="addClientBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> موكل جديد</button>
+          </div>
+        </div>
+        <div id="clientsFilterBar" class="cases-filter-bar" style="display:none;">
+          <div class="filter-row">
+            <select id="cfilterStatus" class="input input-sm"><option value="">الحالة</option><option value="active">نشط</option><option value="archived">مؤرشف</option></select>
+            <select id="cfilterMinCases" class="input input-sm"><option value="">عدد القضايا</option><option value="0">0+</option><option value="1">1+</option><option value="3">3+</option><option value="5">5+</option></select>
+            <select id="cfilterCity" class="input input-sm"><option value="">المدينة</option></select>
+            <button id="cfilterApply" class="btn btn-primary btn-sm">تطبيق</button>
+            <button id="cfilterReset" class="btn btn-secondary btn-sm">إعادة</button>
+          </div>
+        </div>
+        <div id="clientsTableView" class="case-view-panel active">
+          <div class="table-wrap"><table class="table" id="clientsTable"><thead><tr><th>الاسم</th><th>الهاتف</th><th>البريد</th><th>القضايا</th><th>آخر نشاط</th><th>الرصيد</th><th></th></tr></thead><tbody id="clientsBody"></tbody></table></div>
+        </div>
+        <div id="clientsCardView" class="case-view-panel">
+          <div id="clientsCardGrid" class="cases-card-grid"></div>
+        </div>
+        <div id="clientsSegmentView" class="case-view-panel">
+          <div id="clientsSegments" class="clients-segments"></div>
+        </div>
+      </section>
+
+      <!-- ═══ CASES V4 ═══ -->
+      <section id="section-cases" class="section">
+        <div class="section-header">
+          <h1>القضايا</h1>
+          <p class="section-sub">مساحة عمل القضايا — إدارة ومتابعة الملفات القانونية</p>
+        </div>
+        <div class="cases-view-bar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchCases" placeholder="رقم القضية، الموكل، المحكمة..." class="input"></div>
+            <div class="cases-view-toggle">
+              <button class="view-btn active" data-view="table"><i class="ri-table-line"></i></button>
+              <button class="view-btn" data-view="card"><i class="ri-layout-grid-line"></i></button>
+              <button class="view-btn" data-view="kanban"><i class="ri-layout-masonry-line"></i></button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <button id="casesFilterBtn" class="btn btn-secondary btn-sm"><i class="ri-filter-3-line"></i> فلاتر</button>
+            <button id="toggleArchivedBtn" class="btn btn-secondary btn-sm"><i class="ri-archive-line"></i></button>
+            <button id="addCaseBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> قضية جديدة</button>
+          </div>
+        </div>
+        <!-- Filter bar (collapsible) -->
+        <div id="casesFilterBar" class="cases-filter-bar" style="display:none;">
+          <div class="filter-row">
+            <select id="filterCourt" class="input input-sm"><option value="">المحكمة</option></select>
+            <select id="filterStatus" class="input input-sm"><option value="">الحالة</option><option value="active">نشطة</option><option value="pending">معلقة</option><option value="closed">مغلقة</option></select>
+            <select id="filterPriority" class="input input-sm"><option value="">الأولوية</option><option value="high">عالية</option><option value="medium">متوسطة</option><option value="low">منخفضة</option></select>
+            <select id="filterClient" class="input input-sm"><option value="">الموكل</option></select>
+            <input type="date" id="filterDateFrom" class="input input-sm" style="width:140px;">
+            <button id="filterApplyBtn" class="btn btn-primary btn-sm">تطبيق</button>
+            <button id="filterResetBtn" class="btn btn-secondary btn-sm">إعادة</button>
+          </div>
+        </div>
+        <!-- Table View -->
+        <div id="casesTableView" class="case-view-panel active">
+          <div class="table-wrap"><table class="table" id="casesTable"><thead><tr><th>رقم القضية</th><th>الموضوع</th><th>الموكل</th><th>المحكمة</th><th>النوع</th><th>الحالة</th><th>الأولوية</th><th>آخر تحديث</th><th></th></tr></thead><tbody id="casesBody"></tbody></table></div>
+        </div>
+        <!-- Card View -->
+        <div id="casesCardView" class="case-view-panel">
+          <div id="casesCardGrid" class="cases-card-grid"></div>
+        </div>
+        <!-- Kanban View -->
+        <div id="casesKanbanView" class="case-view-panel">
+          <div class="kanban-board-full">
+            <div class="kanban-col-full" data-status="new"><div class="kanban-col-header-full"><span>جديد</span><span class="kanban-col-count" id="kanbanCountNew">0</span></div><div class="kanban-col-body" id="kanbanNew"></div></div>
+            <div class="kanban-col-full" data-status="active"><div class="kanban-col-header-full"><span>قيد المعالجة</span><span class="kanban-col-count" id="kanbanCountActive">0</span></div><div class="kanban-col-body" id="kanbanActive"></div></div>
+            <div class="kanban-col-full" data-status="pending"><div class="kanban-col-header-full"><span>معلق</span><span class="kanban-col-count" id="kanbanCountPending">0</span></div><div class="kanban-col-body" id="kanbanPending"></div></div>
+            <div class="kanban-col-full" data-status="appeal"><div class="kanban-col-header-full"><span>استئناف</span><span class="kanban-col-count" id="kanbanCountAppeal">0</span></div><div class="kanban-col-body" id="kanbanAppeal"></div></div>
+            <div class="kanban-col-full" data-status="closed"><div class="kanban-col-header-full"><span>مغلقة</span><span class="kanban-col-count" id="kanbanCountClosed">0</span></div><div class="kanban-col-body" id="kanbanClosed"></div></div>
+            <div class="kanban-col-full" data-status="archived"><div class="kanban-col-header-full"><span>مؤرشفة</span><span class="kanban-col-count" id="kanbanCountArchived">0</span></div><div class="kanban-col-body" id="kanbanArchived"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ HEARINGS ═══ -->
+      <!-- ═══ HEARINGS V7 ═══ -->
+      <section id="section-hearings" class="section">
+        <div class="section-header"><h1>الجلسات</h1><p class="section-sub">جدولة ومتابعة جميع جلسات المحكمة والمواعيد القانونية</p></div>
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchHearings" placeholder="بحث في الجلسات..." class="input"></div>
+            <div class="filter-group">
+              <button class="filter-btn active" data-filter="all">الكل</button>
+              <button class="filter-btn" data-filter="upcoming">القادمة</button>
+              <button class="filter-btn" data-filter="past">السابقة</button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <select id="hearingsFilterType" class="input input-sm" style="width:130px;"><option value="all">جميع الأنواع</option><option value="hearing">⚖️ جلسات</option><option value="deadline">⏰ مواعيد نهائية</option><option value="meeting">📋 اجتماعات</option><option value="task">✅ مهام</option><option value="document">📄 تقديم وثائق</option><option value="payment">💰 دفعات</option></select>
+            <button id="addHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> حدث جديد</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="table" id="hearingsTable"><thead><tr><th>التاريخ</th><th>الوقت</th><th>النوع</th><th>العنوان</th><th>القضية</th><th>الموكل</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody id="hearingsBody"></tbody></table></div>
+      </section>
+
+      <!-- ═══ CALENDAR V7 ═══ -->
+      <section id="section-calendar" class="section">
+        <div class="section-header">
+          <h1>التقويم</h1>
+          <p class="section-sub">نظام تقويم قانوني متكامل — جلسات، مواعيد، مهام</p>
+        </div>
+        <div class="case-view-bar">
+          <div class="toolbar-left">
+            <button class="btn btn-secondary btn-xs" id="calPrev"><i class="ri-arrow-right-s-line"></i></button>
+            <h2 id="calTitle" style="font-size:var(--font-size-base);font-weight:var(--font-weight-bold);color:var(--navy);min-width:160px;text-align:center;margin:0 12px;">يونيو 2026</h2>
+            <button class="btn btn-secondary btn-xs" id="calNext"><i class="ri-arrow-left-s-line"></i></button>
+            <button class="btn btn-secondary btn-xs" id="calToday" style="margin-right:var(--space-3);">اليوم</button>
+            <div class="cases-view-toggle">
+              <button class="view-btn active" data-view="month"><i class="ri-calendar-2-line"></i></button>
+              <button class="view-btn" data-view="week"><i class="ri-calendar-line"></i></button>
+              <button class="view-btn" data-view="day"><i class="ri-calendar-check-line"></i></button>
+              <button class="view-btn" data-view="agenda"><i class="ri-list-check"></i></button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <div class="cal-legend">
+              <span class="cal-legend-item"><span class="cal-dot cal-dot-hearing"></span> جلسات</span>
+              <span class="cal-legend-item"><span class="cal-dot cal-dot-deadline"></span> مواعيد</span>
+              <span class="cal-legend-item"><span class="cal-dot cal-dot-task"></span> مهام</span>
+              <span class="cal-legend-item"><span class="cal-dot cal-dot-meeting"></span> اجتماعات</span>
+            </div>
+            <button id="addEventBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> حدث</button>
+          </div>
+        </div>
+        <!-- Calendar Grid -->
+        <div id="calMonthView" class="cal-view active"><div id="calGrid" class="cal-grid"></div></div>
+        <div id="calWeekView" class="cal-view"><div id="calWeekGrid" class="cal-week-grid"></div></div>
+        <div id="calDayView" class="cal-view"><div id="calDayGrid" class="cal-day-grid"></div></div>
+        <div id="calAgendaView" class="cal-view"><div id="calAgendaList" class="cal-agenda"></div></div>
+      </section>
+
+      <!-- ═══ EVENT DETAIL MODAL ═══ -->
+      <div id="eventDetailOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal modal-workspace" style="max-width:680px;">
+          <div class="ws-header">
+            <div class="ws-header-left">
+              <button class="ws-back" onclick="document.getElementById('eventDetailOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <div class="ws-title-area"><h3 id="eventDetailTitle">الحدث</h3><span class="ws-badge" id="eventDetailBadge">جلسة</span></div>
+            </div>
+            <div class="ws-header-actions">
+              <button class="btn btn-secondary btn-xs" id="eventEditBtn"><i class="ri-pencil-line"></i> تعديل</button>
+              <button class="btn btn-danger btn-xs" id="eventDeleteBtn"><i class="ri-delete-bin-line"></i></button>
+              <button class="modal-close" style="position:static;" onclick="document.getElementById('eventDetailOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+            </div>
+          </div>
+          <div class="ws-body">
+            <div class="ws-overview-grid" id="eventDetailBody"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TASKS V8 — WORKFLOW SYSTEM ═══ -->
+      <section id="section-tasks" class="section">
+        <div class="section-header">
+          <h1>المهام وسير العمل</h1>
+          <p class="section-sub">نظام تنفيذ قانوني — مهام، مهام فرعية، تبعيات، سير عمل، تتبع زمني</p>
+        </div>
+        <div class="cases-view-bar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchTasks" placeholder="بحث في المهام..." class="input"></div>
+            <div class="cases-view-toggle">
+              <button class="view-btn active" data-view="list"><i class="ri-list-check"></i></button>
+              <button class="view-btn" data-view="kanban"><i class="ri-layout-masonry-line"></i></button>
+              <button class="view-btn" data-view="priority"><i class="ri-alarm-warning-line"></i></button>
+              <button class="view-btn" data-view="analytics"><i class="ri-bar-chart-2-line"></i></button>
+            </div>
+            <select id="taskStatusFilter" class="input input-sm" style="width:120px;"><option value="all">الكل</option><option value="todo">قيد التنفيذ</option><option value="in_progress">قيد الإنجاز</option><option value="waiting">انتظار</option><option value="review">مراجعة</option><option value="done">منجز</option></select>
+          </div>
+          <div class="toolbar-right">
+            <button class="btn btn-secondary btn-xs" id="showWorkflowsBtn"><i class="ri-git-branch-line"></i> سير العمل</button>
+            <button id="addTaskBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> مهمة</button>
+          </div>
+        </div>
+        <!-- List View -->
+        <div id="taskListPanel" class="case-view-panel active">
+          <div id="tasksContainer" class="tasks-list-v8"></div>
+        </div>
+        <!-- Kanban View -->
+        <div id="taskKanbanPanel" class="case-view-panel">
+          <div class="kanban-board-v8" id="kanbanBoardV8">
+            <div class="kanban-col-v8"><div class="kanban-col-header">متروك</div><div class="kanban-col-body" id="kanbanBacklog"></div></div>
+            <div class="kanban-col-v8"><div class="kanban-col-header">قيد التنفيذ</div><div class="kanban-col-body" id="kanbanTodo"></div></div>
+            <div class="kanban-col-v8"><div class="kanban-col-header">قيد الإنجاز</div><div class="kanban-col-body" id="kanbanInProgress"></div></div>
+            <div class="kanban-col-v8"><div class="kanban-col-header">انتظار</div><div class="kanban-col-body" id="kanbanWaiting"></div></div>
+            <div class="kanban-col-v8"><div class="kanban-col-header">مراجعة</div><div class="kanban-col-body" id="kanbanReview"></div></div>
+            <div class="kanban-col-v8"><div class="kanban-col-header">منجز</div><div class="kanban-col-body" id="kanbanDone"></div></div>
+          </div>
+        </div>
+        <!-- Priority View -->
+        <div id="taskPriorityPanel" class="case-view-panel">
+          <div id="priorityView" class="priority-list"></div>
+        </div>
+        <!-- Analytics View -->
+        <div id="taskAnalyticsPanel" class="case-view-panel">
+          <div id="taskAnalyticsContainer" class="dash-analytics-grid"></div>
+        </div>
+      </section>
+
+      <!-- ═══ TASK DETAIL MODAL V8 ═══ -->
+      <div id="taskDetailOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal modal-workspace" style="max-width:720px;">
+          <div class="ws-header">
+            <div class="ws-header-left">
+              <button class="ws-back" onclick="document.getElementById('taskDetailOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <div class="ws-title-area"><h3 id="taskDetailTitle">المهمة</h3><span class="ws-badge" id="taskDetailBadge">عاجل</span></div>
+            </div>
+            <div class="ws-header-actions">
+              <button class="btn btn-secondary btn-xs" id="taskDetailEdit"><i class="ri-pencil-line"></i></button>
+              <button class="btn btn-danger btn-xs" id="taskDetailDelete"><i class="ri-delete-bin-line"></i></button>
+              <button class="modal-close" style="position:static;" onclick="document.getElementById('taskDetailOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+            </div>
+          </div>
+          <div class="ws-body" id="taskDetailBody"></div>
+        </div>
+      </div>
+
+      <!-- ═══ WORKFLOW MODAL ═══ -->
+      <div id="workflowModalOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal" style="max-width:600px;">
+          <div class="modal-header"><h3 id="workflowModalTitle">سير العمل</h3><button class="modal-close" onclick="document.getElementById('workflowModalOverlay').style.display='none'"><i class="ri-close-line"></i></button></div>
+          <div class="modal-body" id="workflowModalBody"></div>
+        </div>
+      </div>
+
+      <!-- ═══ DOCUMENTS V6 ═══ -->
+      <section id="section-documents" class="section">
+        <div class="section-header"><h1>الوثائق</h1><p class="section-sub">نظام إدارة الوثائق القانونية — بحث، تصنيف، إصدارات</p></div>
+        <div class="cases-view-bar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchDocs" placeholder="بحث في الوثائق..." class="input"></div>
+            <div class="cases-view-toggle">
+              <button class="view-btn active" data-view="grid"><i class="ri-layout-grid-line"></i></button>
+              <button class="view-btn" data-view="table"><i class="ri-table-line"></i></button>
+              <button class="view-btn" data-view="folder"><i class="ri-folder-3-line"></i></button>
+            </div>
+          </div>
+          <div class="toolbar-right">
+            <select id="docFilterType" class="input input-sm" style="width:130px;"><option value="all">جميع الأنواع</option><option value="Contract">عقود</option><option value="Jugement">أحكام</option><option value="Mémoire">مذكرات</option><option value="Preuve">أدلة</option><option value="Rapport">تقارير</option><option value="Facture">فواتير</option><option value="Autre">أخرى</option></select>
+            <button id="uploadDocGlobalBtn" class="btn btn-primary btn-sm"><i class="ri-upload-2-line"></i> رفع</button>
+          </div>
+        </div>
+        <!-- Grid View (default) -->
+        <div id="docGridPanel" class="case-view-panel active">
+          <div id="documentsGrid" class="doc-grid-v6"></div>
+        </div>
+        <!-- Table View -->
+        <div id="docTablePanel" class="case-view-panel">
+          <div class="table-wrap"><table class="table" id="docTable"><thead><tr><th>الاسم</th><th>النوع</th><th>القضية</th><th>الموكل</th><th>تاريخ الرفع</th><th>الحالة</th><th>الوسوم</th><th></th></tr></thead><tbody id="docTableBody"></tbody></table></div>
+        </div>
+        <!-- Folder View -->
+        <div id="docFolderPanel" class="case-view-panel">
+          <div id="docFolderView" class="doc-folders"></div>
+        </div>
+      </section>
+
+      <!-- ═══ DOCUMENT VIEWER V6 ═══ -->
+      <div id="docViewerOverlay" class="modal-overlay" style="display:none;">
+        <div class="modal modal-workspace">
+          <div class="ws-header">
+            <div class="ws-header-left">
+              <button class="ws-back" id="docViewerClose" onclick="document.getElementById('docViewerOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <div class="ws-title-area"><h3 id="docViewerTitle">الوثيقة</h3><span class="ws-badge" id="docViewerType">عقد</span></div>
+            </div>
+            <div class="ws-header-actions">
+              <button class="btn btn-secondary btn-xs" id="docViewerOpen"><i class="ri-external-link-line"></i> فتح</button>
+              <button class="btn btn-primary btn-xs" id="docViewerDownload"><i class="ri-download-line"></i> تحميل</button>
+              <button class="modal-close" style="position:static;" onclick="document.getElementById('docViewerOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+            </div>
+          </div>
+          <div class="ws-body" style="display:grid;grid-template-columns:1fr 320px;gap:0;padding:0;">
+            <div style="padding:var(--space-5);overflow-y:auto;background:var(--gray-50);display:flex;align-items:center;justify-content:center;min-height:400px;">
+              <div style="text-align:center;color:var(--gray-400);"><i class="ri-file-4-line" style="font-size:64px;display:block;margin-bottom:16px;"></i><p id="docViewerPreview">معاينة الملف</p></div>
+            </div>
+            <div style="border-right:1px solid var(--gray-100);overflow-y:auto;padding:var(--space-5);">
+              <div class="ws-info-card" style="box-shadow:none;padding:0;"><h4 style="margin-bottom:var(--space-3);">معلومات</h4>
+                <div class="ws-info-row"><span class="ws-info-label">القضية</span><span class="ws-info-value" id="docVCase">—</span></div>
+                <div class="ws-info-row"><span class="ws-info-label">الموكل</span><span class="ws-info-value" id="docVClient">—</span></div>
+                <div class="ws-info-row"><span class="ws-info-label">تاريخ الرفع</span><span class="ws-info-value" id="docVDate">—</span></div>
+                <div class="ws-info-row"><span class="ws-info-label">الحجم</span><span class="ws-info-value" id="docVSize">—</span></div>
+              </div>
+              <div class="ws-info-card" style="box-shadow:none;padding:0;margin-top:var(--space-4);"><h4 style="margin-bottom:var(--space-3);">الوسوم</h4><div id="docVTags" class="doc-viewer-tags"></div></div>
+              <div class="ws-info-card" style="box-shadow:none;padding:0;margin-top:var(--space-4);"><h4 style="margin-bottom:var(--space-3);">الإصدارات</h4><div id="docVVersions" class="doc-viewer-versions"></div></div>
+              <div class="ws-info-card" style="box-shadow:none;padding:0;margin-top:var(--space-4);"><h4 style="margin-bottom:var(--space-3);">ملاحظات</h4><textarea id="docVNotes" class="input" rows="4" placeholder="ملاحظات قانونية..."></textarea>
+                <button class="btn btn-primary btn-xs" style="margin-top:8px;" id="docVSaveNotes">حفظ</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ EXPENSES ═══ -->
+      <section id="section-expenses" class="section">
+        <div class="section-header"><h1>المصاريف والمالية</h1><p class="section-sub">تتبع المصاريف والمدفوعات والفواتير</p></div>
+        <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);margin-bottom:var(--space-5);">
+          <div class="stat-card"><div class="stat-icon stat-icon-blue"><i class="ri-briefcase-line"></i></div><div class="stat-body"><span class="stat-number" id="expTotalHonoraires">0</span><span class="stat-label">إجمالي الأتعاب</span></div></div>
+          <div class="stat-card"><div class="stat-icon stat-icon-green"><i class="ri-checkbox-circle-line"></i></div><div class="stat-body"><span class="stat-number" id="expTotalPaid">0</span><span class="stat-label">المدفوع</span></div></div>
+          <div class="stat-card"><div class="stat-icon stat-icon-gold"><i class="ri-money-dollar-circle-line"></i></div><div class="stat-body"><span class="stat-number" id="expTotalRemaining">0</span><span class="stat-label">الباقي</span></div></div>
+          <div class="stat-card"><div class="stat-icon stat-icon-red"><i class="ri-expenses-line"></i></div><div class="stat-body"><span class="stat-number" id="expTotalExpenses">0</span><span class="stat-label">المصروفات</span></div></div>
+        </div>
+        <div class="card"><div class="card-header"><h3><i class="ri-money-dollar-circle-line"></i> المدفوعات الأخيرة</h3></div>
+          <div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);">
+            <table class="table" id="expPaymentsTable"><thead><tr><th>التاريخ</th><th>القضية</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th></tr></thead><tbody id="expPaymentsBody"></tbody></table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ NOTIFICATIONS ═══ -->
+      <section id="section-notifications" class="section">
+        <div class="section-header">
+          <h1>الإشعارات</h1>
+          <p class="section-sub">مركز الإشعارات والتنبيهات</p>
+          <div style="margin-top:var(--space-3);display:flex;gap:8px;">
+            <button id="markAllReadBtn" class="btn btn-secondary btn-sm"><i class="ri-check-double-line"></i> تحديد الكل كمقروء</button>
+          </div>
+        </div>
+        <div id="notificationsList" class="notif-list"></div>
+      </section>
+
+      <!-- ═══ SEARCH ═══ -->
+      <section id="section-search" class="section">
+        <div class="section-header"><h1>بحث متقدم</h1><p class="section-sub">بحث شامل في جميع بيانات التطبيق</p></div>
+        <div class="card">
+          <div class="input-group"><i class="ri-search-line input-icon"></i><input type="text" id="advancedSearchInput" placeholder="اكتب كلمة البحث..." class="input" style="font-size:var(--font-size-base);padding:14px 44px 14px 16px;"></div>
+          <div class="toolbar" style="margin-top:var(--space-3);">
+            <div class="toolbar-left">
+              <label class="checkbox-label"><input type="checkbox" id="searchInCases" checked><span>القضايا</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="searchInClients" checked><span>الموكلين</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="searchInDocs" checked><span>الوثائق</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="searchInProcedures" checked><span>الجلسات</span></label>
+              <label class="checkbox-label"><input type="checkbox" id="searchInTasks" checked><span>المهام</span></label>
+            </div>
+          </div>
+          <div id="advancedSearchResults" style="margin-top:var(--space-4);"></div>
+        </div>
+      </section>
+
+      <!-- ═══ REPORTS ═══ -->
+      <section id="section-reports" class="section">
+        <div class="section-header"><h1>التقارير</h1><p class="section-sub">إنشاء وتصدير التقارير والإحصائيات</p></div>
+        <div class="reports-grid">
+          <div class="card report-card" data-report="cases"><div class="report-icon"><i class="ri-briefcase-4-line"></i></div><h3>تقرير القضايا</h3><p>إحصائيات القضايا حسب الحالة والمحكمة</p></div>
+          <div class="card report-card" data-report="clients"><div class="report-icon"><i class="ri-user-3-line"></i></div><h3>تقرير الموكلين</h3><p>إحصائيات الموكلين والنشاطات</p></div>
+          <div class="card report-card" data-report="hearings"><div class="report-icon"><i class="ri-scales-3-line"></i></div><h3>تقرير الجلسات</h3><p>إحصائيات الجلسات القادمة والماضية</p></div>
+          <div class="card report-card" data-report="financial"><div class="report-icon"><i class="ri-money-dollar-circle-line"></i></div><h3>التقرير المالي</h3><p>الأتعاب والمدفوعات والمصروفات</p></div>
+          <div class="card report-card" data-report="tasks"><div class="report-icon"><i class="ri-task-line"></i></div><h3>تقرير المهام</h3><p>إنجاز المهام والأولويات</p></div>
+          <div class="card report-card" data-report="monthly"><div class="report-icon"><i class="ri-bar-chart-line"></i></div><h3>تقرير شهري</h3><p>ملخص شامل للنشاط الشهري</p></div>
+        </div>
+        <div id="reportOutput" class="card" style="display:none;margin-top:var(--space-5);">
+          <div class="card-header"><h3 id="reportTitle">التقرير</h3><button id="exportReportPdf" class="btn btn-primary btn-sm"><i class="ri-file-pdf-line"></i> PDF</button></div>
+          <div id="reportContent" class="card-body"></div>
+        </div>
+      </section>
+
+      <!-- ═══ AI ASSISTANT ═══ -->
+      <section id="section-ai" class="section">
+        <div class="section-header"><h1>المساعد الذكي</h1><p class="section-sub">محرك الذكاء القانوني — تحليل، صياغة، استراتيجية، مخاطر</p></div>
+        <!-- Context awareness bar -->
+        <div id="aiContextBar" class="ai-context-bar" style="display:none;">
+          <i class="ri-focus-3-line"></i>
+          <span id="aiContextLabel">السياق: عام</span>
+          <button class="btn btn-secondary btn-xs" onclick="clearAiContext()">إلغاء</button>
+        </div>
+        <div class="card ai-container">
+          <div id="aiSetup">
+            <div style="text-align:center;padding:40px 20px;">
+              <i class="ri-robot-3-line" style="font-size:48px;color:var(--gold);display:block;margin-bottom:16px;"></i>
+              <h3 style="color:var(--navy);font-size:18px;margin-bottom:6px;">المساعد الذكي</h3>
+              <p style="color:var(--gray-400);font-size:13px;margin-bottom:20px;">مساعد ذكي — Groq AI (مجاني، سريع)</p>
+              <div style="max-width:400px;margin:0 auto;">
+                <div class="input-group"><label class="input-label">مفتاح API</label><input type="text" id="aiApiKey" placeholder="gsk_..." class="input" style="text-align:left;direction:ltr;"></div>
+                <button id="aiSaveKey" class="btn btn-primary btn-full">حفظ المفتاح</button>
+                <p style="color:var(--gray-400);font-size:11px;margin-top:10px;">احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" style="color:var(--info);">Groq Console</a></p>
+              </div>
+            </div>
+          </div>
+          <div id="aiChat" style="display:none;flex-direction:column;height:550px;">
+            <div class="ai-mode-bar" style="position:relative;">
+              <button class="ai-mode-btn active" data-mode="chat">💬 محادثة</button>
+              <button class="ai-mode-btn" data-mode="summarize">📄 تلخيص</button>
+              <button class="ai-mode-btn" data-mode="draft">📝 صياغة</button>
+              <button class="ai-mode-btn" data-mode="analyze">⚖️ تحليل</button>
+              <button class="ai-mode-btn" data-mode="strategy">🧠 استراتيجية</button>
+              <button class="ai-mode-btn" data-mode="risk">⚠️ مخاطر</button>
+              <button class="ai-mode-btn" data-mode="hearing_prep">🎯 تحضير جلسة</button>
+              <button id="aiChangeKeyBtn" class="btn btn-secondary btn-xs" style="position:absolute;left:8px;top:50%;transform:translateY(-50%);" title="تغيير المفتاح"><i class="ri-key-2-line"></i></button>
+            </div>
+            <div id="aiMessages" style="flex:1;overflow-y:auto;padding:16px 0;"></div>
+            <div class="ai-input-bar">
+              <textarea id="aiInput" rows="2" placeholder="اكتب سؤالك هنا..." class="input" style="flex:1;min-height:60px;"></textarea>
+              <button id="aiSendBtn" class="btn btn-primary btn-icon-only"><i class="ri-send-plane-2-line"></i></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ═══ ABOUT / SALES PAGE ═══ -->
+      <section id="section-about" class="section" style="display:none;">
+        <div class="sales-page">
+          <div style="text-align:center;margin-bottom:var(--space-6);">
+            <div class="startup-logo" style="margin:0 auto var(--space-4);">م</div>
+            <h1 style="margin-bottom:4px;">مدير مكتب المحامي</h1>
+            <p style="color:var(--gray-400);font-size:var(--font-size-sm);margin-bottom:var(--space-3);">Cabinet Manager — منصة إدارة المكاتب القانونية</p>
+            <span class="version-badge">v2.0.0</span>
+          </div>
+          <div class="meta-row"><span class="meta-label">الإصدار</span><span class="meta-value">2.0.0 (Build 2026.06)</span></div>
+          <div class="meta-row"><span class="meta-label">آخر تحديث</span><span class="meta-value">18 يونيو 2026</span></div>
+          <div class="meta-row"><span class="meta-label">التقنية</span><span class="meta-value">Electron + SQLite + Groq AI</span></div>
+          <div class="meta-row"><span class="meta-label">الترخيص</span><span class="meta-value">مكتب المحاماة — ترخيص مهني</span></div>
+          <div class="meta-row"><span class="meta-label">المطور</span><span class="meta-value">Cabinet Manager Team</span></div>
+          <h2>المميزات الرئيسية</h2>
+          <p>• نظام متكامل لإدارة القضايا والموكلين والجلسات والوثائق والمهام<br>
+          • تقويم قانوني بــ 4 طرق عرض (شهري/أسبوعي/يومي/قائمة)<br>
+          • مساعد ذكي بتقنية Groq AI (تحليل، صياغة، استراتيجية، مخاطر)<br>
+          • نظام أمان متعدد المستويات (6 أدوار، صلاحيات دقيقة)<br>
+          • نسخ احتياطي تلقائي واسترجاع<br>
+          • تقارير متقدمة وتصدير PDF</p>
+        </div>
+      </section>
+
+      <!-- ═══ LICENSE PAGE ═══ -->
+      <section id="section-license" class="section" style="display:none;">
+        <div class="sales-page">
+          <h1>الترخيص</h1>
+          <p>مدير مكتب المحامي — Cabinet Manager v2.0</p>
+          <div class="license-box">
+            <p style="color:var(--gray-400);margin-bottom:var(--space-3);">رخصة الاستخدام المهني</p>
+            <div class="license-key">CAB-MGR-2026-XXXX-XXXX</div>
+            <p style="font-size:12px;color:var(--gray-400);margin-top:var(--space-3);">مرخص لمكتب المحاماة — جميع الحقوق محفوظة</p>
+          </div>
+          <h2>شروط الاستخدام</h2>
+          <p>هذا البرنامج مرخص للاستخدام المهني في مكاتب المحاماة. يمنع نسخ أو توزيع أو إعادة بيع البرنامج دون إذن كتابي. جميع البيانات المخزنة محلياً على جهاز المستخدم ولا تُشارك مع أي جهة خارجية.</p>
+        </div>
+      </section>
+
+      <!-- ═══ CHANGELOG PAGE ═══ -->
+      <section id="section-changelog" class="section" style="display:none;">
+        <div class="sales-page">
+          <h1>سجل التحديثات</h1>
+          <p>تاريخ تطور المنصة</p>
+          <div class="changelog-item"><span class="tag tag-new">جديد</span><h4>v2.0.0 — التحديث التجاري</h4><p style="font-size:12px;color:var(--gray-400);">18 يونيو 2026</p><p>واجهة احترافية جديدة، مساعد ذكي Groq AI، نظام أمان متكامل، تقويم قانوني، لوحة تحكم محسّنة، نسخ احتياطي تلقائي، تقارير PDF.</p></div>
+          <div class="changelog-item"><span class="tag tag-improve">تحسين</span><h4>v1.9.0 — التحسينات النهائية</h4><p style="font-size:12px;color:var(--gray-400);">15 يونيو 2026</p><p>إضافة Shimmer Skeletons، Empty States محسّنة، Command Palette مطورة، Onboarding Guide، Toast Notifications.</p></div>
+          <div class="changelog-item"><span class="tag tag-new">جديد</span><h4>v1.8.0 — مساعد الذكاء الاصطناعي</h4><p style="font-size:12px;color:var(--gray-400);">10 يونيو 2026</p><p>إطلاق AI Assistant بــ 7 أوضاع (محادثة، تلخيص، صياغة، تحليل، استراتيجية، مخاطر، تحضير جلسة).</p></div>
+        </div>
+      </section>
+
+      <!-- ═══ SUPPORT PAGE ═══ -->
+      <section id="section-support" class="section" style="display:none;">
+        <div class="sales-page">
+          <h1>الدعم والمساعدة</h1>
+          <p>تواصل مع فريق الدعم الفني</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin:var(--space-6) 0;">
+            <div class="support-card" onclick="window.open('mailto:support@cabinetmanager.ma')">
+              <div class="support-card-icon"><i class="ri-mail-line"></i></div>
+              <div><h4>البريد الإلكتروني</h4><p>support@cabinetmanager.ma</p></div>
+            </div>
+            <div class="support-card" onclick="navigateTo('about')">
+              <div class="support-card-icon"><i class="ri-information-line"></i></div>
+              <div><h4>حول البرنامج</h4><p>معلومات الإصدار والمميزات</p></div>
+            </div>
+            <div class="support-card" onclick="navigateTo('changelog')">
+              <div class="support-card-icon"><i class="ri-history-line"></i></div>
+              <div><h4>سجل التحديثات</h4><p>تعرف على آخر التغييرات</p></div>
+            </div>
+            <div class="support-card" onclick="navigateTo('license')">
+              <div class="support-card-icon"><i class="ri-file-shield-line"></i></div>
+              <div><h4>الترخيص</h4><p>شروط ورخصة الاستخدام</p></div>
+            </div>
+          </div>
+          <p style="text-align:center;color:var(--gray-400);font-size:13px;margin-top:var(--space-6);">نحن هنا لمساعدتك — فريق الدعم يرد خلال 24 ساعة</p>
+        </div>
+      </section>
+
+      <!-- ═══ ARCHIVE ═══ -->
+      <section id="section-archive" class="section">
+        <div class="section-header"><h1>الأرشيف</h1><p class="section-sub">القضايا المؤرشفة والملفات المنتهية</p></div>
+        <div class="toolbar">
+          <div class="toolbar-left">
+            <div class="input-group" style="margin:0"><i class="ri-search-line input-icon"></i><input type="text" id="searchArchive" placeholder="بحث في الأرشيف..." class="input"></div>
+          </div>
+        </div>
+        <div class="table-wrap"><table class="table" id="archiveTable"><thead><tr><th>رقم القضية</th><th>الموضوع</th><th>الموكل</th><th>تاريخ الأرشفة</th><th>الإجراءات</th></tr></thead><tbody id="archiveBody"></tbody></table></div>
+      </section>
+
+      <!-- ═══ SETTINGS ═══ -->
+      <section id="section-settings" class="section">
+        <div class="section-header"><h1>الإعدادات</h1><p class="section-sub">تخصيص إعدادات التطبيق</p></div>
+        <div class="settings-layout">
+          <div class="settings-nav">
+            <button class="settings-nav-item active" data-setting="general"><i class="ri-settings-3-line"></i> عام</button>
+            <button class="settings-nav-item" data-setting="security"><i class="ri-shield-keyhole-line"></i> الأمان</button>
+            <button class="settings-nav-item" data-setting="users"><i class="ri-group-line"></i> المستخدمون</button>
+            <button class="settings-nav-item" data-setting="activity"><i class="ri-activity-line"></i> النشاط</button>
+            <button class="settings-nav-item" data-setting="logs"><i class="ri-file-list-3-line"></i> السجلات</button>
+            <button class="settings-nav-item" data-setting="backup"><i class="ri-database-2-line"></i> النسخ الاحتياطي</button>
+            <button class="settings-nav-item" data-setting="notifications"><i class="ri-notification-3-line"></i> التنبيهات</button>
+            <button class="settings-nav-item" data-setting="about"><i class="ri-information-line"></i> حول</button>
+          </div>
+          <div class="settings-content">
+            <div class="setting-panel active" id="setting-general">
+              <div class="card"><div class="card-header"><h3>اللغة والمظهر</h3></div>
+                <div class="card-body">
+                  <div class="setting-row"><label>اللغة / Langue</label><select id="settingLang" class="input" style="width:200px;"><option value="ar">العربية</option><option value="fr">Français</option></select></div>
+                  <div class="setting-row"><label>الوضع الليلي</label><label class="toggle"><input type="checkbox" id="settingDarkMode"><span class="toggle-slider"></span></label></div>
+                </div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-security">
+              <div class="card"><div class="card-header"><h3>كلمة السر</h3></div>
+                <div class="card-body">
+                  <div class="setting-row"><label>كلمة السر الحالية</label><input type="password" id="settingsCurrentPwd" class="input" style="width:200px;"></div>
+                  <div class="setting-row"><label>كلمة السر الجديدة</label><input type="password" id="settingsNewPwd" class="input" style="width:200px;"></div>
+                  <div class="setting-row"><label>تأكيد كلمة السر</label><input type="password" id="settingsConfirmPwd" class="input" style="width:200px;"></div>
+                  <button id="settingsChangePwdBtn" class="btn btn-primary btn-sm">تغيير كلمة السر</button>
+                  <div id="settingsPwdMsg" style="margin-top:8px;font-size:13px;color:var(--success);display:none;"></div>
+                </div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-users">
+              <div class="card"><div class="card-header"><h3>إدارة المستخدمين</h3><button class="btn btn-primary btn-sm" id="settingAddUserBtn"><i class="ri-add-line"></i> مستخدم</button></div>
+                <div class="card-body"><div class="table-wrap"><table class="table"><thead><tr><th>الاسم</th><th>البريد</th><th>الدور</th><th>الحالة</th><th>آخر دخول</th><th></th></tr></thead><tbody id="settingsUsersBody"></tbody></table></div></div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-activity">
+              <div class="card"><div class="card-header"><h3>سجل النشاط</h3></div>
+                <div class="card-body"><div class="table-wrap" style="max-height:400px;overflow-y:auto;"><table class="table"><thead><tr><th>الوقت</th><th>المستخدم</th><th>الإجراء</th><th>التفاصيل</th></tr></thead><tbody id="settingsActivityBody"></tbody></table></div><div id="settingsLogLoadMoreContainer" style="text-align:center;margin-top:var(--space-3);"></div></div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-logs">
+              <div class="card"><div class="card-header">
+                <h3>سجل الأخطاء</h3>
+                <div style="display:flex;gap:8px;align-items:center;">
+                  <select id="logLevelFilter" class="input" style="width:120px;font-size:11px;">
+                    <option value="">جميع المستويات</option>
+                    <option value="INFO">INFO</option>
+                    <option value="WARN">WARN</option>
+                    <option value="ERROR">ERROR</option>
+                    <option value="CRITICAL">CRITICAL</option>
+                  </select>
+                  <input type="text" id="logSearchFilter" class="input" placeholder="بحث..." style="width:150px;font-size:11px;">
+                  <button class="btn btn-outline btn-xs" id="logRefreshBtn"><i class="ri-refresh-line"></i></button>
+                  <button class="btn btn-outline btn-xs" id="logExportBtn"><i class="ri-download-line"></i> تصدير</button>
+                  <button class="btn btn-outline btn-xs" id="logClearBtn" style="color:var(--danger);border-color:var(--danger);"><i class="ri-delete-bin-line"></i> مسح</button>
+                  <span id="logStatsBadge" style="font-size:10px;color:var(--gray-400);"></span>
+                </div>
+              </div>
+                <div class="card-body">
+                  <div class="table-wrap" style="max-height:400px;overflow-y:auto;">
+                    <table class="table" style="font-size:11px;">
+                      <thead><tr><th>الوقت</th><th>المستوى</th><th>السياق</th><th>الرسالة</th></tr></thead>
+                      <tbody id="settingsLogsBody"></tbody>
+                    </table>
+                  </div>
+                  <div id="settingsLogsLoadMoreContainer" style="text-align:center;margin-top:var(--space-3);"></div>
+                </div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-backup">
+              <div class="card"><div class="card-header"><h3>النسخ الاحتياطي التلقائي</h3><label class="toggle"><input type="checkbox" id="settingAutoBackup"><span class="toggle-slider"></span></label></div>
+                <div class="card-body">
+                  <div class="setting-row"><label>عدد الساعات بين النسخ</label><input type="number" id="settingBackupFreq" value="24" class="input" style="width:120px;"></div>
+                  <div class="setting-row"><label>الحد الأقصى للنسخ المحفوظة</label><input type="number" id="settingBackupKeep" value="30" class="input" style="width:120px;"></div>
+                  <button id="settingSaveBackup" class="btn btn-primary btn-sm">حفظ الإعدادات</button>
+                </div>
+              </div>
+              <div class="card" style="margin-top:var(--space-4);"><div class="card-header"><h3>إنشاء نسخة احتياطية يدوية</h3></div>
+                <div class="card-body" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                  <button id="settingCreateBackup" class="btn btn-primary"><i class="ri-save-3-line"></i> إنشاء نسخة الآن</button>
+                  <button id="settingExportArchive" class="btn btn-secondary"><i class="ri-archive-drawer-line"></i> تصدير أرشيف كامل</button>
+                  <span id="backupStatus" style="color:var(--gray-400);font-size:13px;"></span>
+                </div>
+              </div>
+              <div class="card" style="margin-top:var(--space-4);">
+                <div class="card-header"><h3>نقاط الاستعادة</h3><span id="backupCountBadge" style="font-size:11px;color:var(--gray-400);"></span></div>
+                <div class="card-body">
+                  <div id="backupListContainer"><p style="color:var(--gray-300);font-size:13px;" id="backupListStatus">جاري تحميل النسخ الاحتياطية...</p></div>
+                  <div id="backupList" style="max-height:400px;overflow-y:auto;"></div>
+                </div>
+              </div>
+              <div id="restoreConfirmOverlay" class="modal-overlay" style="display:none;z-index:20000;">
+                <div class="modal" style="max-width:480px;">
+                  <div class="modal-header"><h3 id="restoreConfirmTitle">تأكيد الاستعادة</h3></div>
+                  <div class="modal-body" id="restoreConfirmBody">
+                    <p style="color:var(--danger);font-weight:600;margin-bottom:12px;"><i class="ri-alert-line"></i> تحذير: استعادة النسخة الاحتياطية ستستبدل جميع البيانات الحالية!</p>
+                    <p id="restoreConfirmInfo" style="font-size:13px;color:var(--gray-600);margin-bottom:16px;"></p>
+                    <div style="display:flex;gap:8px;justify-content:flex-end;">
+                      <button id="restoreConfirmCancel" class="btn btn-secondary">إلغاء</button>
+                      <button id="restoreConfirmProceed" class="btn btn-danger">تأكيد الاستعادة</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-notifications">
+              <div class="card"><div class="card-header"><h3>إعدادات التنبيهات</h3><label class="toggle"><input type="checkbox" id="settingAlertEnabled"><span class="toggle-slider"></span></label></div>
+                <div class="card-body">
+                  <div class="setting-row"><label>التنبيه الأول (أيام)</label><input type="number" id="settingDays1" value="7" class="input" style="width:100px;"></div>
+                  <div class="setting-row"><label>التنبيه الثاني (أيام)</label><input type="number" id="settingDays2" value="3" class="input" style="width:100px;"></div>
+                  <div class="setting-row"><label>التنبيه الثالث (أيام)</label><input type="number" id="settingDays3" value="1" class="input" style="width:100px;"></div>
+                  <button id="settingSaveAlerts" class="btn btn-primary btn-sm">حفظ الإعدادات</button>
+                </div>
+              </div>
+            </div>
+            <div class="setting-panel" id="setting-about">
+              <div class="card" style="text-align:center;padding:40px;">
+                <i class="ri-shield-keyhole-line" style="font-size:48px;color:var(--gold);display:block;margin-bottom:16px;"></i>
+                <h3 style="color:var(--navy);font-size:18px;">مدير مكتب المحامي</h3>
+                <p style="color:var(--gray-400);font-size:13px;">Cabinet Manager v2.0</p>
+                <p style="color:var(--gray-500);font-size:13px;margin-top:12px;">تطبيق متكامل لإدارة مكاتب المحاماة في المغرب</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- ═══ GLOBAL MODAL ═══ -->
+<div id="modalOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal" id="modalContent">
+    <div class="modal-header"><h3 id="modalTitle">عنوان</h3><button class="modal-close" id="modalCloseBtn"><i class="ri-close-line"></i></button></div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn btn-secondary" id="modalCancelBtn">إلغاء</button>
+      <button class="btn btn-primary" id="modalConfirmBtn">حفظ</button>
+    </div>
+  </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- ═══ CONFIRM DIALOG ═══ -->
+<div id="confirmOverlay" class="confirm-overlay" style="display:none;">
+  <div class="confirm-dialog">
+    <div id="confirmIcon" class="confirm-icon confirm-icon-danger"><i class="ri-delete-bin-line"></i></div>
+    <h3 class="confirm-title" id="confirmTitle">تأكيد الحذف</h3>
+    <p class="confirm-message" id="confirmMessage">هل أنت متأكد؟</p>
+    <div class="confirm-actions">
+      <button class="btn btn-secondary" id="confirmCancelBtn">إلغاء</button>
+      <button class="btn btn-danger" id="confirmActionBtn">حذف</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CASE WORKSPACE (V4) ═══ -->
+<div id="caseDetailOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal modal-workspace">
+    <div class="ws-header">
+      <div class="ws-header-left">
+        <button class="ws-back" id="caseDetailClose"><i class="ri-arrow-right-s-line"></i></button>
+        <div class="ws-title-area">
+          <h3 id="cdTitle">القضية</h3>
+          <span class="ws-badge" id="cdStatusBadge">نشطة</span>
+        </div>
+      </div>
+      <div class="ws-header-actions">
+        <button class="btn btn-secondary btn-xs" id="cdArchiveBtn"><i class="ri-archive-line"></i> أرشفة</button>
+        <button class="btn btn-secondary btn-xs" id="cdEditBtn"><i class="ri-edit-line"></i> تعديل</button>
+        <button class="btn btn-primary btn-xs" id="cdAiBtn"><i class="ri-robot-3-line"></i> AI</button>
+        <button class="modal-close" id="caseDetailCloseBtn" style="position:static;"><i class="ri-close-line"></i></button>
+      </div>
+    </div>
+    <div class="ws-tabs">
+      <button class="ws-tab active" data-ws="overview"><i class="ri-grid-line"></i><span>نظرة عامة</span></button>
+      <button class="ws-tab" data-ws="timeline"><i class="ri-history-line"></i><span>النشاطات</span></button>
+      <button class="ws-tab" data-ws="documents"><i class="ri-file-4-line"></i><span>الوثائق</span></button>
+      <button class="ws-tab" data-ws="hearings"><i class="ri-scales-3-line"></i><span>الجلسات</span></button>
+      <button class="ws-tab" data-ws="tasks"><i class="ri-task-line"></i><span>المهام</span></button>
+      <button class="ws-tab" data-ws="notes"><i class="ri-edit-2-line"></i><span>الملاحظات</span></button>
+      <button class="ws-tab" data-ws="expenses"><i class="ri-money-dollar-circle-line"></i><span>المصاريف</span></button>
+      <button class="ws-tab" data-ws="contacts"><i class="ri-contacts-line"></i><span>جهات الاتصال</span></button>
+      <button class="ws-tab" data-ws="analytics"><i class="ri-bar-chart-line"></i><span>تحليلات</span></button>
+      <button class="ws-tab" data-ws="ai"><i class="ri-robot-3-line"></i><span>AI</span></button>
+    </div>
+    <div class="ws-body" id="caseDetailBody">
+      <div id="wsOverview" class="ws-panel active"></div>
+      <div id="wsTimeline" class="ws-panel"></div>
+      <div id="wsDocuments" class="ws-panel"></div>
+      <div id="wsHearings" class="ws-panel"></div>
+      <div id="wsTasks" class="ws-panel"></div>
+      <div id="wsNotes" class="ws-panel"></div>
+      <div id="wsExpenses" class="ws-panel"></div>
+      <div id="wsContacts" class="ws-panel"></div>
+      <div id="wsAnalytics" class="ws-panel"></div>
+      <div id="wsAI" class="ws-panel"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COMMAND PALETTE ═══ -->
+<div id="commandPalette" class="cmd-palette-overlay" style="display:none;">
+  <div class="cmd-palette">
+    <div class="cmd-search">
+      <i class="ri-search-line"></i>
+      <input type="text" id="cmdInput" placeholder="ابحث عن قضية، موكل، وثيقة، أو اكتب أمراً..." autofocus>
+    </div>
+    <div class="cmd-results" id="cmdResults"></div>
+    <div class="cmd-footer"><span><kbd>↑</kbd><kbd>↓</kbd> تنقل</span><span><kbd>↵</kbd> اختيار</span><span><kbd>Tab</kbd> التالي</span><span><kbd>Esc</kbd> إغلاق</span></div>
+  </div>
+</div>
+
+<!-- ═══ CLIENT WORKSPACE (V5) ═══ -->
+<div id="clientDetailOverlay" class="modal-overlay" style="display:none;">
+  <div class="modal modal-workspace">
+    <div class="ws-header">
+      <div class="ws-header-left">
+        <button class="ws-back" id="clientDetailClose"><i class="ri-arrow-right-s-line"></i></button>
+        <div class="ws-title-area">
+          <div class="cl-avatar-sm" id="clAvatarSm">م</div>
+          <h3 id="clTitle">الموكل</h3>
+          <span class="ws-badge" id="clStatusBadge">نشط</span>
+        </div>
+      </div>
+      <div class="ws-header-actions">
+        <button class="btn btn-secondary btn-xs" id="clEditBtn"><i class="ri-edit-line"></i> تعديل</button>
+        <button class="btn btn-secondary btn-xs" id="clArchiveBtn"><i class="ri-archive-line"></i> أرشفة</button>
+        <button class="btn btn-primary btn-xs" id="clAiBtn"><i class="ri-robot-3-line"></i> AI</button>
+        <button class="modal-close" style="position:static;" id="clientDetailCloseBtn"><i class="ri-close-line"></i></button>
+      </div>
+    </div>
+    <div class="ws-tabs">
+      <button class="ws-tab active" data-ws="cloverview"><i class="ri-grid-line"></i><span>نظرة عامة</span></button>
+      <button class="ws-tab" data-ws="clcases"><i class="ri-briefcase-4-line"></i><span>القضايا</span></button>
+      <button class="ws-tab" data-ws="cldocs"><i class="ri-file-4-line"></i><span>الوثائق</span></button>
+      <button class="ws-tab" data-ws="clcomms"><i class="ri-chat-3-line"></i><span>الاتصالات</span></button>
+      <button class="ws-tab" data-ws="clpayments"><i class="ri-money-dollar-circle-line"></i><span>المدفوعات</span></button>
+      <button class="ws-tab" data-ws="cltimeline"><i class="ri-history-line"></i><span>النشاطات</span></button>
+      <button class="ws-tab" data-ws="clnotes"><i class="ri-edit-2-line"></i><span>الملاحظات</span></button>
+      <button class="ws-tab" data-ws="clanalytics"><i class="ri-bar-chart-line"></i><span>تحليلات</span></button>
+    </div>
+    <div class="ws-body" id="clientDetailBody">
+      <div id="wsClOverview" class="ws-panel active"></div>
+      <div id="wsClCases" class="ws-panel"></div>
+      <div id="wsClDocs" class="ws-panel"></div>
+      <div id="wsClComms" class="ws-panel"></div>
+      <div id="wsClPayments" class="ws-panel"></div>
+      <div id="wsClTimeline" class="ws-panel"></div>
+      <div id="wsClNotes" class="ws-panel"></div>
+      <div id="wsClAnalytics" class="ws-panel"></div>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" style="display:none;">
+<!-- ipcRenderer + electron exposed via preload.js (contextIsolation:true) -->
+<script src="modules/shared.js"></script>
+<script src="modules/ipc-cache.js"></script>
+<script src="modules/logger-client.js"></script>
+<script src="modules/modal.js"></script>
+<script src="modules/navigation.js"></script>
+<script src="modules/ui.js"></script>
+<script src="modules/auth.js"></script>
+<script src="modules/archive.js"></script>
+<script src="modules/reports.js"></script>
+<script src="modules/search/index.js"></script>
+<script src="modules/dashboard/views.js"></script>
+<script src="modules/dashboard/index.js"></script>
+<script src="modules/clients/views.js"></script>
+<script src="modules/clients/index.js"></script>
+<script src="modules/cases/views.js"></script>
+<script src="modules/cases/kanban.js"></script>
+<script src="modules/cases/index.js"></script>
+<script src="modules/calendar/views.js"></script>
+<script src="modules/calendar/index.js"></script>
+<script src="modules/hearings/index.js"></script>
+<script src="modules/tasks/views.js"></script>
+<script src="modules/tasks/index.js"></script>
+<script src="modules/documents/views.js"></script>
+<script src="modules/documents/index.js"></script>
+<script src="modules/ai/index.js"></script>
+<script src="modules/settings/index.js"></script>
+<script src="modules/expenses/index.js"></script>
+<script src="modules/notifications/index.js"></script>
+<script src="modules/autosave.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>

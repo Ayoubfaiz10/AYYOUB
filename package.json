@@ -1,0 +1,55 @@
+{
+  "name": "lawyer-manager",
+  "version": "2.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win --x64",
+    "test": "node --test tests/unit/*.test.js",
+    "test:auth": "node --test tests/unit/auth.test.js",
+    "test:db": "node --test tests/unit/database.test.js",
+    "test:cases": "node --test tests/unit/cases.test.js",
+    "test:clients": "node --test tests/unit/clients.test.js",
+    "test:docs": "node --test tests/unit/documents.test.js",
+    "test:tasks": "node --test tests/unit/tasks.test.js",
+    "test:search": "node --test tests/unit/search.test.js",
+    "test:ipc": "node --test tests/unit/ipc-handlers.test.js",
+    "test:legacy": "node test/password.test.js"
+  },
+  "build": {
+    "appId": "com.avocat.manager",
+    "productName": "مدير مكتب المحامي",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerLanguages": [
+        "ar",
+        "fr"
+      ],
+      "language": "1033"
+    },
+    "asarUnpack": [
+      "node_modules/sql.js/dist/*.wasm",
+      "node_modules/tesseract.js-core/*.wasm"
+    ]
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "sql.js": "^1.11.0",
+    "tesseract.js": "^7.0.0"
+  },
+  "devDependencies": {
+    "electron": "^42.4.1",
+    "electron-builder": "^24.0.0"
+  },
+  "allowScripts": {
+    "electron@28.3.3": true
+  }
+}

@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.exe
+*.dmg
+
+# Storage (sensitive data)
+storage/ai_config.json
+storage/password.json
+storage/affaires/
+
+# Backups
+backups/
+*.backup
+*.db
+
+# OS files
+Thumbs.db
+.DS_Store
+*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OpenCode config
+.opencode/
+
+# Temp files
+*.tmp

@@ -1,0 +1,294 @@
+:root {
+  /* ─── Colors ─── */
+  --bg: #F8F8F7;
+  --bg-alt: #F0F0EE;
+  --white: #FFFFFF;
+  --navy: #1E2A38;
+  --navy-light: #2A3A4C;
+  --navy-dark: #151E28;
+  --gold: #C6A15B;
+  --gold-dark: #A8883E;
+  --gray-50: #F7F7F6;
+  --gray-100: #E8E7E5;
+  --gray-200: #D4D3D0;
+  --gray-300: #B0AFA9;
+  --gray-400: #8C8A84;
+  --gray-500: #6B6A65;
+  --gray-600: #4F4E4A;
+  --gray-700: #363532;
+  --gray-800: #1F2937;
+  --danger: #D94A4A;
+  --danger-bg: #FDF2F2;
+  --success: #1A8A5C;
+  --success-bg: #F0FDF6;
+  --warning: #D99D2A;
+  --warning-bg: #FFFBEB;
+  --info: #4A8BC2;
+  --purple: #7c3aed;
+
+  /* ─── Gold Opacity Colors ─── */
+  --gold-bg-xs: rgba(198, 161, 91, 0.04);
+  --gold-bg-sm: rgba(198, 161, 91, 0.08);
+  --gold-bg-md: rgba(198, 161, 91, 0.12);
+  --gold-bg-lg: rgba(198, 161, 91, 0.18);
+  --gold-bg-subtle: rgba(198, 161, 91, 0.05);
+
+  /* ─── Semantic BG Subtle ─── */
+  --danger-bg-xs: rgba(217, 74, 74, 0.08);
+  --danger-bg-subtle: rgba(217, 74, 74, 0.1);
+  --success-bg-xs: rgba(26, 138, 92, 0.08);
+  --success-bg-subtle: rgba(26, 138, 92, 0.1);
+  --warning-bg-xs: rgba(217, 157, 42, 0.08);
+  --warning-bg-subtle: rgba(217, 157, 42, 0.1);
+  --info-bg-xs: rgba(74, 139, 194, 0.08);
+  --info-bg-subtle: rgba(74, 139, 194, 0.1);
+  --table-stripe: rgba(0, 0, 0, 0.015);
+
+  /* ─── Overlay Colors ─── */
+  --overlay-light: rgba(0, 0, 0, 0.3);
+  --overlay-medium-alt: rgba(0, 0, 0, 0.4);
+  --overlay-medium: rgba(0, 0, 0, 0.5);
+  --overlay-navy: rgba(30, 42, 56, 0.5);
+
+  /* ─── Sidebar ─── */
+  --sidebar-border: rgba(255, 255, 255, 0.06);
+  --sidebar-label: rgba(255, 255, 255, 0.25);
+  --sidebar-icon: rgba(255, 255, 255, 0.4);
+  --sidebar-btn-hover-bg: rgba(255, 255, 255, 0.1);
+  --sidebar-btn-hover-color: rgba(255, 255, 255, 0.8);
+  --sidebar-text-5: rgba(255, 255, 255, 0.5);
+  --sidebar-text-9: rgba(255, 255, 255, 0.9);
+  --sidebar-text-35: rgba(255, 255, 255, 0.35);
+  --sidebar-text-95: rgba(255, 255, 255, 0.95);
+
+  /* ─── Typography ─── */
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-base: 14px;
+  --font-size-lg: 16px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 32px;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height: 1.45;
+
+  /* ─── Type Scale (Semantic) ─── */
+  --text-page-title: 22px;
+  --text-page-title-weight: 700;
+  --text-page-title-lh: 1.25;
+  --text-section-title: 16px;
+  --text-section-title-weight: 600;
+  --text-section-title-lh: 1.3;
+  --text-card-title: 14px;
+  --text-card-title-weight: 600;
+  --text-card-title-lh: 1.35;
+  --text-body: 13px;
+  --text-body-weight: 400;
+  --text-body-lh: 1.5;
+  --text-secondary: 12px;
+  --text-secondary-weight: 500;
+  --text-secondary-lh: 1.45;
+  --text-caption: 11px;
+  --text-caption-weight: 500;
+  --text-caption-lh: 1.3;
+
+  /* ─── Spacing ─── */
+  --space-0: 1px;
+  --space-0-5: 2px;
+  --space-1: 3px;
+  --space-1-5: 4px;
+  --space-2: 6px;
+  --space-3: 8px;
+  --space-3-5: 10px;
+  --space-4: 12px;
+  --space-5: 14px;
+  --space-6: 18px;
+  --space-7: 20px;
+  --space-8: 24px;
+  --space-9: 28px;
+  --space-10: 32px;
+  --space-11: 36px;
+  --space-12: 40px;
+  --space-14: 48px;
+
+  /* ─── Layout ─── */
+  --sidebar-width: 220px;
+  --topbar-height: 48px;
+  --modal-width: 520px;
+  --confirm-width: 340px;
+  --palette-width: 580px;
+  --onboarding-width: 480px;
+  --login-width: 340px;
+  --topbar-search-max: 480px;
+  --sales-page-width: 720px;
+
+  /* ─── Avatar Sizes ─── */
+  --avatar-xs: 24px;
+  --avatar-sm: 28px;
+  --avatar-md: 32px;
+  --avatar-lg: 36px;
+  --avatar-xl: 44px;
+  --avatar-2xl: 52px;
+
+  /* ─── Icon Sizes ─── */
+  --icon-xs: 16px;
+  --icon-sm: 18px;
+  --icon-md: 20px;
+  --icon-lg: 22px;
+  --icon-xl: 28px;
+  --icon-2xl: 32px;
+  --icon-3xl: 36px;
+  --icon-4xl: 64px;
+
+  /* ─── Priority/Slider Sizes ─── */
+  --priority-width: 3px;
+  --priority-height-sm: 20px;
+  --priority-height-md: 32px;
+  --priority-height-lg: 3px;
+
+  /* ─── Animations ─── */
+  --easing-default: cubic-bezier(0.25, 0.1, 0.25, 1);
+  --easing-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --easing-exit: cubic-bezier(0.4, 0, 0.8, 0.15);
+
+  /* ─── Radii ─── */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 12px;
+  --radius-2xl: 16px;
+  --radius-pill: 100px;
+
+  /* ─── Shadows ─── */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 4px rgba(0, 0, 0, 0.02);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.03);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.06), 0 4px 8px rgba(0, 0, 0, 0.03);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.08), 0 8px 16px rgba(0, 0, 0, 0.04);
+  --shadow-gold: 0 4px 16px rgba(198, 161, 91, 0.3);
+  --shadow-gold-hover: 0 6px 24px rgba(198, 161, 91, 0.4);
+  --shadow-dialog: 0 20px 60px rgba(0, 0, 0, 0.15);
+  --shadow-toast: 0 8px 24px rgba(0, 0, 0, 0.15);
+  --shadow-danger: 0 4px 12px rgba(217, 74, 74, 0.2);
+  --shadow-palette: 0 16px 48px rgba(0, 0, 0, 0.15);
+  --focus-ring-gold: 0 0 0 2px rgba(198, 161, 91, 0.12);
+  --focus-ring-gold-wide: 0 0 0 3px rgba(198, 161, 91, 0.1);
+
+  /* ─── Blur Values ─── */
+  --blur-sm: 4px;
+  --blur-md: 6px;
+  --blur-lg: 8px;
+  --blur-xl: 12px;
+
+  /* ─── Transitions ─── */
+  --transition-fast: 120ms var(--easing-default);
+  --transition-base: 150ms var(--easing-default);
+  --transition-slow: 200ms var(--easing-default);
+
+  /* ─── Button ─── */
+  --btn-padding: 8px 16px;
+  --btn-radius: 6px;
+  --btn-font-size: 13px;
+  --btn-transition: all 150ms ease;
+
+  --btn-primary-bg: var(--gold);
+  --btn-primary-color: #fff;
+  --btn-primary-hover-bg: var(--gold-dark);
+
+  --btn-secondary-bg: var(--gray-100);
+  --btn-secondary-color: var(--gray-700);
+  --btn-secondary-hover-bg: var(--gray-200);
+
+  --btn-danger-bg: var(--danger);
+  --btn-danger-color: #fff;
+  --btn-danger-hover-bg: #c0392b;
+
+  /* ─── Card ─── */
+  --card-padding: 20px;
+  --card-radius: 12px;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --card-header-padding: 16px 20px;
+
+  /* ─── Modal ─── */
+  --modal-padding: 24px;
+  --modal-radius: 16px;
+  --modal-max-width: 520px;
+  --modal-overlay-bg: rgba(0,0,0,0.4);
+
+  /* ─── Input ─── */
+  --input-padding: 8px 12px;
+  --input-radius: 6px;
+  --input-border: 1px solid var(--gray-200);
+  --input-focus-border: var(--gold);
+  --input-height: 40px;
+
+  /* ─── Sidebar Specific ─── */
+  --sidebar-bg: var(--navy);
+  --sidebar-text: rgba(255, 255, 255, 0.55);
+  --sidebar-text-hover: rgba(255, 255, 255, 0.85);
+  --sidebar-text-active: #FFFFFF;
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-active: rgba(255, 255, 255, 0.07);
+}
+
+/* ─── Dark Mode ─── */
+.dark-mode {
+  --bg: #111827;
+  --bg-alt: #1A2332;
+  --white: #1F2937;
+  --gray-50: #1F2937;
+  --gray-100: #374151;
+  --gray-200: #4B5563;
+  --gray-300: #6B7280;
+  --gray-400: #9CA3AF;
+  --gray-500: #D1D5DB;
+  --gray-600: #E5E7EB;
+  --gray-700: #F3F4F6;
+  --gray-800: #F9FAFB;
+  --danger-bg: #3B1A1A;
+  --success-bg: #1A3B2A;
+  --warning-bg: #3B2E1A;
+  --info-bg: #1A2A3B;
+  --gold-bg-sm: rgba(198, 161, 91, 0.12);
+  --gold-bg-md: rgba(198, 161, 91, 0.18);
+  --danger-bg-subtle: rgba(217, 74, 74, 0.2);
+  --success-bg-subtle: rgba(26, 138, 92, 0.2);
+  --warning-bg-subtle: rgba(217, 157, 42, 0.2);
+  --info-bg-subtle: rgba(74, 139, 194, 0.2);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2), 0 1px 4px rgba(0, 0, 0, 0.15);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.35), 0 8px 16px rgba(0, 0, 0, 0.2);
+  --sidebar-bg: #0F172A;
+  --focus-ring-gold: 0 0 0 2px rgba(198, 161, 91, 0.25);
+  --focus-ring-gold-wide: 0 0 0 3px rgba(198, 161, 91, 0.2);
+  --overlay-light: rgba(0, 0, 0, 0.5);
+  --overlay-medium: rgba(0, 0, 0, 0.7);
+  --overlay-navy: rgba(15, 23, 42, 0.7);
+}
+
+/* ─── Phase 11/12 dark mode additions ─── */
+.dark-mode .cmd-palette { background: var(--white); }
+.dark-mode .cmd-search { border-bottom-color: var(--gray-100); }
+.dark-mode .cmd-search input { color: var(--gray-700); }
+.dark-mode .cmd-search input::placeholder { color: var(--gray-300); }
+.dark-mode .cmd-item:hover, .dark-mode .cmd-item.active { background: var(--gray-50); }
+.dark-mode .cmd-item-title { color: var(--gray-700); }
+.dark-mode .cmd-item-sub { color: var(--gray-400); }
+.dark-mode .cmd-item-kbd { background: var(--gray-100); color: var(--gray-400); }
+.dark-mode .cmd-footer { border-top-color: var(--gray-100); color: var(--gray-300); }
+.dark-mode .cmd-category { color: var(--gray-300); }
+.dark-mode .cmd-results::-webkit-scrollbar-track { background: var(--white); }
+.dark-mode .cmd-results::-webkit-scrollbar-thumb { background: var(--gray-100); }
+.dark-mode .cmd-palette-overlay { background: var(--overlay-medium); }
+.dark-mode #startupOverlay { background: var(--bg); }
+.dark-mode .startup-name { color: var(--gray-700); }
+.dark-mode .onboarding-box { background: var(--white); }
+.dark-mode .onboarding-box h2 { color: var(--gray-700); }
+.dark-mode .onboarding-box p { color: var(--gray-400); }
+.dark-mode .toast { background: var(--gray-100); }
+.dark-mode .empty-state-v2 i { color: var(--gray-100); }
+.dark-mode .empty-state-v2 h3 { color: var(--gray-400); }
+.dark-mode .skeleton { background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%); }
