@@ -147,12 +147,12 @@ A.AutoSave = {
   },
 
   init() {
-    setInterval(() => this.saveAll(), 30000);
-    window.addEventListener('beforeunload', () => this.saveAll());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) this.saveAll(); });
-    this._updateGlobalIndicator();
-    setInterval(() => this._updateGlobalIndicator(), 5000);
-    setTimeout(() => this.showRestoreNotification(), 2000);
+    setInterval(() => A.AutoSave.saveAll(), 30000);
+    window.addEventListener('beforeunload', () => A.AutoSave.saveAll());
+    document.addEventListener('visibilitychange', () => { if (document.hidden) A.AutoSave.saveAll(); });
+    A.AutoSave._updateGlobalIndicator();
+    setInterval(() => A.AutoSave._updateGlobalIndicator(), 5000);
+    setTimeout(() => A.AutoSave.showRestoreNotification(), 2000);
   },
 
   _updateGlobalIndicator() {

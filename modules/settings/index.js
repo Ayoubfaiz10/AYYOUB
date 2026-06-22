@@ -44,7 +44,12 @@ window.deleteSettingsUser = async function(id) {
 };
 
 A.initSettings = function() {
-  document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
+  document.getElementById('settingLang')?.addEventListener('change', function() {
+  A.setLanguage(this.value);
+  A.showToast(this.value === 'fr' ? 'Langue changée en français' : 'تم تغيير اللغة إلى العربية', 'success');
+});
+
+document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     A.showModal('مستخدم جديد', `
       <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="fUserName" class="input"></div>
       <div class="input-group"><label class="input-label">البريد</label><input type="email" id="fUserEmail" class="input"></div>
@@ -101,6 +106,23 @@ A.initSettings = function() {
       frequency_hours: parseInt(document.getElementById('settingBackupFreq').value) || 24,
       keep_count: parseInt(document.getElementById('settingBackupKeep').value) || 30
     }); A.showToast('تم حفظ الإعدادات', 'success'); } catch (e) { A.logError('saveBackupSettings', e); A.showToast('فشل حفظ الإعدادات', 'error'); }
+  });
+
+  document.getElementById('settingCleanOrphans')?.addEventListener('click', async () => {
+    if (!A.state.ipc) return;
+    const btn = document.getElementById('settingCleanOrphans');
+    const status = document.getElementById('cleanOrphansStatus');
+    if (btn) btn.disabled = true;
+    if (status) status.textContent = 'جاري التنظيف...';
+    try {
+      const result = await A.state.ipc.invoke('db:cleanOrphanedFiles');
+      if (result) {
+        const msg = `تم تنظيف ${result.deletedCount} ملفاً يتيماً (${result.freedMB} MB)`;
+        if (status) status.textContent = msg;
+        A.showToast(msg, 'success');
+      }
+    } catch (e) { A.logError('cleanOrphans', e); A.showToast('فشل تنظيف الملفات', 'error'); if (status) status.textContent = ''; }
+    finally { if (btn) btn.disabled = false; }
   });
 
   document.getElementById('settingCreateBackup')?.addEventListener('click', async () => {

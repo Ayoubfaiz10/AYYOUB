@@ -7,7 +7,45 @@ const bcrypt = require('bcryptjs');
 const db = require('./db');
 const logger = require('./logger');
 
+/* ─── Write Lock: sequential DB writes ─── */
+let _writeQueue = Promise.resolve();
+function seqWrite(fn) {
+  return _writeQueue = _writeQueue.then(fn, fn);
+}
+
 // Export saveDb so we can save on quit
+async function getUniqueFilePath(dir, filename) {
+  let finalPath = path.join(dir, filename);
+  let count = 1;
+  const ext = path.extname(filename);
+  const base = path.basename(filename, ext);
+  while (true) {
+    try { await fsp.access(finalPath); } catch { break; }
+    finalPath = path.join(dir, `${base}_(${count})${ext}`);
+    count++;
+  }
+  return finalPath;
+}
+
+const CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'window_config.json');
+
+function loadWindowState() {
+  try {
+    if (fs.existsSync(CONFIG_PATH)) {
+      return JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8'));
+    }
+  } catch (e) { console.warn('Failed to load window state:', e.message); }
+  return {};
+}
+
+function saveWindowState(state) {
+  try {
+    const dir = path.dirname(CONFIG_PATH);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(state));
+  } catch (e) { console.warn('Failed to save window state:', e.message); }
+}
+
 async function saveDbOnQuit() {
   try {
     if (typeof db.saveDb === 'function') await db.saveDb();
@@ -32,9 +70,12 @@ const NOTIF_GC_INTERVAL = 6 * 60 * 60 * 1000;  // every 6 hours
 const sentNotifications = new Map(); // key → timestamp
 
 function createWindow() {
+  const savedState = loadWindowState();
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 840,
+    width: savedState.width || 1280,
+    height: savedState.height || 840,
+    x: savedState.x,
+    y: savedState.y,
     minWidth: 900,
     minHeight: 600,
     title: 'مدير مكتب المحامي',
@@ -53,12 +94,32 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.groq.com"]
+        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com"]
       }
     });
   });
 
   mainWindow.loadFile('index.html');
+
+  mainWindow.on('close', async (e) => {
+    if (mainWindow) {
+      e.preventDefault();
+      await saveDbOnQuit();
+      mainWindow.destroy();
+    }
+  });
+
+  const debounceSaveState = (() => { let t; return () => { clearTimeout(t); t = setTimeout(() => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const bounds = mainWindow.getBounds();
+      saveWindowState({ width: bounds.width, height: bounds.height, x: bounds.x, y: bounds.y });
+    }
+  }, 500); }; })();
+
+  mainWindow.on('resize', debounceSaveState);
+  mainWindow.on('move', debounceSaveState);
+  mainWindow.on('maximize', debounceSaveState);
+  mainWindow.on('unmaximize', debounceSaveState);
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -132,7 +193,7 @@ function mutateIpc(name, fn) {
     }
     try {
       const result = await fn(event, ...args);
-      await db.saveDb();
+      await seqWrite(() => db.saveDb());
       return result;
     } catch (err) {
       logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
@@ -164,9 +225,26 @@ async function init() {
   })));
   ipcMain.handle('db:deleteCase', mutateIpc('deleteCase', withPerm('delete_case')(async (_e, id) => {
     if (id == null) return;
-    const c = db.getAllCases().find(x => x.id === id);
+
+    // 1. Fetch case info before deletion
+    const allCases = db.getAllCases();
+    const c = allCases.find(x => x.id === id);
+
+    // 2. Delete case from database (ON DELETE CASCADE handles related records in DB)
     db.deleteCase(id);
-    db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id}`);
+
+    // 3. Delete storage folder from disk
+    const caseDir = path.join(db.STORAGE_DIR, String(id));
+    try {
+      if (fs.existsSync(caseDir)) {
+        fs.rmSync(caseDir, { recursive: true, force: true });
+        console.log(`Deleted storage for case #${id}`);
+      }
+    } catch (err) {
+      console.error(`Failed to delete storage for case #${id}:`, err);
+    }
+
+    db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id} مع جميع ملفاتها`);
   })));
   ipcMain.handle('db:getCasesByClient', withPerm('view_case')(safeIpc('getCasesByClient', (_e, clientId) => db.getCasesByClient(clientId))));
   ipcMain.handle('db:getAllClients', withPerm('view_case')(() => db.getAllClients()));
@@ -221,16 +299,7 @@ async function init() {
     const caseDir = path.join(db.STORAGE_DIR, String(caseId));
     try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
     const filename = path.basename(sourcePath);
-    const destPath = path.join(caseDir, filename);
-    let finalPath = destPath;
-    let count = 1;
-    while (true) {
-      try { await fsp.access(finalPath); } catch { break; }
-      const ext = path.extname(filename);
-      const base = path.basename(filename, ext);
-      finalPath = path.join(caseDir, `${base}_(${count})${ext}`);
-      count++;
-    }
+    const finalPath = await getUniqueFilePath(caseDir, filename);
     await fsp.copyFile(sourcePath, finalPath);
     const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType });
     setTimeout(() => indexDocument(docId), 100);
@@ -261,7 +330,7 @@ async function init() {
         const caseDir = path.join(db.STORAGE_DIR, String(caseId));
         try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
         const filename = path.basename(sourcePath);
-        const finalPath = path.join(caseDir, Date.now() + '_' + filename);
+        const finalPath = await getUniqueFilePath(caseDir, filename);
         await fsp.copyFile(sourcePath, finalPath);
         const docId = db.addDocument({ case_id: caseId, filename, file_path: finalPath, doc_type: docType });
         if (tags) db.updateDocument(docId, { tags });
@@ -371,6 +440,11 @@ async function init() {
   ipcMain.handle('db:addLog', mutateIpc('addLog', (_e, action, details) => { if (action) db.addLog(action, details || ''); }));
   ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', () => db.integrityCheck()));
   ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', () => db.repairOrphans()));
+  ipcMain.handle('db:cleanOrphanedFiles', safeIpc('cleanOrphanedFiles', () => {
+    const result = db.cleanOrphanedFiles();
+    db.addLog('clean_orphans', `تنظيف ${result.deletedCount} ملفاً يتيماً (${result.freedMB} MB)`);
+    return result;
+  }));
 
   // ─── Logger IPC ───
   ipcMain.handle('logger:log', (_e, level, context, message) => {
@@ -541,7 +615,9 @@ async function indexDocument(docId) {
     let text = '';
     const imgExts = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.tiff', '.webp'];
     if (ext === '.pdf' || imgExts.includes(ext)) {
-      const { data } = await Tesseract.recognize(doc.file_path, 'ara+fra');
+      const worker = await Tesseract.createWorker('ara+fra');
+      const { data } = await worker.recognize(doc.file_path);
+      await worker.terminate();
       text = data.text || '';
     }
     if (text.trim()) {
@@ -737,7 +813,7 @@ ipcMain.handle('auth:addUser', async (_e, data) => {
     data.password_hash = hashBcrypt(pwd);
     data._userId = currentUser?.id; data._userName = currentUser?.name;
     const id = db.addUser(data);
-    await db.saveDb();
+    await seqWrite(() => db.saveDb());
     return id ? { ok: true, id } : { ok: false, error: 'فشل إضافة المستخدم' };
   } catch (e) {
     handleError('addUser', e);
@@ -750,7 +826,7 @@ ipcMain.handle('auth:updateUser', async (_e, id, data) => {
   try {
     if (!id || typeof id !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     db.updateUser(id, data);
-    await db.saveDb();
+    await seqWrite(() => db.saveDb());
     return { ok: true };
   } catch (e) {
     handleError('updateUser', e);
@@ -762,7 +838,7 @@ ipcMain.handle('auth:deleteUser', async (_e, id) => {
   if (!checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لحذف المستخدمين' };
   try {
     db.deleteUser(id);
-    await db.saveDb();
+    await seqWrite(() => db.saveDb());
     return { ok: true };
   } catch (e) {
     handleError('deleteUser', e);
@@ -776,17 +852,31 @@ const AI_PROVIDERS = {
   groq: {
     name: 'Groq',
     baseUrl: 'https://api.groq.com/openai/v1/chat/completions',
-    defaultModel: 'llama-3.1-8b-instant'
+    defaultModel: 'llama-3.1-8b-instant',
+    models: ['llama-3.1-8b-instant', 'llama-3.1-70b-versatile', 'mixtral-8x7b-32768', 'gemma2-9b-it'],
+    keyPrefix: 'gsk_'
   },
   openai: {
     name: 'OpenAI',
     baseUrl: 'https://api.openai.com/v1/chat/completions',
-    defaultModel: 'gpt-4o-mini'
+    defaultModel: 'gpt-4o-mini',
+    models: ['gpt-4o-mini', 'gpt-4o', 'gpt-4-turbo', 'gpt-3.5-turbo'],
+    keyPrefix: 'sk-'
   },
   anthropic: {
-    name: 'Anthropic',
+    name: 'Anthropic / Claude',
     baseUrl: 'https://api.anthropic.com/v1/messages',
-    defaultModel: 'claude-3-haiku-20240307'
+    defaultModel: 'claude-3-haiku-20240307',
+    models: ['claude-3-haiku-20240307', 'claude-3-sonnet-20240229', 'claude-3-opus-20240229', 'claude-3-5-sonnet-20241022'],
+    keyPrefix: 'sk-ant-'
+  },
+  gemini: {
+    name: 'Google Gemini',
+    apiVersion: 'v1',
+    baseUrl: 'https://generativelanguage.googleapis.com/v1/models',
+    defaultModel: 'gemini-1.5-flash',
+    models: ['gemini-1.5-flash', 'gemini-1.5-pro', 'gemini-2.0-flash-exp'],
+    keyPrefix: 'AIza'
   }
 };
 
@@ -857,23 +947,76 @@ async function callProvider(provider, apiKey, model, messages) {
   const cfg = AI_PROVIDERS[provider];
   if (!cfg) throw new Error(`Unknown provider: ${provider}`);
 
-  const body = JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4096 });
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 25000);
+  const timeout = setTimeout(() => controller.abort(), 30000);
+  const systemMsg = messages.find(m => m.role === 'system')?.content || '';
+  const userMsg = messages.filter(m => m.role === 'user').map(m => m.content).join('\n');
+  const lastUserContent = messages.filter(m => m.role === 'user').pop()?.content || '';
 
   try {
-    const response = await fetch(cfg.baseUrl, {
+    if (provider === 'gemini') {
+      const url = `${cfg.baseUrl}/${model}:generateContent?key=${apiKey}`;
+      const geminiBody = {
+        contents: [{ parts: [{ text: systemMsg ? `${systemMsg}\n\n${lastUserContent}` : lastUserContent }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
+      };
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      const data = await resp.json();
+      if (!resp.ok) {
+        const errMsg = data?.error?.message || `HTTP ${resp.status}`;
+        const err = new Error(errMsg);
+        err.statusCode = resp.status;
+        throw err;
+      }
+      return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    }
+
+    if (provider === 'anthropic') {
+      const antrMsg = [];
+      messages.forEach(m => {
+        if (m.role === 'system') return;
+        antrMsg.push({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.content });
+      });
+      const antrBody = { model, messages: antrMsg, max_tokens: 4096, temperature: 0.7 };
+      if (systemMsg) antrBody.system = systemMsg;
+
+      const resp = await fetch(cfg.baseUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+        body: JSON.stringify(antrBody),
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      const data = await resp.json();
+      if (!resp.ok) {
+        const errMsg = data?.error?.message || `HTTP ${resp.status}`;
+        const err = new Error(errMsg);
+        err.statusCode = resp.status;
+        throw err;
+      }
+      return data?.content?.[0]?.text || '';
+    }
+
+    // OpenAI-compatible (Groq, OpenAI)
+    const body = JSON.stringify({ model, messages, temperature: 0.7, max_tokens: 4096 });
+    const resp = await fetch(cfg.baseUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
       body,
       signal: controller.signal
     });
     clearTimeout(timeout);
-    const data = await response.json();
-    if (!response.ok) {
-      const errMsg = data?.error?.message || data?.error || `HTTP ${response.status}`;
+    const data = await resp.json();
+    if (!resp.ok) {
+      const errMsg = data?.error?.message || data?.error || `HTTP ${resp.status}`;
       const err = new Error(errMsg);
-      err.statusCode = response.status;
+      err.statusCode = resp.status;
       throw err;
     }
     return data?.choices?.[0]?.message?.content || '';
@@ -901,45 +1044,49 @@ async function callAI(systemPrompt, message, context) {
   const maxRetries = 3;
   let lastError, attempts = 0;
 
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    attempts++;
-    try {
-      const text = await callProvider(provider, apiKey, model, messages);
-      return { text, provider, model, attempts };
-    } catch (e) {
-      lastError = e;
-      const category = classifyAIError(e);
+  try {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      attempts++;
+      try {
+        const text = await callProvider(provider, apiKey, model, messages);
+        return { text, provider, model, attempts };
+      } catch (e) {
+        lastError = e;
+        const category = classifyAIError(e);
 
-      if (category === 'auth' || category === 'no_key') {
-        return { error: e.message, friendlyError: AI_ERROR_MESSAGES[category], provider, model, attempts };
-      }
+        if (category === 'auth' || category === 'no_key') {
+          return { error: e.message, friendlyError: AI_ERROR_MESSAGES[category], provider, model, attempts };
+        }
 
-      if (category === 'quota') {
-        return { error: e.message, friendlyError: AI_ERROR_MESSAGES.quota, provider, model, attempts };
-      }
+        if (category === 'quota') {
+          return { error: e.message, friendlyError: AI_ERROR_MESSAGES.quota, provider, model, attempts };
+        }
 
-      if (category === 'rate_limit' && attempt < maxRetries) {
-        const delay = Math.min(2000 * Math.pow(2, attempt) + Math.random() * 1000, 10000);
-        await new Promise(r => setTimeout(r, delay));
-        continue;
-      }
+        if (category === 'rate_limit' && attempt < maxRetries) {
+          const delay = Math.min(2000 * Math.pow(2, attempt) + Math.random() * 1000, 10000);
+          await new Promise(r => setTimeout(r, delay));
+          continue;
+        }
 
-      if (attempt < maxRetries) {
-        const delay = Math.min(1500 * Math.pow(2, attempt) + Math.random() * 1000, 8000);
-        await new Promise(r => setTimeout(r, delay));
+        if (attempt < maxRetries) {
+          const delay = Math.min(1500 * Math.pow(2, attempt) + Math.random() * 1000, 8000);
+          await new Promise(r => setTimeout(r, delay));
+        }
       }
     }
-  }
 
-  const category = classifyAIError(lastError);
-  console.error(`AI failed after ${attempts} attempts:`, lastError?.message);
-  return {
-    error: lastError?.message || 'فشل الطلب',
-    friendlyError: AI_ERROR_MESSAGES[category] || AI_ERROR_MESSAGES.unknown,
-    provider,
-    model,
-    attempts
-  };
+    const category = classifyAIError(lastError);
+    console.error(`AI failed after ${attempts} attempts:`, lastError?.message);
+    return {
+      error: lastError?.message || 'فشل الطلب',
+      friendlyError: AI_ERROR_MESSAGES[category] || AI_ERROR_MESSAGES.unknown,
+      provider,
+      model,
+      attempts
+    };
+  } finally {
+    config.apiKey = null;
+  }
 }
 
 function sanitizeContext(text) {
@@ -1123,6 +1270,36 @@ ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', withPerm('use_ai'
   return callAI('أنت خبير في تقييم المخاطر القانونية. قم بتحليل القضية التالية وحدد المخاطر المحتملة مع اقتراحات للتخفيف منها. أجب بالعربية.', 'حلل المخاطر القانونية لهذه القضية.', context);
 })));
 
+ipcMain.handle('ai:analyzeDocument', wrapHandler('ai:analyzeDocument', withPerm('use_ai')(async (_e, { docId }) => {
+  const doc = db.getDocument(docId);
+  if (!doc) return { error: 'الوثيقة غير موجودة' };
+
+  const cached = db.getDocumentAnalysis(docId);
+  if (cached) return { analysis: cached, cached: true, doc };
+
+  const txt = db.getDocumentText(docId);
+  const text = txt ? txt.extracted_text?.trim() : '';
+  if (!text || text.length < 50) return { error: 'هذه الوثيقة لا تحتوي على نص كافٍ للتحليل' };
+
+  const context = `اسم الملف: ${doc.filename}\nالنوع: ${doc.doc_type || 'غير محدد'}\nتاريخ الرفع: ${doc.upload_date || ''}\nالوسوم: ${doc.tags || ''}\n\nالنص المستخرج:\n${text}`;
+
+  const result = await callAI(
+    'أنت خبير قانوني مغربي محترف. قم بتحليل النص التالي المستخرج من وثيقة قانونية واستخرج منه:\n' +
+    '1. **الخلاصة**: ملخص دقيق للوثيقة (3-5 أسطر)\n' +
+    '2. **النقاط الرئيسية**: قائمة بأهم العناصر (تواريخ، أسماء، أرقام، مبالغ)\n' +
+    '3. **التوصية القانونية**: ماذا يجب على المحامي فعله بعد قراءة هذه الوثيقة\n\n' +
+    'أجب بهذا التنسيق تماماً:\n' +
+    '=== الخلاصة ===\n...\n=== النقاط الرئيسية ===\n...\n=== التوصية القانونية ===\n...',
+    'حلل هذه الوثيقة القانونية بالعربية.', context
+  );
+
+  if (result.text) {
+    db.saveDocumentAnalysis(docId, result.text);
+  }
+
+  return { analysis: result.text || result.friendlyError || 'تعذر تحليل الوثيقة', cached: false, doc };
+})));
+
 function getAiConfig() {
   try {
     if (fs.existsSync(AI_CONFIG_PATH)) {
@@ -1132,24 +1309,24 @@ function getAiConfig() {
       if (data.encrypted) {
         try {
           const apiKey = decrypt(data.encrypted, password);
-          return { apiKey, provider: data.provider || 'groq' };
+          return { apiKey, provider: data.provider || 'groq', model: data.model || '' };
         } catch (e) {
           console.warn('فشل فك تشفير مفتاح API');
-          return { provider: data.provider || 'groq' };
+          return { provider: data.provider || 'groq', model: data.model || '' };
         }
       }
       
       if (data.apiKey) {
         console.warn('تم اكتشاف مفتاح API غير مشفر');
         const encrypted = encrypt(data.apiKey, password);
-        const provider = data.provider || 'groq';
         try {
           fs.writeFileSync(AI_CONFIG_PATH, JSON.stringify({
             encrypted,
-            provider
+            provider: data.provider || 'groq',
+            model: data.model || ''
           }, null, 2));
         } catch (e) { /* ignore */ }
-        return { apiKey: data.apiKey, provider };
+        return { apiKey: data.apiKey, provider: data.provider || 'groq', model: data.model || '' };
       }
       
       return data;
@@ -1164,14 +1341,17 @@ function saveAiConfig(config) {
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     
     const password = process.env.MASTER_KEY || 'default-key-change-me';
+    const apiKey = config.apiKey;
     
-    const encrypted = encrypt(config.apiKey, password);
+    const encrypted = encrypt(apiKey, password);
     
     fs.writeFileSync(AI_CONFIG_PATH, JSON.stringify({
       encrypted,
-      provider: config.provider || 'groq'
+      provider: config.provider || 'groq',
+      model: config.model || ''
     }, null, 2));
     
+    config.apiKey = null;
     console.log('تم حفظ مفتاح API مشفراً بنجاح');
   } catch (e) {
     console.error('AI config save error:', e.message || e);

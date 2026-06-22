@@ -13,13 +13,14 @@ A._renderDocCards = function(displayed, container) {
   A.safeSet(container, esc => displayed.length ? displayed.map(d => `<div class="doc-card-v6" onclick="openDocViewer(${d.id})">
       <i class="ri-file-4-line doc-card-icon" style="color:${d.doc_type === 'Contract' ? 'var(--success)' : d.doc_type === 'Jugement' ? 'var(--navy)' : d.doc_type === 'Preuve' ? 'var(--info)' : 'var(--gold)'};"></i>
       <div class="doc-card-title">${esc(d.filename)}</div>
-      <div class="doc-card-meta">${esc(d.case_number || '')} · ${d.upload_date ? d.upload_date.slice(0,10) : ''}</div>
+      <div class="doc-card-meta">${esc(d.case_number || '')} · ${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</div>
       <div class="doc-card-tags">${(d.tags||'').split(',').filter(Boolean).slice(0,3).map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`).join('')}</div>
       <div class="doc-card-footer">
         <span class="badge badge-gold" style="font-size:9px;">${esc(d.doc_type)}</span>
         <div class="doc-card-actions">
           <button onclick="event.stopPropagation();(async()=>{try{await A.state.ipc.invoke('db:openDocument',${d.id})}catch(e){A.logError('openDoc',e);A.showToast('تعذر فتح الملف','error')}})()" title="فتح"><i class="ri-external-link-line"></i></button>
           <button onclick="event.stopPropagation();openDocViewer(${d.id})" title="تفاصيل"><i class="ri-eye-line"></i></button>
+          <button onclick="event.stopPropagation();analyzeDoc(${d.id})" title="تحليل بالذكاء الاصطناعي" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button>
         </div>
       </div>
     </div>`).join('') : '<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">لا توجد وثائق</p></div>');
@@ -39,10 +40,10 @@ A.renderDocTable = function() {
       <td><span class="badge badge-gold">${esc(d.doc_type)}</span></td>
       <td>${esc(d.case_number || '')}</td>
       <td>${esc(d.client_name || '')}</td>
-      <td style="font-size:11px;color:var(--gray-400);">${d.upload_date ? d.upload_date.slice(0,10) : ''}</td>
+      <td style="font-size:11px;color:var(--gray-400);">${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</td>
       <td><span class="badge badge-active">نهائي</span></td>
       <td>${(d.tags||'').split(',').filter(Boolean).slice(0,2).map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`).join('') || '-'}</td>
-      <td><button class="btn-icon" onclick="openDocViewer(${d.id})"><i class="ri-eye-line"></i></button></td>
+      <td><button class="btn-icon" onclick="openDocViewer(${d.id})" title="تفاصيل"><i class="ri-eye-line"></i></button><button class="btn-icon" onclick="analyzeDoc(${d.id})" title="تحليل بالذكاء الاصطناعي" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
     </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">لا توجد وثائق</td></tr>');
 };
 

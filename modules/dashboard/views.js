@@ -1,6 +1,6 @@
 var A = window.App = window.App || {};
 
-A.renderDashboard = function(data) {
+  A.renderDashboard = function(data) {
   const { stats, cases: casesList, clients, chartData, tasks } = data;
   const safeCases = casesList || [];
   const safeClients = clients || [];
@@ -9,6 +9,7 @@ A.renderDashboard = function(data) {
   if (emptyState) emptyState.style.display = hasData ? 'none' : 'block';
   A.loadWelcomeSection(safeCases.length);
   A.loadQuickStats(stats, safeCases, safeClients, chartData);
+  A.initCharts(stats, chartData);
   A.loadRecentCases(safeCases);
   A.loadPriorityCases(safeCases);
   A.loadRecentDocs(safeCases);
@@ -279,6 +280,100 @@ A.drawPieChart = function(chartData) {
     start += angle;
   });
   ctx.beginPath(); ctx.arc(cx, cy, 28, 0, Math.PI * 2); ctx.fillStyle = document.body.classList.contains('dark-mode') ? '#1F2937' : '#FFFFFF'; ctx.fill();
+};
+
+A.initCharts = function(stats, chartData) {
+  if (typeof Chart === 'undefined') return;
+  const navy = '#1E2A38';
+  const gold = '#C6A15B';
+  const success = '#1A8A5C';
+  const danger = '#D94A4A';
+  const gray200 = '#D4D3D0';
+  const gray400 = '#8C8A84';
+
+  // Destroy existing charts to prevent memory leaks
+  if (A._casesChart) { A._casesChart.destroy(); A._casesChart = null; }
+  if (A._financialChart) { A._financialChart.destroy(); A._financialChart = null; }
+  if (A._tasksChart) { A._tasksChart.destroy(); A._tasksChart = null; }
+
+  // Cases by Status (Doughnut)
+  const casesCtx = document.getElementById('casesChart')?.getContext('2d');
+  if (casesCtx && stats.casesByStatus) {
+    const statusLabels = { active: 'نشطة', pending: 'معلقة', closed: 'مغلقة' };
+    const statusColors = { active: success, pending: gold, closed: gray200 };
+    A._casesChart = new Chart(casesCtx, {
+      type: 'doughnut',
+      data: {
+        labels: stats.casesByStatus.map(s => statusLabels[s.status] || s.status),
+        datasets: [{
+          data: stats.casesByStatus.map(s => s.count),
+          backgroundColor: stats.casesByStatus.map(s => statusColors[s.status] || gray400),
+          borderWidth: 2,
+          borderColor: document.body.classList.contains('dark-mode') ? '#1F2937' : '#FFFFFF'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Inter' }, color: '#8C8A84', padding: 12 } }
+        }
+      }
+    });
+  }
+
+  // Financial Performance (Bar)
+  const finCtx = document.getElementById('financialChart')?.getContext('2d');
+  if (finCtx && chartData.monthly) {
+    const monthNames = ['يناير','فبراير','مارس','أبريل','ماي','يونيو','يوليوز','غشت','شتنبر','أكتوبر','نونبر','دجنبر'];
+    const months = chartData.monthly.map(m => monthNames[parseInt(m.month) - 1] || m.month);
+    A._financialChart = new Chart(finCtx, {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [{
+          label: 'القضايا المسجلة',
+          data: chartData.monthly.map(m => m.count),
+          backgroundColor: gold,
+          borderRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          y: { beginAtZero: true, grid: { color: 'rgba(140,138,132,0.15)' }, ticks: { color: gray400 } },
+          x: { grid: { display: false }, ticks: { color: gray400 } }
+        }
+      }
+    });
+  }
+
+  // Tasks by Priority (Doughnut)
+  const tasksCtx = document.getElementById('tasksChart')?.getContext('2d');
+  if (tasksCtx && stats.tasksByPriority) {
+    const priorityLabels = { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' };
+    const priorityColors = { critical: danger, high: '#FF8A65', medium: gold, low: success };
+    A._tasksChart = new Chart(tasksCtx, {
+      type: 'doughnut',
+      data: {
+        labels: stats.tasksByPriority.map(p => priorityLabels[p.priority] || p.priority),
+        datasets: [{
+          data: stats.tasksByPriority.map(p => p.count),
+          backgroundColor: stats.tasksByPriority.map(p => priorityColors[p.priority] || gray400),
+          borderWidth: 2,
+          borderColor: document.body.classList.contains('dark-mode') ? '#1F2937' : '#FFFFFF'
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { family: 'Inter' }, color: '#8C8A84', padding: 12 } }
+        }
+      }
+    });
+  }
 };
 
 A.initQuickActions = function() {

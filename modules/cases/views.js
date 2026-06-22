@@ -183,9 +183,9 @@ A.loadWsHearings = async function() {
     const today = new Date().toISOString().slice(0, 10);
     A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> جلسة جديدة</button></div>
       <div style="margin-top:var(--space-4);">${hearings.length ? hearings.map(h => `<div class="tl-item">
-        <span class="tl-time">${esc(h.date)}</span>
+        <span class="tl-time">${esc(A.formatDate(h.date))}</span>
         <div class="tl-icon" style="width:28px;height:28px;background:${h.date >= today ? 'rgba(198,161,91,0.12)' : 'var(--gray-50)'};color:${h.date >= today ? 'var(--gold)' : 'var(--gray-400)'};"><i class="ri-scales-3-line"></i></div>
-        <div class="tl-body"><div class="tl-title">${esc(h.date)}</div><div class="tl-sub">${esc(h.description || '')}</div></div>
+        <div class="tl-body"><div class="tl-title">${esc(A.formatDate(h.date))}</div><div class="tl-sub">${esc(h.description || '')}</div></div>
         <span class="badge ${h.date >= today ? 'badge-active' : 'badge-closed'}">${h.date >= today ? 'قادمة' : 'سابقة'}</span>
       </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد جلسات</p>'}</div>`);
     document.getElementById('wsAddHearingBtn')?.addEventListener('click', () => A.wsAddHearing());
@@ -294,7 +294,7 @@ A.loadWsExpenses = async function(c) {
       <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--gold);">${(total - paid).toFixed(2)}</div><div class="ws-exp-label">المتبقي</div></div>
     </div>
     <div class="toolbar"><button id="wsAddExpenseBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> إضافة دفعة</button></div>
-    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(p.date)}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد دفعات</p>'}`);
+    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد دفعات</p>'}`);
     document.getElementById('wsAddExpenseBtn')?.addEventListener('click', () => A.wsAddExpense());
   } catch (e) { A.logError('loadWsExpenses', e); A.showError(el, 'تعذر تحميل المصاريف.', () => A.loadWsExpenses({ id: A.state.currentCaseId, total_fees: 0, expenses: 0 })); }
 };

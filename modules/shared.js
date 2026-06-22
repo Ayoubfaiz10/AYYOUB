@@ -88,6 +88,22 @@ A.safeInvoke = async function(channel, ...args) {
   }
 };
 
+A.showLoading = function(elementId) {
+  const el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+  if (!el) return;
+  el.dataset.originalHtml = el.dataset.originalHtml || el.innerHTML;
+  el.innerHTML = '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--gray-400);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i> جاري التحميل...</div>';
+};
+
+A.hideLoading = function(elementId) {
+  const el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
+  if (!el) return;
+  if (el.dataset.originalHtml) {
+    el.innerHTML = el.dataset.originalHtml;
+    delete el.dataset.originalHtml;
+  }
+};
+
 A.VirtualScroll = {
   init: function(containerId, items, renderFn, pageSize) {
     if (pageSize == null) pageSize = 50;
@@ -253,6 +269,24 @@ A.i18n = {
   getLocales: function() {
     return Object.keys(this.messages);
   }
+};
+
+A.formatDate = function(isoStr, options) {
+  if (!isoStr) return '—';
+  try {
+    const d = new Date(isoStr + (isoStr.includes('T') ? '' : 'T12:00:00'));
+    if (isNaN(d.getTime())) return isoStr;
+    return d.toLocaleDateString('ar-MA', options || { year: 'numeric', month: 'short', day: 'numeric' });
+  } catch { return isoStr; }
+};
+
+A.formatDateTime = function(isoStr) {
+  if (!isoStr) return '—';
+  try {
+    const d = new Date(isoStr);
+    if (isNaN(d.getTime())) return isoStr;
+    return d.toLocaleDateString('ar-MA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  } catch { return isoStr; }
 };
 
 window.showToast = A.showToast;

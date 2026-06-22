@@ -1,3 +1,17 @@
+window.onerror = function(message, source, lineno, colno, error) {
+  const A = window.App;
+  if (A && A.logError) A.logError('errorBoundary', error || message);
+  else console.error('Error Boundary:', message, source, lineno);
+  return true;
+};
+
+window.addEventListener('unhandledrejection', function(e) {
+  const A = window.App;
+  if (A && A.logError) A.logError('unhandledRejection', e.reason);
+  else console.error('Unhandled Rejection:', e.reason);
+  e.preventDefault();
+});
+
 document.addEventListener('DOMContentLoaded', () => {
   var A = window.App;
   A.state.ipc = window.ipcRenderer;
@@ -15,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Init all modules
   const safeInit = (fn) => { try { if (typeof fn === 'function') fn(); } catch (e) { console.error('Init error:', e); } };
+  safeInit(A.initI18n);
   safeInit(A.initModal);
   safeInit(A.initNavigation);
   safeInit(A.initDarkMode);

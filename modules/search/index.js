@@ -5,6 +5,7 @@ A._searchIndexLoaded = false;
 
 A.loadSearchIndex = async function() {
   if (A._searchIndexLoaded || !A.state.ipc) return;
+  A.showLoading('globalSearch');
   try {
     const idx = await A.state.ipc.invoke('db:getSearchIndex');
     if (idx && idx.length) {
@@ -15,6 +16,7 @@ A.loadSearchIndex = async function() {
       A._searchIndexLoaded = true;
     }
   } catch (e) { A.logError('loadSearchIndex', e); }
+  finally { A.hideLoading('globalSearch'); }
 };
 
 function scoreResult(item, qWords) {
@@ -315,18 +317,25 @@ A.initCommandPalette = function() {
     results.querySelectorAll('.cmd-item').forEach(item => item.addEventListener('click', execCmdItem));
   }
 
+  A.showCommandPalette = function() {
+    const isOpen = palette.style.display !== 'none';
+    palette.style.display = isOpen ? 'none' : 'flex';
+    if (!isOpen) { input.value = ''; input.focus(); refresh(); }
+  };
+  A.hideCommandPalette = function() {
+    palette.style.display = 'none';
+    input.value = '';
+  };
+
   // Open/close
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      const isOpen = palette.style.display !== 'none';
-      palette.style.display = isOpen ? 'none' : 'flex';
-      if (!isOpen) { input.value = ''; input.focus(); refresh(); }
+      A.showCommandPalette();
       return;
     }
     if (e.key === 'Escape' && palette.style.display !== 'none') {
-      palette.style.display = 'none';
-      input.value = '';
+      A.hideCommandPalette();
     }
   });
 
@@ -349,8 +358,11 @@ A.initCommandPalette = function() {
   }
 
   // Close on overlay click
-  palette.addEventListener('click', (e) => { if (e.target === palette) { palette.style.display = 'none'; input.value = ''; } });
+  palette.addEventListener('click', (e) => { if (e.target === palette) A.hideCommandPalette(); });
 };
+
+window.showCommandPalette = () => A.showCommandPalette();
+window.hideCommandPalette = () => A.hideCommandPalette();
 
 A.initAdvancedSearch = function() {
   const input = document.getElementById('advancedSearchInput');

@@ -115,6 +115,7 @@ async function initDb() {
   try { db.run("ALTER TABLE documents ADD COLUMN notes TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE documents ADD COLUMN file_size TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'case'"); } catch(e) {}
+  try { db.run("ALTER TABLE documents ADD COLUMN ai_analysis TEXT DEFAULT ''"); } catch(e) {}
   db.run('CREATE TABLE IF NOT EXISTS procedures (id INTEGER PRIMARY KEY AUTOINCREMENT, affaire_id INTEGER NOT NULL, date TEXT NOT NULL, type TEXT NOT NULL, description TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')), FOREIGN KEY (affaire_id) REFERENCES cases(id) ON DELETE CASCADE)');
   db.run('CREATE TABLE IF NOT EXISTS paiements (id INTEGER PRIMARY KEY AUTOINCREMENT, affaire_id INTEGER NOT NULL, date TEXT NOT NULL, montant REAL NOT NULL, mode_paiement TEXT NOT NULL, remarque TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')), FOREIGN KEY (affaire_id) REFERENCES cases(id) ON DELETE CASCADE)');
   db.run('CREATE TABLE IF NOT EXISTS alert_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, days_before_1 INTEGER DEFAULT 7, days_before_2 INTEGER DEFAULT 3, days_before_3 INTEGER DEFAULT 1, enabled INTEGER DEFAULT 1)');
@@ -746,7 +747,10 @@ function deleteAppointment(id) { mutate('DELETE FROM appointments WHERE id = ?',
 
 function getDashboardStats() {
   const res = query("SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM appointments WHERE strftime('%Y-%m-%d', date) >= strftime('%Y-%m-%d', 'now', 'weekday 0', '-7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status = 'todo') as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients");
-  return res.length ? res[0] : { activeCases: 0, thisWeekAppointments: 0, pendingTasks: 0, totalClients: 0 };
+  const base = res.length ? res[0] : { activeCases: 0, thisWeekAppointments: 0, pendingTasks: 0, totalClients: 0 };
+  const casesByStatus = query("SELECT status, COUNT(*) as count FROM cases GROUP BY status");
+  const tasksByPriority = query("SELECT priority, COUNT(*) as count FROM tasks GROUP BY priority");
+  return { ...base, casesByStatus, tasksByPriority };
 }
 
 function updateCaseStatus(id, status) {
@@ -784,7 +788,7 @@ function deleteDocument(id) {
 function updateDocument(id, data) {
   const fields = []; const values = [];
   for (const [key, val] of Object.entries(data)) {
-    if (['tags', 'notes', 'doc_type', 'filename'].includes(key)) { fields.push(`${key} = ?`); values.push(val); }
+    if (['tags', 'notes', 'doc_type', 'filename', 'ai_analysis'].includes(key)) { fields.push(`${key} = ?`); values.push(val); }
   }
   if (fields.length) { values.push(id); mutate(`UPDATE documents SET ${fields.join(', ')} WHERE id = ?`, values); }
   if (id) {
@@ -805,6 +809,16 @@ function addDocumentText(documentId, text) {
   }
 }
 function getDocumentText(documentId) { const rows = query('SELECT * FROM document_text WHERE document_id = ?', [documentId]); return rows.length ? rows[0] : null; }
+
+function getDocumentAnalysis(documentId) {
+  const rows = query('SELECT ai_analysis FROM documents WHERE id = ?', [documentId]);
+  return rows.length && rows[0].ai_analysis ? rows[0].ai_analysis : null;
+}
+
+function saveDocumentAnalysis(documentId, analysis) {
+  updateDocument(documentId, { ai_analysis: analysis });
+  addLog('doc_analysis', `تحليل ذكي للوثيقة #${documentId}`);
+}
 
 // Events
 function getAllEvents() {
@@ -893,6 +907,44 @@ function markSent(key) {
 
 function cleanOldSentNotifications() {
   db.run("DELETE FROM sent_notifications WHERE datetime(sent_at) < datetime('now', '-30 days')");
+}
+
+function cleanOrphanedFiles() {
+  const docPaths = new Set(
+    query('SELECT file_path FROM documents WHERE file_path IS NOT NULL AND file_path != \'\'')
+      .map(r => path.resolve(r.file_path))
+  );
+  let deletedCount = 0;
+  let freedBytes = 0;
+  function walk(dir) {
+    let entries;
+    try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const fullPath = path.join(dir, entry.name);
+      if (entry.isDirectory()) {
+        walk(fullPath);
+        try {
+          const remaining = fs.readdirSync(fullPath);
+          if (remaining.length === 0) { fs.rmdirSync(fullPath); }
+        } catch {}
+      } else if (entry.isFile()) {
+        const resolved = path.resolve(fullPath);
+        if (!docPaths.has(resolved)) {
+          try {
+            const stat = fs.statSync(fullPath);
+            freedBytes += stat.size;
+            fs.unlinkSync(fullPath);
+            deletedCount++;
+          } catch {}
+        }
+      }
+    }
+  }
+  if (fs.existsSync(STORAGE_DIR)) {
+    walk(STORAGE_DIR);
+  }
+  const freedMB = (freedBytes / (1024 * 1024)).toFixed(2);
+  return { deletedCount, freedBytes, freedMB: parseFloat(freedMB) };
 }
 
 function getEventsByDate(dateStr) {
@@ -1213,7 +1265,7 @@ module.exports = {
   getAlertSettings, updateAlertSettings,
   getUpcomingDeadlines, getUpcomingHearings,
   getBackupSettings, updateBackupSettings,
-  createBackup, addDocumentText, getDocumentText,
+  createBackup, addDocumentText, getDocumentText, getDocumentAnalysis, saveDocumentAnalysis,
   globalSearch, getSearchIndex, syncSearchIndex, rebuildSearchIndex,
   addCommunication, getClientCommunications,
   addLog, getLogs, listBackups, validateBackupFile, deleteBackupFile, restoreFromBackup, exportFullArchive,
@@ -1222,5 +1274,5 @@ module.exports = {
   integrityCheck, repairOrphans, transaction,
   checkPermission, getPermissions,
   getEventsByDate, getTomorrowHearings,
-  isSent, markSent, cleanOldSentNotifications
+  isSent, markSent, cleanOldSentNotifications, cleanOrphanedFiles
 };

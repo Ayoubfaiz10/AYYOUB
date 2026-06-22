@@ -24,7 +24,7 @@ A._renderHearingRows = function(displayed) {
     const statusBadge = e.date < today ? '<span class="badge badge-closed">سابقة</span>' : e.date === today ? '<span class="badge badge-gold">اليوم</span>' : '<span class="badge badge-active">قادمة</span>';
     const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
     return `<tr>
-      <td style="font-size:11px;">${esc(e.date)}</td>
+      <td style="font-size:11px;">${esc(A.formatDate(e.date))}</td>
       <td style="font-size:11px;">${esc(e.time || '-')}</td>
       <td>${typeIcons[e.type] || '📌'} ${esc(e.type)}</td>
       <td><strong style="cursor:pointer;color:var(--navy);" onclick="openEventDetail(${e.id})">${esc(e.title)}</strong></td>

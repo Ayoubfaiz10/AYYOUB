@@ -740,6 +740,17 @@ body {
 .dash-stat-trend.up { color: var(--success); }
 .dash-stat-trend.down { color: var(--danger); }
 
+/* ─── Charts Container ─── */
+.charts-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+.chart-card { min-height: 280px; }
+.chart-wrapper { padding: var(--space-3); position: relative; height: 240px; }
+.chart-wrapper canvas { width: 100% !important; height: 100% !important; max-height: 240px; }
+
 /* ─── Three-Zone Layout ─── */
 .dash-three-zone {
   display: grid;
@@ -923,10 +934,12 @@ body {
 
 /* ─── Responsive Dashboard ─── */
 @media (max-width: 1400px) {
+  .charts-container { grid-template-columns: 1fr 1fr; }
   .dash-three-zone { grid-template-columns: 1fr 1fr; }
   .dash-stats-row { grid-template-columns: repeat(3, 1fr); }
 }
 @media (max-width: 1200px) {
+  .charts-container { grid-template-columns: 1fr; }
   .dash-three-zone { grid-template-columns: 1fr; }
 }
 @media (max-width: 768px) {
@@ -3248,3 +3261,50 @@ select.input {
   .view-panel { display: block !important; width: 100% !important; padding: 0 !important; }
   .dash-stat-card, .kanban-card, .card { box-shadow: none !important; border: 1px solid #ddd; break-inside: avoid; }
 }
+
+/* ═══ i18n — French LTR ═══ */
+.lang-fr { direction: ltr; font-family: 'Inter', 'Segoe UI', system-ui, sans-serif; }
+.lang-fr .sidebar-header { flex-direction: row; }
+.lang-fr .sidebar-brand { flex-direction: row; }
+.lang-fr .nav-item { flex-direction: row; text-align: left; }
+.lang-fr .nav-item .nav-icon { margin-left: 10px; margin-right: 0; }
+.lang-fr .topbar-search { flex-direction: row; }
+.lang-fr .topbar-actions { flex-direction: row; }
+.lang-fr .topbar-user { flex-direction: row; }
+.lang-fr .dash-quick-actions { flex-direction: row; }
+.lang-fr .dash-stats-row { flex-direction: row; }
+.lang-fr .card-header { flex-direction: row; }
+.lang-fr .input-group { flex-direction: row; }
+.lang-fr .input-group .input-icon { left: auto; right: 12px; }
+.lang-fr .dash-three-zone { flex-direction: row; }
+.lang-fr .settings-layout { flex-direction: row; }
+.lang-fr .settings-nav { border-left: 1px solid var(--gray-100); border-right: none; }
+.lang-fr .ws-header-left { flex-direction: row; }
+.lang-fr .ws-header-actions { flex-direction: row; }
+.lang-fr .ws-tabs { flex-direction: row; }
+.lang-fr .ws-info-row { flex-direction: row; }
+.lang-fr .cmd-search { flex-direction: row; }
+.lang-fr .cmd-footer { flex-direction: row; }
+.lang-fr .modal-header { flex-direction: row; }
+.lang-fr .confirm-actions { flex-direction: row; }
+.lang-fr .login-form { text-align: left; }
+.lang-fr .login-setup-area { text-align: left; }
+.lang-fr .charts-container { direction: ltr; }
+.lang-fr .chart-card { direction: ltr; }
+.lang-fr .dash-item { flex-direction: row; }
+.lang-fr .dash-item-body { text-align: left; }
+.lang-fr .toast { flex-direction: row; text-align: left; }
+.lang-fr .sidebar-brand-text { text-align: left; }
+.lang-fr .topbar-date { direction: ltr; }
+
+/* ═══ Multi-Provider AI Selector ═══ */
+.ai-provider-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: var(--space-3) var(--space-2); border: 2px solid var(--gray-100);
+  border-radius: var(--radius-lg); background: var(--white); cursor: pointer;
+  transition: all 0.15s; font-family: var(--font-primary);
+}
+.ai-provider-btn:hover { border-color: var(--gold); background: var(--gray-50); }
+.ai-provider-btn.active { border-color: var(--gold); background: rgba(198,161,91,0.06); box-shadow: 0 0 0 3px rgba(198,161,91,0.12); }
+.ai-provider-btn span { display: block; }
+.ai-provider-logo { flex-shrink: 0; }

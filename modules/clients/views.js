@@ -92,7 +92,7 @@ A.loadWsClOverview = async function(c) {
         <div class="ws-info-row"><span class="ws-info-label">الهاتف</span><span class="ws-info-value">${esc(c.phone || '-')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">البريد</span><span class="ws-info-value">${esc(c.email || '-')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">العنوان</span><span class="ws-info-value">${esc(c.address || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">آخر اتصال</span><span class="ws-info-value">${comms.length ? esc(comms[0].date) : '-'}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">آخر اتصال</span><span class="ws-info-value">${comms.length ? esc(A.formatDate(comms[0].date)) : '-'}</span></div>
       </div>
       <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>آخر النشاطات</h4><div id="clOverviewActivity"></div></div>
     </div>
@@ -143,7 +143,7 @@ A.loadWsClComms = async function(c) {
   A.safeSet(el, esc => `<div class="toolbar"><button id="clAddCommBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> اتصال جديد</button></div>
     <div class="cl-comms-list" style="margin-top:var(--space-3);">${comms.length ? comms.map(co => `<div class="cl-comms-item">
       <div class="cl-comms-icon" style="background:${(colorMap[co.type] || colorMap.default)}12;color:${colorMap[co.type] || colorMap.default};"><i class="${iconMap[co.type] || iconMap.default}"></i></div>
-      <div class="cl-comms-body"><div class="cl-comms-title">${esc(co.type)} · ${esc(co.date)}</div><div class="cl-comms-sub">${esc(co.summary || '')}</div></div>
+      <div class="cl-comms-body"><div class="cl-comms-title">${esc(co.type)} · ${esc(A.formatDate(co.date))}</div><div class="cl-comms-sub">${esc(co.summary || '')}</div></div>
     </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد اتصالات</p>'}</div>`);
   document.getElementById('clAddCommBtn')?.addEventListener('click', () => A.clAddComm());
 };
@@ -179,7 +179,7 @@ A.loadWsClPayments = async function(c) {
         <div class="cl-pay-row"><span class="cl-pay-label">المتبقي</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)} د.م.</span></div>
       </div>
     </div>
-    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>القضية</th><th>المبلغ</th><th>طريقة الدفع</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(p.date)}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد مدفوعات</p>'}`);
+    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>القضية</th><th>المبلغ</th><th>طريقة الدفع</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد مدفوعات</p>'}`);
   A.drawClPieChart(totalFees, totalPaid);
 };
 

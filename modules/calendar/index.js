@@ -116,7 +116,7 @@ A.openEventDetail = async function(eventId) {
       <h4>معلومات الحدث</h4>
       <div class="ws-info-row"><span class="ws-info-label">النوع</span><span class="ws-info-value">${esc(e.type)}</span></div>
       <div class="ws-info-row"><span class="ws-info-label">الحالة</span><span class="ws-info-value"><span class="badge ${statusColors[e.status] || 'badge-active'}">${esc(e.status)}</span></span></div>
-      <div class="ws-info-row"><span class="ws-info-label">التاريخ</span><span class="ws-info-value">${esc(e.date)} ${e.time ? esc(e.time) : ''}</span></div>
+      <div class="ws-info-row"><span class="ws-info-label">التاريخ</span><span class="ws-info-value">${esc(A.formatDate(e.date))} ${e.time ? esc(e.time) : ''}</span></div>
       <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc(e.urgency)}</span></div>
       ${e.court ? `<div class="ws-info-row"><span class="ws-info-label">المحكمة</span><span class="ws-info-value">${esc(e.court)}</span></div>` : ''}
       ${e.judge ? `<div class="ws-info-row"><span class="ws-info-label">القاضي</span><span class="ws-info-value">${esc(e.judge)}</span></div>` : ''}

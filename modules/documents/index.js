@@ -49,15 +49,16 @@ A.openDocViewer = async function(docId) {
   document.getElementById('docViewerType').textContent = doc.doc_type;
   document.getElementById('docVCase').textContent = doc.case_number || '—';
   document.getElementById('docVClient').textContent = doc.client_name || '—';
-  document.getElementById('docVDate').textContent = doc.upload_date ? doc.upload_date.slice(0,10) : '—';
+  document.getElementById('docVDate').textContent = doc.upload_date ? A.formatDate(doc.upload_date) : '—';
   document.getElementById('docVSize').textContent = doc.file_size || '—';
   document.getElementById('docVPreview').textContent = doc.filename;
   A.safeSet(document.getElementById('docVTags'), esc => (doc.tags||'').split(',').filter(Boolean).map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`).join('') || '<span style="font-size:12px;color:var(--gray-400);">لا توجد</span>');
-  A.safeSetStatic(document.getElementById('docVVersions'), `<div class="doc-version-item current"><span class="doc-version-label">الإصدار الحالي</span><span class="doc-version-date">${doc.upload_date ? doc.upload_date.slice(0,10) : ''}</span></div>`);
+  A.safeSetStatic(document.getElementById('docVVersions'), `<div class="doc-version-item current"><span class="doc-version-label">الإصدار الحالي</span><span class="doc-version-date">${doc.upload_date ? A.formatDate(doc.upload_date) : ''}</span></div>`);
   document.getElementById('docVNotes').value = doc.notes || '';
 
   document.getElementById('docViewerOpen').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('openDoc', e); A.showToast('تعذر فتح الملف', 'error'); } };
   document.getElementById('docViewerDownload').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('downloadDoc', e); A.showToast('تعذر تحميل الملف', 'error'); } };
+  document.getElementById('docViewerAnalyze').onclick = () => { A.analyzeDoc(docId); };
   document.getElementById('docVSaveNotes').onclick = async () => {
     const notes = document.getElementById('docVNotes').value;
     try { await A.mutate('db:updateDocNotes', { id: docId, notes }); A.showToast('تم حفظ الملاحظات', 'success'); if (A.AutoSave) A.AutoSave.clear('doc_notes_' + docId); } catch (e) { A.logError('saveDocNotes', e); A.showToast('فشل حفظ الملاحظات', 'error'); }
