@@ -208,6 +208,50 @@ describe('Global Search — Expenses (payments)', () => {
   });
 });
 
+describe('FTS4 Full-Text Search', () => {
+  let db;
+  before(async () => {
+    db = await createDb();
+    mutate(db, "INSERT INTO clients (name, phone) VALUES (?, ?)", ['موكل تجريبي', '0600000000']);
+    const clId = query(db, "SELECT id FROM clients WHERE name = 'موكل تجريبي'")[0].id;
+    mutate(db, "INSERT INTO cases (case_number, title, client_id, client_name, court, description) VALUES (?, ?, ?, ?, ?, ?)",
+      ['FTS-001', 'قضية FTS التجريبية', clId, 'موكل تجريبي', 'المحكمة التجارية', 'هذا النص يستخدم للبحث التجريبي السريع']);
+    const cId = query(db, "SELECT id FROM cases WHERE case_number = 'FTS-001'")[0].id;
+    mutate(db, "INSERT INTO documents (case_id, filename, file_path, doc_type, tags) VALUES (?, ?, ?, ?, ?)",
+      [cId, 'عقد_مبدئي.pdf', '/tmp/fts.pdf', 'Contract', 'fts, test']);
+    const docId = query(db, "SELECT id FROM documents WHERE filename = 'عقد_مبدئي.pdf'")[0].id;
+    mutate(db, "INSERT INTO document_text (document_id, extracted_text) VALUES (?, ?)",
+      [docId, 'هذا النص مستخرج من العقد للتجربة والبحث']);
+    // Manually sync FTS index since test helper doesn't auto-sync
+    mutate(db, "INSERT INTO search_index (case_id, title, content, tags) SELECT CAST(c.id AS TEXT), c.title, COALESCE(c.case_number,'') || ' ' || COALESCE(c.title,'') || ' ' || COALESCE(c.description,'') || ' ' || COALESCE(c.court,'') || ' ' || COALESCE(c.client_name,'') || ' ' || COALESCE(dt.extracted_text,''), '' FROM cases c LEFT JOIN documents d ON d.case_id = c.id LEFT JOIN document_text dt ON dt.document_id = d.id WHERE c.id = ?", [cId]);
+  });
+
+  it('searches by title token using FTS4 MATCH', () => {
+    const r = query(db, "SELECT case_id FROM search_index WHERE search_index MATCH 'قضية*'");
+    assert.ok(r.length >= 1);
+  });
+
+  it('searches by client_name token using FTS4 MATCH', () => {
+    const r = query(db, "SELECT case_id FROM search_index WHERE search_index MATCH 'تجريبي*'");
+    assert.ok(r.length >= 1);
+  });
+
+  it('searches by document text indexed with case', () => {
+    const r = query(db, "SELECT case_id FROM search_index WHERE search_index MATCH 'مستخرج*'");
+    assert.ok(r.length >= 1);
+  });
+
+  it('returns no results for non-matching query', () => {
+    const r = query(db, "SELECT case_id FROM search_index WHERE search_index MATCH 'ZZZZZnotfound*'");
+    assert.equal(r.length, 0);
+  });
+
+  it('searches with multi-word FTS query', () => {
+    const r = query(db, "SELECT case_id FROM search_index WHERE search_index MATCH 'النص* تجريبي*'");
+    assert.ok(r.length >= 1);
+  });
+});
+
 describe('Search Index', () => {
   let db;
   before(async () => {

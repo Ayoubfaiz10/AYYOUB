@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.renderTableView = function(list) {
   const body = document.getElementById('casesBody');

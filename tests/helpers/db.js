@@ -7,6 +7,8 @@ async function createDb() {
   const db = new SQL.Database();
   db.run('PRAGMA foreign_keys = ON');
 
+  db.run('CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts4(case_id, title, content, tags)');
+
   db.run('CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT, email TEXT, address TEXT, notes TEXT, national_id TEXT, tags TEXT, status TEXT DEFAULT \'active\')');
   db.run('CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, case_number TEXT NOT NULL, title TEXT NOT NULL, client_name TEXT, client_id INTEGER, court TEXT, status TEXT DEFAULT \'active\', description TEXT, created_date TEXT DEFAULT (date(\'now\')), next_hearing TEXT, deadline_date TEXT, total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, expenses REAL DEFAULT 0, priority TEXT DEFAULT \'medium\', case_type TEXT DEFAULT \'مدني\', notes TEXT, archived INTEGER DEFAULT 0, honoraires_totaux REAL DEFAULT 0, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)');
   db.run('CREATE TABLE IF NOT EXISTS tasks (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, description TEXT DEFAULT \'\', priority TEXT DEFAULT \'medium\', status TEXT DEFAULT \'todo\', due_date TEXT, notes TEXT, case_id INTEGER, client_id INTEGER, tags TEXT DEFAULT \'\', assigned_to TEXT DEFAULT \'\', attachments TEXT DEFAULT \'[]\', parent_id INTEGER, depends_on TEXT DEFAULT \'[]\', progress INTEGER DEFAULT 0, time_tracked INTEGER DEFAULT 0, workflow_id INTEGER, template_id INTEGER, archived INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime(\'now\',\'localtime\')), updated_at TEXT DEFAULT (datetime(\'now\',\'localtime\')), FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL, FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE SET NULL)');
@@ -99,7 +101,6 @@ function validateRef(db, table, id) {
   return rows.length > 0;
 }
 
-/** Return object with rows affected count */
 function getChanges(db) {
   return db.exec("SELECT changes() as c")[0]?.values[0]?.[0] || 0;
 }

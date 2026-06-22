@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.initReports = function() {
   document.querySelectorAll('.report-card').forEach(card => card.addEventListener('click', async () => {

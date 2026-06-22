@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.loadArchive = async function() {
   if (!A.state.ipc) return;

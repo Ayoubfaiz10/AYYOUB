@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.loadNotifications = async function() {
   const container = document.getElementById('dashNotifications');

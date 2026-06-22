@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.state.quotes = [
   '"العدالة أساس الملك"', '"الحق فوق القوة"', '"القانون سلاح الضعفاء"', '"العدل أساس العمران"',

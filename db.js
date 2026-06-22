@@ -17,21 +17,37 @@ if (!fs.existsSync(BACKUP_DIR)) {
 
 let db = null;
 let SQL = null;
+let _saveTimer = null;
+const SAVE_DEBOUNCE_MS = 500;
 
 async function initDb() {
   SQL = await initSqlJs({
     locateFile: file => path.join(app.getAppPath(), 'node_modules', 'sql.js', 'dist', file)
   });
-  
-  console.log('DB_PATH:', DB_PATH);
-  
+
   if (fs.existsSync(DB_PATH)) {
-    const fileBuffer = fs.readFileSync(DB_PATH);
-    db = new SQL.Database(fileBuffer);
-    console.log('Loaded existing DB, size:', fileBuffer.length);
+    try {
+      const fileBuffer = fs.readFileSync(DB_PATH);
+      db = new SQL.Database(fileBuffer);
+      db.exec("SELECT count(*) FROM sqlite_master");
+    } catch (e) {
+      console.error('DB corrupted, attempting auto-restore from backup:', e.message);
+      try {
+        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
+          .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
+          .sort((a, b) => b.mtime - a.mtime);
+        if (!files.length) throw new Error('No auto_backup files');
+        const buf = fs.readFileSync(path.join(BACKUP_DIR, files[0].name));
+        db = new SQL.Database(buf);
+        db.exec("SELECT count(*) FROM sqlite_master");
+        console.log('Auto-restored from:', files[0].name);
+      } catch (re) {
+        console.error('Auto-restore failed, creating fresh DB:', re.message);
+        db = new SQL.Database();
+      }
+    }
   } else {
     db = new SQL.Database();
-    console.log('Created new in-memory DB');
   }
 
   db.run('PRAGMA foreign_keys = ON;');
@@ -40,12 +56,15 @@ async function initDb() {
   try { db.run("ALTER TABLE clients ADD COLUMN national_id TEXT"); } catch(e) {}
   try { db.run("ALTER TABLE clients ADD COLUMN tags TEXT"); } catch(e) {}
   try { db.run("ALTER TABLE clients ADD COLUMN status TEXT DEFAULT 'active'"); } catch(e) {}
-  db.run('CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, case_number TEXT NOT NULL, title TEXT NOT NULL, client_name TEXT, client_id INTEGER, court TEXT, status TEXT DEFAULT \'active\', description TEXT, created_date TEXT DEFAULT (date(\'now\')), next_hearing TEXT, deadline_date TEXT, total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, expenses REAL DEFAULT 0, priority TEXT DEFAULT \'medium\', case_type TEXT DEFAULT \'مدني\', notes TEXT, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)');
+  db.run('CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, case_number TEXT NOT NULL, title TEXT NOT NULL, client_name TEXT, client_id INTEGER, court TEXT, status TEXT DEFAULT \'active\', description TEXT, created_date TEXT DEFAULT (date(\'now\')), next_hearing TEXT, deadline_date TEXT, total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, expenses REAL DEFAULT 0, priority TEXT DEFAULT \'medium\', case_type TEXT DEFAULT \'مدني\', notes TEXT, archived INTEGER DEFAULT 0, honoraires_totaux REAL DEFAULT 0, access_level TEXT DEFAULT \'team\', FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)');
 
-  // Migrate: add columns if missing (for existing databases)
   try { db.run("ALTER TABLE cases ADD COLUMN priority TEXT DEFAULT 'medium'"); } catch(e) {}
   try { db.run("ALTER TABLE cases ADD COLUMN case_type TEXT DEFAULT 'مدني'"); } catch(e) {}
   try { db.run("ALTER TABLE cases ADD COLUMN notes TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE cases ADD COLUMN archived INTEGER DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE cases ADD COLUMN honoraires_totaux REAL DEFAULT 0"); } catch(e) {}
+  try { db.run("ALTER TABLE cases ADD COLUMN access_level TEXT DEFAULT 'team'"); } catch(e) {}
+  try { db.run("ALTER TABLE cases ADD COLUMN deadline_date TEXT"); } catch(e) {}
   db.run(`CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
     description TEXT DEFAULT '', priority TEXT DEFAULT 'medium',
@@ -62,21 +81,6 @@ async function initDb() {
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL,
     FOREIGN KEY (parent_id) REFERENCES tasks(id) ON DELETE SET NULL
   )`);
-  try { db.run("ALTER TABLE tasks ADD COLUMN case_id INTEGER"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN client_id INTEGER"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN description TEXT DEFAULT ''"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN tags TEXT DEFAULT ''"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN assigned_to TEXT DEFAULT ''"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN attachments TEXT DEFAULT '[]'"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN parent_id INTEGER"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN depends_on TEXT DEFAULT '[]'"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN progress INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN time_tracked INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN workflow_id INTEGER"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN template_id INTEGER"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN archived INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN created_at TEXT"); } catch(e) {}
-  try { db.run("ALTER TABLE tasks ADD COLUMN updated_at TEXT"); } catch(e) {}
 
   db.run(`CREATE TABLE IF NOT EXISTS subtasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, task_id INTEGER NOT NULL,
@@ -106,10 +110,11 @@ async function initDb() {
     created_at TEXT DEFAULT (datetime('now','localtime'))
   )`);
   db.run('CREATE TABLE IF NOT EXISTS appointments (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, date TEXT, time TEXT, location TEXT, notes TEXT, case_id INTEGER, FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL)');
-  db.run('CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER NOT NULL, filename TEXT NOT NULL, file_path TEXT NOT NULL, doc_type TEXT NOT NULL, tags TEXT DEFAULT \'\', notes TEXT DEFAULT \'\', file_size TEXT DEFAULT \'\', upload_date TEXT DEFAULT (datetime(\'now\', \'localtime\')), FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE)');
+  db.run('CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER NOT NULL, filename TEXT NOT NULL, file_path TEXT NOT NULL, doc_type TEXT NOT NULL, tags TEXT DEFAULT \'\', notes TEXT DEFAULT \'\', file_size TEXT DEFAULT \'\', upload_date TEXT DEFAULT (datetime(\'now\', \'localtime\')), visibility TEXT DEFAULT \'case\', FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE)');
   try { db.run("ALTER TABLE documents ADD COLUMN tags TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE documents ADD COLUMN notes TEXT DEFAULT ''"); } catch(e) {}
   try { db.run("ALTER TABLE documents ADD COLUMN file_size TEXT DEFAULT ''"); } catch(e) {}
+  try { db.run("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'case'"); } catch(e) {}
   db.run('CREATE TABLE IF NOT EXISTS procedures (id INTEGER PRIMARY KEY AUTOINCREMENT, affaire_id INTEGER NOT NULL, date TEXT NOT NULL, type TEXT NOT NULL, description TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')), FOREIGN KEY (affaire_id) REFERENCES cases(id) ON DELETE CASCADE)');
   db.run('CREATE TABLE IF NOT EXISTS paiements (id INTEGER PRIMARY KEY AUTOINCREMENT, affaire_id INTEGER NOT NULL, date TEXT NOT NULL, montant REAL NOT NULL, mode_paiement TEXT NOT NULL, remarque TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')), FOREIGN KEY (affaire_id) REFERENCES cases(id) ON DELETE CASCADE)');
   db.run('CREATE TABLE IF NOT EXISTS alert_settings (id INTEGER PRIMARY KEY AUTOINCREMENT, days_before_1 INTEGER DEFAULT 7, days_before_2 INTEGER DEFAULT 3, days_before_3 INTEGER DEFAULT 1, enabled INTEGER DEFAULT 1)');
@@ -130,7 +135,6 @@ async function initDb() {
     permission TEXT NOT NULL, allowed INTEGER DEFAULT 1,
     UNIQUE(role, permission)
   )`);
-  // Seeded default permissions
   const defaultPerms = {
     admin: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data','manage_users','view_audit'],
     senior_lawyer: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data'],
@@ -150,8 +154,6 @@ async function initDb() {
     access_level TEXT DEFAULT 'team',
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE
   )`);
-  try { db.run("ALTER TABLE cases ADD COLUMN access_level TEXT DEFAULT 'team'"); } catch(e) {}
-  try { db.run("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'case'"); } catch(e) {}
 
   db.run('CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, user_name TEXT DEFAULT \'\', action TEXT NOT NULL, details TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')))');
   try { db.run("ALTER TABLE activity_log ADD COLUMN user_id INTEGER DEFAULT 0"); } catch(e) {}
@@ -177,76 +179,46 @@ async function initDb() {
     FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL,
     FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL
   )`);
-  try { db.run("ALTER TABLE events ADD COLUMN alert_sent_7d INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE events ADD COLUMN alert_sent_3d INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE events ADD COLUMN alert_sent_1d INTEGER DEFAULT 0"); } catch(e) {}
-  try { db.run("ALTER TABLE events ADD COLUMN updated_at TEXT"); } catch(e) {}
 
-  try {
-    const cols = db.exec("PRAGMA table_info('cases')");
-    if (cols.length > 0) {
-      const hasClientId = cols[0].values.some(v => v[1] === 'client_id');
-      if (!hasClientId) {
-        db.run("ALTER TABLE cases ADD COLUMN client_id INTEGER REFERENCES clients(id) ON DELETE SET NULL");
-        console.log('Added client_id column');
-      }
-    }
+  db.run('CREATE TABLE IF NOT EXISTS sent_notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, sent_at TEXT DEFAULT (datetime(\'now\', \'localtime\')))');
+  db.run("INSERT OR IGNORE INTO alert_settings (id, days_before_1, days_before_2, days_before_3, enabled) VALUES (1, 7, 3, 1, 1)");
+  db.run("INSERT OR IGNORE INTO backup_settings (id, auto_enabled, frequency_hours, keep_count, last_backup_at) VALUES (1, 1, 24, 36, NULL)");
 
-    const caseCols = db.exec("PRAGMA table_info('cases')");
-    if (caseCols.length > 0) {
-      if (!caseCols[0].values.some(v => v[1] === 'deadline_date')) {
-        db.run("ALTER TABLE cases ADD COLUMN deadline_date TEXT");
-        console.log('Added deadline_date column');
-      }
-      const hasTotalFees = caseCols[0].values.some(v => v[1] === 'total_fees');
-      if (!hasTotalFees) {
-        db.run("ALTER TABLE cases ADD COLUMN total_fees REAL DEFAULT 0");
-        db.run("ALTER TABLE cases ADD COLUMN paid_fees REAL DEFAULT 0");
-        db.run("ALTER TABLE cases ADD COLUMN expenses REAL DEFAULT 0");
-        console.log('Added financial columns to cases');
-      }
-      const hasHonorairesTotaux = caseCols[0].values.some(v => v[1] === 'honoraires_totaux');
-      if (!hasHonorairesTotaux) {
-        db.run("ALTER TABLE cases ADD COLUMN honoraires_totaux REAL DEFAULT 0");
-        db.run("UPDATE cases SET honoraires_totaux = total_fees WHERE honoraires_totaux = 0 AND total_fees > 0");
-        console.log('Added honoraires_totaux column');
-      }
-      const hasArchived = caseCols[0].values.some(v => v[1] === 'archived');
-      if (!hasArchived) {
-        db.run("ALTER TABLE cases ADD COLUMN archived INTEGER DEFAULT 0");
-        console.log('Added archived column');
-      }
-    }
+  db.run('CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_cases_created_date ON cases(created_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_cases_client ON cases(client_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_case ON tasks(case_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_events_case ON events(case_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_documents_case ON documents(case_id)');
+  db.run('CREATE INDEX IF NOT EXISTS idx_activity_log_date ON activity_log(created_at)');
 
-    const appCols = db.exec("PRAGMA table_info('appointments')");
-    if (appCols.length > 0) {
-      const hasCaseId = appCols[0].values.some(v => v[1] === 'case_id');
-      if (!hasCaseId) {
-        db.run("ALTER TABLE appointments ADD COLUMN case_id INTEGER REFERENCES cases(id) ON DELETE SET NULL");
-        console.log('Added case_id column to appointments');
+  db.run('CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts4(case_id, title, content, tags)');
+
+  db.create_function('search_rank', function(matchinfoBlob) {
+    try {
+      const buf = new Uint32Array(matchinfoBlob);
+      if (buf.length < 14) return 0;
+      const nPhrase = buf[0], nCol = buf[1];
+      let score = 0;
+      for (let p = 0; p < nPhrase; p++) {
+        for (let c = 0; c < nCol; c++) {
+          const idx = 2 + (p * nCol + c) * 3;
+          if (idx + 2 < buf.length) {
+            const thisRow = buf[idx];
+            const docs = buf[idx + 2];
+            if (thisRow > 0) {
+              const colWeight = (c === 1) ? 3 : (c === 3) ? 2 : (c === 2) ? 1 : 0.5;
+              score += thisRow * colWeight * (1 + Math.log(1 + (docs > 0 ? 10 / docs : 1)));
+            }
+          }
+        }
       }
-    }
-
-    db.run("INSERT OR IGNORE INTO alert_settings (id, days_before_1, days_before_2, days_before_3, enabled) VALUES (1, 7, 3, 1, 1)");
-    db.run("INSERT OR IGNORE INTO backup_settings (id, auto_enabled, frequency_hours, keep_count, last_backup_at) VALUES (1, 1, 24, 30, NULL)");
-  } catch (e) {
-    console.error("Schema update warning:", e);
-  }
-
-  try {
-    db.run('CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_cases_created_date ON cases(created_date)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_cases_client ON cases(client_id)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_case ON tasks(case_id)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_events_case ON events(case_id)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_documents_case ON documents(case_id)');
-    db.run('CREATE INDEX IF NOT EXISTS idx_activity_log_date ON activity_log(created_at)');
-  } catch (e) {
-    console.warn('Index creation warning:', e.message);
-  }
+      return Math.round(score * 100);
+    } catch (e) { return 0; }
+  });
 
   await saveDb();
 }
@@ -254,13 +226,44 @@ async function initDb() {
 async function saveDb() {
   try {
     if (!db) return;
+    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
+
+    try {
+      if (fs.existsSync(DB_PATH)) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+        const backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
+        await fsp.copyFile(DB_PATH, backupPath);
+
+        const files = await fsp.readdir(BACKUP_DIR);
+        const dbFiles = files.filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
+          .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
+          .sort((a, b) => b.mtime - a.mtime);
+        if (dbFiles.length > 5) {
+          for (const f of dbFiles.slice(5)) {
+            try { await fsp.unlink(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Rotating backup error:', e.message);
+    }
+
     const data = db.export();
     const buffer = Buffer.from(data);
     await fsp.writeFile(DB_PATH, buffer);
-    console.log('DB saved successfully. Size:', buffer.length);
   } catch (err) {
     console.error('DB save error:', err);
   }
+}
+
+function scheduleSave() {
+  if (_saveTimer) clearTimeout(_saveTimer);
+  _saveTimer = setTimeout(() => {
+    _saveTimer = null;
+    saveDb().catch(e => console.error('DB save error:', e));
+  }, SAVE_DEBOUNCE_MS);
 }
 
 function query(sql, params) {
@@ -275,10 +278,10 @@ function query(sql, params) {
       stmt.free();
       return results;
     }
-    
+
     const result = db.exec(sql);
     if (!result || result.length === 0) return [];
-    
+
     const { columns, values } = result[0];
     return values.map(row => {
       const obj = {};
@@ -294,7 +297,7 @@ function query(sql, params) {
 function mutate(sql, params) {
   try {
     db.run(sql, params ? params.map(v => v === undefined ? null : v) : []);
-    saveDb().catch(e => console.error('DB background save error:', e));
+    scheduleSave();
   } catch (err) {
     console.error('SQL Mutate Error:', err, 'SQL:', sql);
   }
@@ -305,12 +308,39 @@ function transaction(fn) {
     db.run('BEGIN TRANSACTION');
     const result = fn();
     db.run('COMMIT');
-    saveDb().catch(e => console.error('DB save error after transaction:', e));
+    scheduleSave();
     return result;
   } catch (err) {
     try { db.run('ROLLBACK'); } catch (e) { /* ignore rollback error */ }
     console.error('Transaction Error:', err);
     throw err;
+  }
+}
+
+function syncSearchIndex(caseId) {
+  if (caseId == null || typeof caseId !== 'number') return;
+  try {
+    db.run("DELETE FROM search_index WHERE case_id = ?", [String(caseId)]);
+    const rows = query("SELECT * FROM cases WHERE id = ?", [caseId]);
+    if (!rows.length) return;
+    const c = rows[0];
+    const docs = query(`SELECT d.filename, d.doc_type, d.tags, d.notes, dt.extracted_text FROM documents d LEFT JOIN document_text dt ON d.id = dt.document_id WHERE d.case_id = ?`, [caseId]);
+    const docText = docs.map(d => [d.filename, d.doc_type, d.tags, d.notes, d.extracted_text].filter(Boolean).join(' ')).join(' ');
+    const content = [c.case_number, c.title, c.description, c.court, c.client_name, c.notes, docText].filter(Boolean).join(' ');
+    db.run("INSERT INTO search_index (case_id, title, content, tags) VALUES (?, ?, ?, ?)", [String(caseId), c.title || '', content || '', c.tags || '']);
+  } catch (e) {
+    console.error('syncSearchIndex error for case', caseId, ':', e.message);
+  }
+}
+
+function rebuildSearchIndex() {
+  try {
+    db.run("DELETE FROM search_index");
+    const cases = query("SELECT id FROM cases WHERE archived = 0 OR archived IS NULL");
+    cases.forEach(c => syncSearchIndex(c.id));
+    console.log('Rebuilt search index for', cases.length, 'cases');
+  } catch (e) {
+    console.error('rebuildSearchIndex error:', e.message);
   }
 }
 
@@ -333,14 +363,14 @@ function addCase(data) {
   mutate('INSERT INTO cases (case_number, title, client_id, client_name, court, status, description, next_hearing, total_fees, paid_fees, expenses, deadline_date, honoraires_totaux, priority, case_type, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
   [data.case_number, data.title, data.client_id, data.client_name || '', data.court, data.status, data.description, data.next_hearing, data.total_fees, data.paid_fees, data.expenses, data.deadline_date, data.total_fees, data.priority || 'medium', data.case_type || 'مدني', data.created_date || new Date().toISOString().slice(0,10)]);
   const res = query('SELECT last_insert_rowid() as id');
-  return { id: res.length ? res[0].id : null };
+  const id = res.length ? res[0].id : null;
+  if (id) syncSearchIndex(id);
+  return { id };
 }
 
 function deleteCase(id) {
   if (!id || typeof id !== 'number') return;
   transaction(() => {
-    const caseData = query('SELECT id FROM cases WHERE id = ?', [id]);
-    if (!caseData.length) return;
     const docs = query('SELECT file_path FROM documents WHERE case_id = ?', [id]);
     docs.forEach(d => {
       try { if (d.file_path && fs.existsSync(d.file_path)) fs.unlinkSync(d.file_path); } catch (e) { /* best effort */ }
@@ -351,22 +381,17 @@ function deleteCase(id) {
     mutate('DELETE FROM events WHERE case_id = ?', [id]);
     mutate('DELETE FROM communications WHERE case_id = ?', [id]);
     mutate('DELETE FROM appointments WHERE case_id = ?', [id]);
+    mutate('DELETE FROM search_index WHERE case_id = ?', [String(id)]);
     mutate('DELETE FROM cases WHERE id = ?', [id]);
   });
 }
 
-function archiveCase(id) {
-  mutate("UPDATE cases SET archived = 1 WHERE id = ?", [id]);
-}
-
-function unarchiveCase(id) {
-  mutate("UPDATE cases SET archived = 0 WHERE id = ?", [id]);
-}
+function archiveCase(id) { mutate("UPDATE cases SET archived = 1 WHERE id = ?", [id]); }
+function unarchiveCase(id) { mutate("UPDATE cases SET archived = 0 WHERE id = ?", [id]); }
 
 function autoArchive() {
   mutate("UPDATE cases SET archived = 1 WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days')");
-  const count = db.getRowsModified();
-  return count;
+  return db.getRowsModified();
 }
 
 function getCasesByClient(clientId) {
@@ -375,8 +400,7 @@ function getCasesByClient(clientId) {
       (SELECT COUNT(*) FROM procedures p WHERE p.affaire_id = c.id) as procedure_count,
       (SELECT MIN(p.date) FROM procedures p WHERE p.affaire_id = c.id AND p.date >= date('now')) as next_procedure_date,
       (SELECT MIN(p.date) FROM procedures p WHERE p.affaire_id = c.id AND p.date >= date('now')) as next_hearing_date
-    FROM cases c
-    WHERE c.client_id = ? AND c.status != 'closed'
+    FROM cases c WHERE c.client_id = ? AND c.status != 'closed'
     ORDER BY c.created_date DESC
   `, [clientId]);
   return cases.map(c => ({
@@ -395,12 +419,12 @@ function getAllClients() {
 }
 
 function findDuplicateClient(data) {
-  const rows = query(`SELECT id, name, phone FROM clients WHERE
-    (name = ? AND ? != '') OR (phone = ? AND ? != '') OR (email = ? AND ? != '') OR (national_id = ? AND ? != '')`,
+  const rows = query(`SELECT id, name, phone FROM clients WHERE (name = ? AND ? != '') OR (phone = ? AND ? != '') OR (email = ? AND ? != '') OR (national_id = ? AND ? != '')`,
     [data.name, data.name||'', data.phone, data.phone||'', data.email, data.email||'', data.national_id||'', data.national_id||'']);
   if (rows.length) return { duplicate: true, existing: rows };
   return { duplicate: false };
 }
+
 function updateClient(data) {
   const old = query('SELECT name FROM clients WHERE id = ?', [data.id]);
   if (!old.length) return null;
@@ -412,6 +436,7 @@ function updateClient(data) {
   addLog('update_client', `تحديث بيانات الموكل @${data.id}`);
   return { id: data.id };
 }
+
 function addClient(data) {
   if (!data.name || !String(data.name).trim()) return { error: 'اسم الموكل مطلوب' };
   data.name = String(data.name).trim();
@@ -443,6 +468,7 @@ function findDuplicateCase(caseNumber) {
   if (rows.length) return { duplicate: true, existing: rows[0] };
   return { duplicate: false };
 }
+
 function validateRef(table, id) {
   if (!id) return true;
   const allowed = { cases: 'cases', clients: 'clients', tasks: 'tasks', events: 'events', documents: 'documents' };
@@ -614,12 +640,8 @@ function deleteTask(id) {
   });
 }
 
-// ─── Subtasks ───
-
-function getSubtasks(taskId) {
-  return query('SELECT * FROM subtasks WHERE task_id = ? ORDER BY id ASC', [taskId]);
-}
-
+// Subtasks
+function getSubtasks(taskId) { return query('SELECT * FROM subtasks WHERE task_id = ? ORDER BY id ASC', [taskId]); }
 function addSubtask(data) {
   if (!data || !data.task_id || !data.title || !String(data.title).trim()) return null;
   data.title = String(data.title).trim();
@@ -627,7 +649,6 @@ function addSubtask(data) {
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
-
 function toggleSubtask(id) {
   const rows = query('SELECT done FROM subtasks WHERE id = ?', [id]);
   if (!rows.length) return;
@@ -640,7 +661,6 @@ function toggleSubtask(id) {
     }
   }
 }
-
 function deleteSubtask(id) {
   const rows = query('SELECT task_id FROM subtasks WHERE id = ?', [id]);
   mutate('DELETE FROM subtasks WHERE id = ?', [id]);
@@ -652,30 +672,18 @@ function deleteSubtask(id) {
   }
 }
 
-// ─── Comments ───
-
-function getComments(taskId) {
-  return query('SELECT * FROM task_comments WHERE task_id = ? ORDER BY created_at ASC', [taskId]);
-}
-
+// Comments
+function getComments(taskId) { return query('SELECT * FROM task_comments WHERE task_id = ? ORDER BY created_at ASC', [taskId]); }
 function addComment(data) {
   if (!data || !data.task_id || !data.text || !String(data.text).trim()) return null;
   mutate('INSERT INTO task_comments (task_id, author, text) VALUES (?, ?, ?)', [data.task_id, data.author||'المحامي', data.text]);
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
+function deleteComment(id) { if (!id || typeof id !== 'number') return; mutate('DELETE FROM task_comments WHERE id = ?', [id]); }
 
-function deleteComment(id) {
-  if (!id || typeof id !== 'number') return;
-  mutate('DELETE FROM task_comments WHERE id = ?', [id]);
-}
-
-// ─── Workflows ───
-
-function getAllWorkflows() {
-  return query(`SELECT w.*, (SELECT COUNT(*) FROM workflow_steps WHERE workflow_id = w.id) as step_count FROM workflows w ORDER BY w.name`);
-}
-
+// Workflows
+function getAllWorkflows() { return query(`SELECT w.*, (SELECT COUNT(*) FROM workflow_steps WHERE workflow_id = w.id) as step_count FROM workflows w ORDER BY w.name`); }
 function getWorkflow(id) {
   const rows = query('SELECT * FROM workflows WHERE id = ?', [id]);
   if (!rows.length) return null;
@@ -683,7 +691,6 @@ function getWorkflow(id) {
   w.steps = query('SELECT * FROM workflow_steps WHERE workflow_id = ? ORDER BY step_order ASC', [id]);
   return w;
 }
-
 function addWorkflow(data) {
   mutate('INSERT INTO workflows (name, description, case_type) VALUES (?, ?, ?)', [data.name, data.description||'', data.case_type||'']);
   const res = query('SELECT last_insert_rowid() as id');
@@ -692,11 +699,7 @@ function addWorkflow(data) {
   }
   return res.length ? res[0].id : null;
 }
-
-function deleteWorkflow(id) {
-  mutate('DELETE FROM workflow_steps WHERE workflow_id = ?', [id]); mutate('DELETE FROM workflows WHERE id = ?', [id]);
-}
-
+function deleteWorkflow(id) { mutate('DELETE FROM workflow_steps WHERE workflow_id = ?', [id]); mutate('DELETE FROM workflows WHERE id = ?', [id]); }
 function applyWorkflow(caseId, workflowId) {
   const w = getWorkflow(workflowId);
   if (!w||!w.steps) return;
@@ -707,8 +710,7 @@ function applyWorkflow(caseId, workflowId) {
   addLog('apply_workflow', `تطبيق سير عمل #${workflowId} على القضية #${caseId}`);
 }
 
-// ─── Templates ───
-
+// Templates
 function getAllTemplates() { return query('SELECT * FROM task_templates ORDER BY name ASC'); }
 function addTemplate(data) {
   mutate('INSERT INTO task_templates (name, description, tasks_json) VALUES (?, ?, ?)', [data.name, data.description||'', data.tasks_json||'[]']);
@@ -723,8 +725,7 @@ function applyTemplate(caseId, templateId) {
   addLog('apply_template', `تطبيق قالب #${templateId} على القضية #${caseId}`);
 }
 
-// ─── Task Analytics ───
-
+// Task Analytics
 function getTaskAnalytics() {
   const total = query('SELECT COUNT(*) as c FROM tasks WHERE archived=0');
   const byStatus = query("SELECT status, COUNT(*) as c FROM tasks WHERE archived=0 GROUP BY status");
@@ -735,19 +736,13 @@ function getTaskAnalytics() {
   return { total: total[0]?.c||0, byStatus: byStatus.reduce((a,r)=>{a[r.status]=r.c;return a;},{}), byPriority: byPriority.reduce((a,r)=>{a[r.priority]=r.c;return a;},{}), overdue: overdue[0]?.c||0, completedThisWeek: completedThisWeek[0]?.c||0, avgCompletionDays: Math.round((avgComp[0]?.avg_days||0)*10)/10 };
 }
 
-function getAllAppointments() {
-  return query(`SELECT appointments.*, cases.case_number, cases.title as case_title FROM appointments LEFT JOIN cases ON appointments.case_id = cases.id ORDER BY appointments.date DESC, appointments.time DESC`);
-}
-
+function getAllAppointments() { return query(`SELECT appointments.*, cases.case_number, cases.title as case_title FROM appointments LEFT JOIN cases ON appointments.case_id = cases.id ORDER BY appointments.date DESC, appointments.time DESC`); }
 function addAppointment(data) {
   mutate('INSERT INTO appointments (title, date, time, location, notes, case_id) VALUES (?, ?, ?, ?, ?, ?)', [data.title, data.date, data.time, data.location, data.notes, data.case_id]);
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
-
-function deleteAppointment(id) { 
-  mutate('DELETE FROM appointments WHERE id = ?', [id]); 
-}
+function deleteAppointment(id) { mutate('DELETE FROM appointments WHERE id = ?', [id]); }
 
 function getDashboardStats() {
   const res = query("SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM appointments WHERE strftime('%Y-%m-%d', date) >= strftime('%Y-%m-%d', 'now', 'weekday 0', '-7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status = 'todo') as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients");
@@ -756,17 +751,12 @@ function getDashboardStats() {
 
 function updateCaseStatus(id, status) {
   const VALID_STATUSES = ['active', 'pending', 'closed'];
-  if (!VALID_STATUSES.includes(status)) {
-    console.warn(`حالة غير صالحة: ${status}`);
-    return;
-  }
+  if (!VALID_STATUSES.includes(status)) { console.warn(`حالة غير صالحة: ${status}`); return; }
   mutate('UPDATE cases SET status = ? WHERE id = ?', [status, id]);
   addLog('update_case_status', `تغيير حالة القضية #${id} إلى ${status}`);
 }
-function updateCaseNotes(id, notes) {
-  mutate('UPDATE cases SET notes = ? WHERE id = ?', [notes, id]);
-  addLog('update_case_notes', `تحديث ملاحظات القضية #${id}`);
-}
+function updateCaseNotes(id, notes) { mutate('UPDATE cases SET notes = ? WHERE id = ?', [notes, id]); addLog('update_case_notes', `تحديث ملاحظات القضية #${id}`); syncSearchIndex(id); }
+
 function getChartData() {
   const statuses = query("SELECT status, COUNT(*) as count FROM cases GROUP BY status");
   const monthly = query("SELECT strftime('%m', created_date) as month, COUNT(*) as count FROM cases WHERE created_date IS NOT NULL AND created_date >= date('now', '-11 months') GROUP BY strftime('%m', created_date) ORDER BY month");
@@ -776,42 +766,32 @@ function getChartData() {
   return { statuses, monthly, courts, fees: totalFees, monthNames };
 }
 
-function getDocuments(caseId) {
-  return query('SELECT d.*, COALESCE(c.case_number, \'\') as case_number FROM documents d LEFT JOIN cases c ON d.case_id = c.id WHERE d.case_id = ? ORDER BY d.upload_date DESC', [caseId]);
-}
-
+function getDocuments(caseId) { return query('SELECT d.*, COALESCE(c.case_number, \'\') as case_number FROM documents d LEFT JOIN cases c ON d.case_id = c.id WHERE d.case_id = ? ORDER BY d.upload_date DESC', [caseId]); }
 function addDocument(data) {
   if (!data.case_id || !data.filename) return null;
   if (!validateRef('cases', data.case_id)) return null;
   mutate('INSERT INTO documents (case_id, filename, file_path, doc_type) VALUES (?, ?, ?, ?)', [data.case_id, data.filename, data.file_path, data.doc_type]);
   const res = query('SELECT last_insert_rowid() as id');
+  if (res.length && data.case_id) syncSearchIndex(data.case_id);
   return res.length ? res[0].id : null;
 }
-
-function getDocument(id) {
-  const rows = query('SELECT * FROM documents WHERE id = ?', [id]);
-  return rows.length ? rows[0] : null;
-}
-
+function getDocument(id) { const rows = query('SELECT * FROM documents WHERE id = ?', [id]); return rows.length ? rows[0] : null; }
 function deleteDocument(id) {
+  const doc = query('SELECT case_id FROM documents WHERE id = ?', [id]);
   mutate('DELETE FROM documents WHERE id = ?', [id]);
+  if (doc.length && doc[0].case_id) syncSearchIndex(doc[0].case_id);
 }
-
 function updateDocument(id, data) {
-  const fields = [];
-  const values = [];
+  const fields = []; const values = [];
   for (const [key, val] of Object.entries(data)) {
-    if (['tags', 'notes', 'doc_type', 'filename'].includes(key)) {
-      fields.push(`${key} = ?`);
-      values.push(val);
-    }
+    if (['tags', 'notes', 'doc_type', 'filename'].includes(key)) { fields.push(`${key} = ?`); values.push(val); }
   }
-  if (fields.length) {
-    values.push(id);
-    mutate(`UPDATE documents SET ${fields.join(', ')} WHERE id = ?`, values);
+  if (fields.length) { values.push(id); mutate(`UPDATE documents SET ${fields.join(', ')} WHERE id = ?`, values); }
+  if (id) {
+    const doc = query('SELECT case_id FROM documents WHERE id = ?', [id]);
+    if (doc.length && doc[0].case_id) syncSearchIndex(doc[0].case_id);
   }
 }
-
 function addDocumentText(documentId, text) {
   const existing = query('SELECT id FROM document_text WHERE document_id = ?', [documentId]);
   if (existing.length) {
@@ -819,32 +799,24 @@ function addDocumentText(documentId, text) {
   } else {
     mutate('INSERT INTO document_text (document_id, extracted_text) VALUES (?, ?)', [documentId, text]);
   }
+  if (documentId) {
+    const doc = query('SELECT case_id FROM documents WHERE id = ?', [documentId]);
+    if (doc.length && doc[0].case_id) syncSearchIndex(doc[0].case_id);
+  }
 }
+function getDocumentText(documentId) { const rows = query('SELECT * FROM document_text WHERE document_id = ?', [documentId]); return rows.length ? rows[0] : null; }
 
-function getDocumentText(documentId) {
-  const rows = query('SELECT * FROM document_text WHERE document_id = ?', [documentId]);
-  return rows.length ? rows[0] : null;
-}
-
-// ─── Events System ───
-
+// Events
 function getAllEvents() {
   return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id
     ORDER BY e.date DESC, e.time DESC`);
 }
-
 function getEvent(id) {
   const rows = query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
-    WHERE e.id = ?`, [id]);
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id WHERE e.id = ?`, [id]);
   return rows.length ? rows[0] : null;
 }
-
 function addEvent(data) {
   if (!data.title || !data.date) return null;
   if (data.case_id && !validateRef('cases', data.case_id)) return null;
@@ -858,82 +830,43 @@ function addEvent(data) {
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
-
 function updateEvent(id, data) {
-  const fields = [];
-  const values = [];
+  const fields = []; const values = [];
   const allowed = ['case_id','client_id','title','type','status','date','time','end_time','court','judge','room','notes','outcome','urgency','recurring_type','recurring_end_date','all_day','alert_sent_7d','alert_sent_3d','alert_sent_1d'];
   for (const [key, val] of Object.entries(data)) {
-    if (allowed.includes(key)) {
-      fields.push(`${key} = ?`);
-      values.push(key === 'all_day' ? (val ? 1 : 0) : val);
-    }
+    if (allowed.includes(key)) { fields.push(`${key} = ?`); values.push(key === 'all_day' ? (val ? 1 : 0) : val); }
   }
-  if (fields.length) {
-    values.push(id);
-    mutate(`UPDATE events SET ${fields.join(', ')}, updated_at = datetime('now','localtime') WHERE id = ?`, values);
-  }
+  if (fields.length) { values.push(id); mutate(`UPDATE events SET ${fields.join(', ')}, updated_at = datetime('now','localtime') WHERE id = ?`, values); }
 }
-
-function deleteEvent(id) {
-  mutate('DELETE FROM events WHERE id = ?', [id]);
-}
-
+function deleteEvent(id) { mutate('DELETE FROM events WHERE id = ?', [id]); }
 function getEventsByDateRange(start, end) {
   return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
-    WHERE e.date >= ? AND e.date <= ?
-    ORDER BY e.date ASC, e.time ASC`, [start, end]);
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id
+    WHERE e.date >= ? AND e.date <= ? ORDER BY e.date ASC, e.time ASC`, [start, end]);
 }
-
 function getEventsByCase(caseId) {
   return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
-    WHERE e.case_id = ?
-    ORDER BY e.date ASC, e.time ASC`, [caseId]);
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id WHERE e.case_id = ? ORDER BY e.date ASC, e.time ASC`, [caseId]);
 }
-
 function getEventsByClient(clientId) {
   return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
-    WHERE e.client_id = ?
-    ORDER BY e.date ASC, e.time ASC`, [clientId]);
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id WHERE e.client_id = ? ORDER BY e.date ASC, e.time ASC`, [clientId]);
 }
-
 function getTodayEvents() {
   const today = new Date().toISOString().split('T')[0];
   return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    LEFT JOIN clients cl ON e.client_id = cl.id
-    WHERE e.date = ?
-    ORDER BY e.time ASC`, [today]);
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id WHERE e.date = ? ORDER BY e.time ASC`, [today]);
 }
-
 function getAlertsNeeded() {
   const today = new Date().toISOString().split('T')[0];
-  return query(`
-    SELECT e.*, c.case_number, c.title as case_title
-    FROM events e
-    LEFT JOIN cases c ON e.case_id = c.id
-    WHERE e.status = 'scheduled'
-      AND (
-        (julianday(e.date) - julianday(?) = 7 AND e.alert_sent_7d = 0)
-        OR (julianday(e.date) - julianday(?) = 3 AND e.alert_sent_3d = 0)
-        OR (julianday(e.date) - julianday(?) = 1 AND e.alert_sent_1d = 0)
-        OR (julianday(e.date) - julianday(?) = 0 AND (e.alert_sent_1d = 0 OR e.alert_sent_3d = 0 OR e.alert_sent_7d = 0))
-        OR (julianday(e.date) - julianday(?) < 0 AND e.status = 'scheduled')
-      )
-    ORDER BY e.date ASC
-  `, [today, today, today, today, today]);
+  return query(`SELECT e.*, c.case_number, c.title as case_title FROM events e LEFT JOIN cases c ON e.case_id = c.id
+    WHERE e.status = 'scheduled' AND ((julianday(e.date) - julianday(?) = 7 AND e.alert_sent_7d = 0)
+    OR (julianday(e.date) - julianday(?) = 3 AND e.alert_sent_3d = 0)
+    OR (julianday(e.date) - julianday(?) = 1 AND e.alert_sent_1d = 0)
+    OR (julianday(e.date) - julianday(?) = 0 AND (e.alert_sent_1d = 0 OR e.alert_sent_3d = 0 OR e.alert_sent_7d = 0))
+    OR (julianday(e.date) - julianday(?) < 0 AND e.status = 'scheduled'))
+    ORDER BY e.date ASC`, [today, today, today, today, today]);
 }
-
 function detectConflicts(eventId, date, time, endTime) {
   const excludeSql = eventId ? 'AND e.id != ?' : '';
   const params = [date];
@@ -942,170 +875,99 @@ function detectConflicts(eventId, date, time, endTime) {
     if (endTime) {
       return query(`SELECT e.* FROM events e WHERE e.date = ? AND e.status != 'cancelled' ${excludeSql}
         AND ((e.time <= ? AND e.end_time >= ?) OR (e.time >= ? AND e.time <= ?) OR (e.end_time >= ? AND e.end_time <= ?))
-        ORDER BY e.time ASC`,
-        [date, time, time, time, endTime, time, endTime, ...(eventId ? [eventId] : [])]);
+        ORDER BY e.time ASC`, [date, time, time, time, endTime, time, endTime, ...(eventId ? [eventId] : [])]);
     }
     return query(`SELECT e.* FROM events e WHERE e.date = ? AND e.time = ? AND e.status != 'cancelled' ${excludeSql}`, [date, time, ...(eventId ? [eventId] : [])]);
   }
   return query(`SELECT e.* FROM events e WHERE e.date = ? AND e.status != 'cancelled' ${excludeSql}`, [date, ...(eventId ? [eventId] : [])]);
 }
 
+function isSent(key) {
+  const r = query('SELECT id FROM sent_notifications WHERE key=?', [key]);
+  return r.length > 0;
+}
+
+function markSent(key) {
+  try { db.run('INSERT OR IGNORE INTO sent_notifications (key) VALUES (?)', [key]); } catch(e) {}
+}
+
+function cleanOldSentNotifications() {
+  db.run("DELETE FROM sent_notifications WHERE datetime(sent_at) < datetime('now', '-30 days')");
+}
+
+function getEventsByDate(dateStr) {
+  return query(`SELECT e.*, c.case_number, c.title as case_title, cl.name as client_name
+    FROM events e LEFT JOIN cases c ON e.case_id = c.id LEFT JOIN clients cl ON e.client_id = cl.id
+    WHERE e.date = ? AND e.status != 'cancelled' ORDER BY e.time ASC`, [dateStr]);
+}
+
+function getTomorrowHearings() {
+  return query(`SELECT p.id, p.date as hearing_date, p.type, p.description,
+    c.id as case_id, c.case_number, c.title as case_title, c.court
+    FROM procedures p JOIN cases c ON p.affaire_id = c.id
+    WHERE p.date = date('now', '+1 day') AND c.status != 'closed'
+    ORDER BY p.date ASC`);
+}
+
 function globalSearch(queryTerm) {
   const q = queryTerm ? queryTerm.trim() : '';
   const empty = { cases: [], clients: [], hearings: [], documents: [], tasks: [], expenses: [] };
   if (!q) return empty;
-
   const like = '%' + q + '%';
-  const prefix = q + '%';
 
-  const cases = query(`
-    SELECT id, 
-      CASE WHEN case_number = ?1 THEN 100 
-           WHEN case_number LIKE ?2 THEN 80 
-           WHEN title = ?1 THEN 90
-           WHEN title LIKE ?2 THEN 70 
-           ELSE 50 
-      END as score,
-      case_number, title, 
-      COALESCE(client_name, clients.name, '') as client_name, status
-    FROM cases LEFT JOIN clients ON cases.client_id = clients.id
-    WHERE case_number LIKE ?3 OR title LIKE ?3 OR court LIKE ?3 OR description LIKE ?3
-    ORDER BY score DESC, case_number ASC LIMIT 6
-  `, [q, prefix, like]);
+  const ftsQuery = q.replace(/[*"()+\-^]/g, ' ').trim().split(/\s+/).filter(Boolean).map(t => t + '*').join(' ');
 
-  const clients = query(`
-    SELECT id,
-      CASE WHEN name = ?1 THEN 100 
-           WHEN name LIKE ?2 THEN 80 
-           WHEN phone = ?1 THEN 90
-           WHEN phone LIKE ?2 THEN 70 
-           ELSE 50 
-      END as score,
-      name, phone, email
-    FROM clients
-    WHERE name LIKE ?3 OR phone LIKE ?3 OR email LIKE ?3 OR address LIKE ?3
-    ORDER BY score DESC, name ASC LIMIT 6
-  `, [q, prefix, like]);
+  let ftsResults = [];
+  if (ftsQuery) {
+    try {
+      const stmt = db.prepare("SELECT case_id, search_rank(matchinfo(search_index)) as score FROM search_index WHERE search_index MATCH ? ORDER BY score DESC");
+      stmt.bind([ftsQuery]);
+      while (stmt.step()) ftsResults.push(stmt.getAsObject());
+      stmt.free();
+    } catch (e) {
+      console.error('FTS search error:', e.message);
+    }
+  }
 
-  const hearings = query(`
-    SELECT e.id,
-      CASE WHEN e.title = ?1 THEN 100 
-           WHEN e.title LIKE ?2 THEN 80 
-           ELSE 60 
-      END as score,
-      e.title, e.date, COALESCE(c.case_number, '') as case_number
-    FROM events e LEFT JOIN cases c ON e.case_id = c.id
-    WHERE e.title LIKE ?3 OR e.type LIKE ?3 OR e.court LIKE ?3 OR e.notes LIKE ?3
-    ORDER BY score DESC, e.date DESC LIMIT 6
-  `, [q, prefix, like]);
+  const uniqueCaseIds = [...new Set(ftsResults.map(r => parseInt(r.case_id)).filter(id => !isNaN(id)))];
+  const scoreMap = {};
+  ftsResults.forEach(r => { const id = parseInt(r.case_id); if (!isNaN(id)) scoreMap[id] = (scoreMap[id] || 0) + (r.score || 0); });
+  const rankedIds = uniqueCaseIds.sort((a, b) => (scoreMap[b] || 0) - (scoreMap[a] || 0)).slice(0, 10);
 
-  const documents = query(`
-    SELECT d.id,
-      CASE WHEN d.filename = ?1 THEN 100 
-           WHEN d.filename LIKE ?2 THEN 80 
-           WHEN d.doc_type = ?1 THEN 90
-           ELSE 50 
-      END as score,
-      d.filename, d.doc_type, COALESCE(c.case_number, '') as case_number
-    FROM documents d LEFT JOIN cases c ON d.case_id = c.id
-    WHERE d.filename LIKE ?3 OR d.doc_type LIKE ?3
-    ORDER BY score DESC, d.filename ASC LIMIT 6
-  `, [q, prefix, like]);
+  let cases = [];
+  if (rankedIds.length) {
+    cases = query(`SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${rankedIds.join(',')}) ORDER BY CASE id ${rankedIds.map((id, i) => `WHEN ${id} THEN ${i}`).join(' ')} END`);
+  }
 
-  const docTexts = query(`
-    SELECT DISTINCT d.id, 40 as score,
-      d.filename, d.doc_type, COALESCE(c.case_number, '') as case_number
-    FROM documents d LEFT JOIN cases c ON d.case_id = c.id
-    JOIN document_text dt ON d.id = dt.document_id
-    WHERE dt.extracted_text LIKE ?
-    LIMIT 3
-  `, [like]);
+  const clients = query(`SELECT id, name, phone, email FROM clients WHERE name LIKE ? OR phone LIKE ? OR email LIKE ? OR address LIKE ? ORDER BY name ASC LIMIT 6`, [like, like, like, like]);
+  const hearings = query(`SELECT e.id, e.title, e.date, COALESCE(c.case_number, '') as case_number FROM events e LEFT JOIN cases c ON e.case_id = c.id WHERE e.title LIKE ? OR e.type LIKE ? OR e.court LIKE ? OR e.notes LIKE ? ORDER BY e.date DESC LIMIT 6`, [like, like, like, like]);
+  const documents = query(`SELECT d.id, d.filename, d.doc_type, COALESCE(c.case_number, '') as case_number FROM documents d LEFT JOIN cases c ON d.case_id = c.id WHERE d.filename LIKE ? OR d.doc_type LIKE ? ORDER BY d.filename ASC LIMIT 6`, [like, like]);
+  const tasks = query(`SELECT t.id, t.title, t.priority, t.status, COALESCE(c.case_number, '') as case_number FROM tasks t LEFT JOIN cases c ON t.case_id = c.id WHERE t.title LIKE ? OR t.description LIKE ? OR t.tags LIKE ? ORDER BY t.title ASC LIMIT 6`, [like, like, like]);
+  const expenses = query(`SELECT p.id, p.montant, p.mode_paiement, p.date as paiement_date, p.remarque, COALESCE(c.case_number, '') as case_number FROM paiements p LEFT JOIN cases c ON p.affaire_id = c.id WHERE c.case_number LIKE ? OR p.remarque LIKE ? OR p.mode_paiement LIKE ? ORDER BY p.date DESC LIMIT 6`, [like, like, like]);
 
-  const tasks = query(`
-    SELECT t.id,
-      CASE WHEN t.title = ?1 THEN 100 
-           WHEN t.title LIKE ?2 THEN 80 
-           WHEN t.description LIKE ?2 THEN 60 
-           ELSE 50 
-      END as score,
-      t.title, t.priority, t.status, COALESCE(c.case_number, '') as case_number
-    FROM tasks t LEFT JOIN cases c ON t.case_id = c.id
-    WHERE t.title LIKE ?3 OR t.description LIKE ?3 OR t.tags LIKE ?3
-    ORDER BY score DESC, t.title ASC LIMIT 6
-  `, [q, prefix, like]);
-
-  const expenses = query(`
-    SELECT p.id,
-      CASE WHEN c.case_number = ?1 THEN 100 
-           WHEN c.case_number LIKE ?2 THEN 80 
-           WHEN p.remarque LIKE ?2 THEN 60
-           ELSE 50 
-      END as score,
-      p.montant, p.mode_paiement, p.date as paiement_date, p.remarque, COALESCE(c.case_number, '') as case_number
-    FROM paiements p LEFT JOIN cases c ON p.affaire_id = c.id
-    WHERE c.case_number LIKE ?3 OR p.remarque LIKE ?3 OR p.mode_paiement LIKE ?3
-    ORDER BY score DESC, p.date DESC LIMIT 6
-  `, [q, prefix, like]);
-
-  return {
-    cases,
-    clients,
-    hearings,
-    documents: dedupeDocuments(documents.concat(docTexts)).slice(0, 6),
-    tasks,
-    expenses
-  };
-}
-
-function dedupeDocuments(arr) {
-  const seen = new Set();
-  return arr.filter(d => { const k = d.id; if (seen.has(k)) return false; seen.add(k); return true; });
+  return { cases, clients, hearings, documents: documents.slice(0, 6), tasks, expenses };
 }
 
 function getSearchIndex() {
-  const cases = getAllCases().map(c => ({
-    id: c.id, type: 'case', label: c.case_number + ' — ' + c.title,
-    sub: c.client_name || '', nav: 'cases',
-    text: (c.case_number||'') + ' ' + (c.title||'') + ' ' + (c.client_name||'') + ' ' + (c.court||'') + ' ' + (c.description||''),
-    status: c.status || ''
-  }));
-  const clients = getAllClients().map(c => ({
-    id: c.id, type: 'client', label: c.name, sub: c.phone || c.email || '',
-    nav: 'clients', text: (c.name||'') + ' ' + (c.phone||'') + ' ' + (c.email||'') + ' ' + (c.address||'') + ' ' + (c.national_id||'')
-  }));
-  const events = getAllEvents().filter(e => ['hearing','deadline'].includes(e.type)).map(e => ({
-    id: e.id, type: 'hearing', label: e.title, sub: e.date + ' — ' + (e.case_number||''), nav: 'calendar',
-    text: (e.title||'') + ' ' + (e.case_number||'') + ' ' + (e.court||'') + ' ' + (e.notes||'') + ' ' + (e.type||'')
-  }));
+  const cases = getAllCases().map(c => ({ id: c.id, type: 'case', label: c.case_number + ' — ' + c.title, sub: c.client_name || '', nav: 'cases', text: (c.case_number||'') + ' ' + (c.title||'') + ' ' + (c.client_name||'') + ' ' + (c.court||'') + ' ' + (c.description||''), status: c.status || '' }));
+  const clients = getAllClients().map(c => ({ id: c.id, type: 'client', label: c.name, sub: c.phone || c.email || '', nav: 'clients', text: (c.name||'') + ' ' + (c.phone||'') + ' ' + (c.email||'') + ' ' + (c.address||'') + ' ' + (c.national_id||'') }));
+  const events = getAllEvents().filter(e => ['hearing','deadline'].includes(e.type)).map(e => ({ id: e.id, type: 'hearing', label: e.title, sub: e.date + ' — ' + (e.case_number||''), nav: 'calendar', text: (e.title||'') + ' ' + (e.case_number||'') + ' ' + (e.court||'') + ' ' + (e.notes||'') + ' ' + (e.type||'') }));
   const allCases = getAllCases();
   let docs = [];
   for (const c of allCases) {
     const d = getDocuments(c.id);
-    d.forEach(doc => docs.push({
-      id: doc.id, type: 'document', label: doc.filename, sub: doc.doc_type + ' — ' + (c.case_number||''), nav: 'documents',
-      text: (doc.filename||'') + ' ' + (doc.doc_type||'') + ' ' + (c.case_number||'') + ' ' + (doc.tags||'') + ' ' + (doc.notes||'')
-    }));
+    d.forEach(doc => docs.push({ id: doc.id, type: 'document', label: doc.filename, sub: doc.doc_type + ' — ' + (c.case_number||''), nav: 'documents', text: (doc.filename||'') + ' ' + (doc.doc_type||'') + ' ' + (c.case_number||'') + ' ' + (doc.tags||'') + ' ' + (doc.notes||'') }));
   }
-  const tasks = getAllTasks().map(t => ({
-    id: t.id, type: 'task', label: t.title, sub: t.status + ' — ' + (t.case_number||''), nav: 'tasks',
-    text: (t.title||'') + ' ' + (t.description||'') + ' ' + (t.case_number||'') + ' ' + (t.tags||'') + ' ' + (t.status||'') + ' ' + (t.priority||'')
-  }));
+  const tasks = getAllTasks().map(t => ({ id: t.id, type: 'task', label: t.title, sub: t.status + ' — ' + (t.case_number||''), nav: 'tasks', text: (t.title||'') + ' ' + (t.description||'') + ' ' + (t.case_number||'') + ' ' + (t.tags||'') + ' ' + (t.status||'') + ' ' + (t.priority||'') }));
   let payments = [];
   for (const c of allCases) {
     const p = getPaiements(c.id);
-    p.forEach(pay => payments.push({
-      id: pay.id, type: 'expense', label: (c.case_number||'') + ' — ' + (pay.montant||0) + ' درهم',
-      sub: pay.date + ' ' + (pay.mode_paiement||''), nav: 'expenses',
-      text: (c.case_number||'') + ' ' + (pay.montant||'') + ' ' + (pay.mode_paiement||'') + ' ' + (pay.remarque||'') + ' ' + (pay.date||'')
-    }));
+    p.forEach(pay => payments.push({ id: pay.id, type: 'expense', label: (c.case_number||'') + ' — ' + (pay.montant||0) + ' درهم', sub: pay.date + ' ' + (pay.mode_paiement||''), nav: 'expenses', text: (c.case_number||'') + ' ' + (pay.montant||'') + ' ' + (pay.mode_paiement||'') + ' ' + (pay.remarque||'') + ' ' + (pay.date||'') }));
   }
   return [...cases, ...clients, ...events, ...docs, ...tasks, ...payments];
 }
 
-function getProcedures(affaireId) {
-  return query('SELECT * FROM procedures WHERE affaire_id = ? ORDER BY date DESC, id DESC', [affaireId]);
-}
-
+function getProcedures(affaireId) { return query('SELECT * FROM procedures WHERE affaire_id = ? ORDER BY date DESC, id DESC', [affaireId]); }
 function addProcedure(data) {
   if (!data.affaire_id || !data.date || !data.type) return null;
   if (!validateRef('cases', data.affaire_id)) return null;
@@ -1113,24 +975,15 @@ function addProcedure(data) {
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
-
 function updateProcedure(id, data) {
   if (!id || typeof id !== 'number') return;
-  const old = query('SELECT id FROM procedures WHERE id = ?', [id]);
-  if (!old.length) return;
+  if (!query('SELECT id FROM procedures WHERE id = ?', [id]).length) return;
   if (!data.date || !data.type) return;
   mutate('UPDATE procedures SET date = ?, type = ?, description = ? WHERE id = ?', [data.date, data.type, data.description || '', id]);
 }
+function deleteProcedure(id) { if (!id || typeof id !== 'number') return; mutate('DELETE FROM procedures WHERE id = ?', [id]); }
 
-function deleteProcedure(id) {
-  if (!id || typeof id !== 'number') return;
-  mutate('DELETE FROM procedures WHERE id = ?', [id]);
-}
-
-function getPaiements(affaireId) {
-  return query('SELECT * FROM paiements WHERE affaire_id = ? ORDER BY date DESC, id DESC', [affaireId]);
-}
-
+function getPaiements(affaireId) { return query('SELECT * FROM paiements WHERE affaire_id = ? ORDER BY date DESC, id DESC', [affaireId]); }
 function addPaiement(data) {
   if (!data.affaire_id || !data.date || data.montant === undefined || !data.mode_paiement) return null;
   if (!validateRef('cases', data.affaire_id)) return null;
@@ -1140,160 +993,67 @@ function addPaiement(data) {
   syncPaidFees(data.affaire_id);
   return res.length ? res[0].id : null;
 }
-
 function updatePaiement(id, data) {
   if (!id || typeof id !== 'number') return;
   const old = query('SELECT affaire_id FROM paiements WHERE id = ?', [id]);
   if (!old.length) return;
   if (!data.date || !data.mode_paiement || data.montant === undefined) return;
-  mutate('UPDATE paiements SET date = ?, montant = ?, mode_paiement = ?, remarque = ? WHERE id = ?',
-    [data.date, parseFloat(data.montant) || 0, data.mode_paiement, data.remarque || '', id]);
+  mutate('UPDATE paiements SET date = ?, montant = ?, mode_paiement = ?, remarque = ? WHERE id = ?', [data.date, parseFloat(data.montant) || 0, data.mode_paiement, data.remarque || '', id]);
   if (old.length) syncPaidFees(old[0].affaire_id);
 }
-
 function deletePaiement(id) {
   if (!id || typeof id !== 'number') return;
   const old = query('SELECT affaire_id FROM paiements WHERE id = ?', [id]);
   mutate('DELETE FROM paiements WHERE id = ?', [id]);
   if (old.length) syncPaidFees(old[0].affaire_id);
 }
-
 function syncPaidFees(affaireId) {
   const rows = query('SELECT COALESCE(SUM(montant), 0) as total FROM paiements WHERE affaire_id = ?', [affaireId]);
-  const totalPaid = rows.length ? rows[0].total : 0;
-  mutate('UPDATE cases SET paid_fees = ? WHERE id = ?', [totalPaid, affaireId]);
+  mutate('UPDATE cases SET paid_fees = ? WHERE id = ?', [rows.length ? rows[0].total : 0, affaireId]);
 }
 
-function getWeekDeadlines() {
-  return query(`
-    SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name,
-           CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining
-    FROM cases c
-    WHERE c.deadline_date IS NOT NULL AND c.deadline_date != ''
-      AND c.status != 'closed'
-      AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days')
-    ORDER BY days_remaining ASC
-  `);
-}
-
-function getUnpaidFees() {
-  return query(`
-    SELECT c.id, c.case_number, c.title, c.client_name,
-           COALESCE(c.honoraires_totaux, c.total_fees, 0) as total_fees,
-           COALESCE(c.paid_fees, 0) as paid_fees,
-           ROUND(COALESCE(c.honoraires_totaux, c.total_fees, 0) - COALESCE(c.paid_fees, 0), 2) as remaining
-    FROM cases c
-    WHERE c.status != 'closed'
-      AND COALESCE(c.honoraires_totaux, c.total_fees, 0) > COALESCE(c.paid_fees, 0)
-    ORDER BY remaining DESC
-  `);
-}
-
-function getStaleCases() {
-  return query(`
-    SELECT c.id, c.case_number, c.title, c.client_name, c.status,
-      COALESCE(
-        MAX(
-          COALESCE((SELECT MAX(p.date) FROM procedures p WHERE p.affaire_id = c.id), '2000-01-01'),
-          COALESCE((SELECT MAX(d.upload_date) FROM documents d WHERE d.case_id = c.id), '2000-01-01'),
-          COALESCE((SELECT MAX(pa.date) FROM paiements pa WHERE pa.affaire_id = c.id), '2000-01-01')
-        ), '2000-01-01'
-      ) as last_activity
-    FROM cases c
-    WHERE c.status != 'closed'
-    GROUP BY c.id
-    HAVING last_activity < date('now', '-30 days')
-    ORDER BY last_activity ASC
-  `);
-}
-
-function getUrgentTasks() {
-  return query(`
-    SELECT * FROM tasks
-    WHERE status = 'todo' AND priority = 'high'
-    ORDER BY due_date ASC
-  `);
-}
+function getWeekDeadlines() { return query(`SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days') ORDER BY days_remaining ASC`); }
+function getUnpaidFees() { return query(`SELECT c.id, c.case_number, c.title, c.client_name, COALESCE(c.honoraires_totaux, c.total_fees, 0) as total_fees, COALESCE(c.paid_fees, 0) as paid_fees, ROUND(COALESCE(c.honoraires_totaux, c.total_fees, 0) - COALESCE(c.paid_fees, 0), 2) as remaining FROM cases c WHERE c.status != 'closed' AND COALESCE(c.honoraires_totaux, c.total_fees, 0) > COALESCE(c.paid_fees, 0) ORDER BY remaining DESC`); }
+function getStaleCases() { return query(`SELECT c.id, c.case_number, c.title, c.client_name, c.status, COALESCE(MAX(COALESCE((SELECT MAX(p.date) FROM procedures p WHERE p.affaire_id = c.id), '2000-01-01'), COALESCE((SELECT MAX(d.upload_date) FROM documents d WHERE d.case_id = c.id), '2000-01-01'), COALESCE((SELECT MAX(pa.date) FROM paiements pa WHERE pa.affaire_id = c.id), '2000-01-01')), '2000-01-01') as last_activity FROM cases c WHERE c.status != 'closed' GROUP BY c.id HAVING last_activity < date('now', '-30 days') ORDER BY last_activity ASC`); }
+function getUrgentTasks() { return query(`SELECT * FROM tasks WHERE status = 'todo' AND priority = 'high' ORDER BY due_date ASC`); }
 
 function addJugement(data) {
   if (!data || !data.sujet || !data.contenu) return null;
-  mutate('INSERT INTO jugements (case_number, sujet, cour, annee, mots_cles, contenu, date_jugement) VALUES (?, ?, ?, ?, ?, ?, ?)',
-    [data.case_number || null, data.sujet, data.cour || null, data.annee || null, data.mots_cles || null, data.contenu, data.date_jugement || null]);
-  const res = query('SELECT last_insert_rowid() as id');
-  return res.length ? res[0].id : null;
+  mutate('INSERT INTO jugements (case_number, sujet, cour, annee, mots_cles, contenu, date_jugement) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.case_number || null, data.sujet, data.cour || null, data.annee || null, data.mots_cles || null, data.contenu, data.date_jugement || null]);
+  return query('SELECT last_insert_rowid() as id')[0]?.id || null;
 }
-
-function getAllJugements() {
-  return query('SELECT * FROM jugements ORDER BY created_at DESC');
-}
-
+function getAllJugements() { return query('SELECT * FROM jugements ORDER BY created_at DESC'); }
 function searchJugements(filters) {
   let sql = 'SELECT * FROM jugements WHERE 1=1';
   const params = [];
-  if (filters.sujet && filters.sujet.trim()) {
-    sql += ' AND sujet LIKE ?';
-    params.push('%' + filters.sujet.trim() + '%');
-  }
-  if (filters.cour && filters.cour.trim()) {
-    sql += ' AND cour LIKE ?';
-    params.push('%' + filters.cour.trim() + '%');
-  }
-  if (filters.annee) {
-    sql += ' AND annee = ?';
-    params.push(parseInt(filters.annee));
-  }
-  if (filters.mots_cles && filters.mots_cles.trim()) {
-    sql += ' AND mots_cles LIKE ?';
-    params.push('%' + filters.mots_cles.trim() + '%');
-  }
+  if (filters.sujet?.trim()) { sql += ' AND sujet LIKE ?'; params.push('%' + filters.sujet.trim() + '%'); }
+  if (filters.cour?.trim()) { sql += ' AND cour LIKE ?'; params.push('%' + filters.cour.trim() + '%'); }
+  if (filters.annee) { sql += ' AND annee = ?'; params.push(parseInt(filters.annee)); }
+  if (filters.mots_cles?.trim()) { sql += ' AND mots_cles LIKE ?'; params.push('%' + filters.mots_cles.trim() + '%'); }
   sql += ' ORDER BY created_at DESC';
   return query(sql, params);
 }
-
-function deleteJugement(id) {
-  if (!id || typeof id !== 'number') return;
-  mutate('DELETE FROM jugements WHERE id = ?', [id]);
-}
+function deleteJugement(id) { if (!id || typeof id !== 'number') return; mutate('DELETE FROM jugements WHERE id = ?', [id]); }
 
 function addCommunication(data) {
   if (!data.type || !data.date) return null;
   if (data.client_id && !validateRef('clients', data.client_id)) return null;
   if (data.case_id && !validateRef('cases', data.case_id)) return null;
-  mutate('INSERT INTO communications (client_id, case_id, type, date, summary) VALUES (?, ?, ?, ?, ?)',
-    [data.client_id || null, data.case_id || null, data.type, data.date, data.summary || null]);
+  mutate('INSERT INTO communications (client_id, case_id, type, date, summary) VALUES (?, ?, ?, ?, ?)', [data.client_id || null, data.case_id || null, data.type, data.date, data.summary || null]);
   return query('SELECT last_insert_rowid() as id')[0]?.id || null;
 }
+function getAllCommunications() { return query(`SELECT comm.*, cl.name as client_name, ca.case_number FROM communications comm LEFT JOIN clients cl ON comm.client_id = cl.id LEFT JOIN cases ca ON comm.case_id = ca.id ORDER BY comm.date DESC, comm.created_at DESC`); }
+function getClientCommunications(clientId) { return query(`SELECT comm.*, ca.case_number FROM communications comm LEFT JOIN cases ca ON comm.case_id = ca.id WHERE comm.client_id = ? ORDER BY comm.date DESC, comm.created_at DESC`, [clientId]); }
+function deleteCommunication(id) { if (!id || typeof id !== 'number') return; mutate('DELETE FROM communications WHERE id = ?', [id]); }
 
-function getAllCommunications() {
-  return query(`SELECT comm.*, cl.name as client_name, ca.case_number FROM communications comm
-    LEFT JOIN clients cl ON comm.client_id = cl.id
-    LEFT JOIN cases ca ON comm.case_id = ca.id
-    ORDER BY comm.date DESC, comm.created_at DESC`);
-}
-
-function getClientCommunications(clientId) {
-  return query(`SELECT comm.*, ca.case_number FROM communications comm
-    LEFT JOIN cases ca ON comm.case_id = ca.id
-    WHERE comm.client_id = ?
-    ORDER BY comm.date DESC, comm.created_at DESC`, [clientId]);
-}
-
-function deleteCommunication(id) {
-  if (!id || typeof id !== 'number') return;
-  mutate('DELETE FROM communications WHERE id = ?', [id]);
-}
 function addLog(action, details, userId, userName) {
-  try {
-    mutate('INSERT INTO activity_log (action, details, user_id, user_name) VALUES (?, ?, ?, ?)', 
-    [action, details || '', userId || 0, userName || '']);
-  } catch (e) {
-    console.error('Log error:', e);
-  }
+  try { mutate('INSERT INTO activity_log (action, details, user_id, user_name) VALUES (?, ?, ?, ?)', [action, details || '', userId || 0, userName || '']); }
+  catch (e) { console.error('Log error:', e); }
 }
 
-// ─── Users & Permissions ───
-
+// Users & Permissions
 function getUsers() { return query('SELECT id, name, email, role, avatar, active, last_login FROM users ORDER BY id ASC'); }
+function getAllUsers() { return query('SELECT * FROM users ORDER BY id ASC'); }
 function addUser(data) {
   mutate('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)', [data.name, data.email||'', data.password_hash||'', data.role||'assistant']);
   addLog('add_user', `إضافة مستخدم ${data.name}`, data._userId, data._userName);
@@ -1306,209 +1066,86 @@ function updateUser(id, data) {
 }
 function deleteUser(id) { mutate('DELETE FROM users WHERE id=?', [id]); }
 function getUserByEmail(email) { const r = query('SELECT * FROM users WHERE email=?', [email]); return r.length ? r[0] : null; }
-
-function checkPermission(role, permission) {
-  const r = query('SELECT allowed FROM permissions WHERE role=? AND permission=?', [role, permission]);
-  return r.length ? !!r[0].allowed : false;
-}
-
-function getPermissions(role) {
-  return query('SELECT permission, allowed FROM permissions WHERE role=?', [role]).reduce((a, r) => { a[r.permission] = !!r.allowed; return a; }, {});
-}
-
+function checkPermission(role, permission) { const r = query('SELECT allowed FROM permissions WHERE role=? AND permission=?', [role, permission]); return r.length ? !!r[0].allowed : false; }
+function getPermissions(role) { return query('SELECT permission, allowed FROM permissions WHERE role=?', [role]).reduce((a, r) => { a[r.permission] = !!r.allowed; return a; }, {}); }
 function setPermission(role, permission, allowed) {
-  try {
-    mutate('INSERT OR REPLACE INTO permissions (role, permission, allowed) VALUES (?, ?, ?)', [role, permission, allowed ? 1 : 0]);
-  } catch(e) { mutate('UPDATE permissions SET allowed=? WHERE role=? AND permission=?', [allowed?1:0, role, permission]); }
+  try { mutate('INSERT OR REPLACE INTO permissions (role, permission, allowed) VALUES (?, ?, ?)', [role, permission, allowed ? 1 : 0]); }
+  catch(e) { mutate('UPDATE permissions SET allowed=? WHERE role=? AND permission=?', [allowed?1:0, role, permission]); }
 }
-
-function getCaseAccessLevel(caseId) {
-  const r = query('SELECT access_level FROM cases WHERE id=?', [caseId]);
-  return r.length ? r[0].access_level : 'team';
-}
-function setCaseAccessLevel(caseId, level) {
-  mutate("UPDATE cases SET access_level=? WHERE id=?", [level, caseId]);
-}
-
-function getDocumentVisibility(docId) {
-  const r = query('SELECT visibility FROM documents WHERE id=?', [docId]);
-  return r.length ? r[0].visibility : 'case';
-}
+function getCaseAccessLevel(caseId) { const r = query('SELECT access_level FROM cases WHERE id=?', [caseId]); return r.length ? r[0].access_level : 'team'; }
+function setCaseAccessLevel(caseId, level) { mutate("UPDATE cases SET access_level=? WHERE id=?", [level, caseId]); }
+function getDocumentVisibility(docId) { const r = query('SELECT visibility FROM documents WHERE id=?', [docId]); return r.length ? r[0].visibility : 'case'; }
 
 function getLogs(filters) {
   filters = filters || {};
   let sql = 'SELECT * FROM activity_log WHERE 1=1';
   const params = [];
-
-  if (filters.search && filters.search.trim()) {
-    sql += ' AND (action LIKE ? OR details LIKE ?)';
-    const q = '%' + filters.search.trim() + '%';
-    params.push(q, q);
-  }
-
-  if (filters.action && filters.action !== 'all') {
-    sql += ' AND action = ?';
-    params.push(filters.action);
-  }
-
-  if (filters.dateFrom) {
-    sql += ' AND created_at >= ?';
-    params.push(filters.dateFrom + ' 00:00:00');
-  }
-
-  if (filters.dateTo) {
-    sql += ' AND created_at <= ?';
-    params.push(filters.dateTo + ' 23:59:59');
-  }
-
+  if (filters.search?.trim()) { const q = '%' + filters.search.trim() + '%'; sql += ' AND (action LIKE ? OR details LIKE ?)'; params.push(q, q); }
+  if (filters.action && filters.action !== 'all') { sql += ' AND action = ?'; params.push(filters.action); }
+  if (filters.dateFrom) { sql += ' AND created_at >= ?'; params.push(filters.dateFrom + ' 00:00:00'); }
+  if (filters.dateTo) { sql += ' AND created_at <= ?'; params.push(filters.dateTo + ' 23:59:59'); }
   sql += ' ORDER BY created_at DESC';
-
   const limit = filters.limit ? parseInt(filters.limit) : 500;
-  sql += ' LIMIT ?';
-  params.push(limit);
-
-  if (filters.offset) {
-    sql += ' OFFSET ?';
-    params.push(parseInt(filters.offset));
-  }
-
+  sql += ' LIMIT ?'; params.push(limit);
+  if (filters.offset) { sql += ' OFFSET ?'; params.push(parseInt(filters.offset)); }
   return query(sql, params);
 }
 
-function getAlertSettings() {
-  const rows = query('SELECT * FROM alert_settings WHERE id = 1');
-  return rows.length ? rows[0] : { days_before_1: 7, days_before_2: 3, days_before_3: 1, enabled: 1 };
-}
-
-function updateAlertSettings(data) {
-  mutate('UPDATE alert_settings SET days_before_1 = ?, days_before_2 = ?, days_before_3 = ?, enabled = ? WHERE id = 1', 
-    [data.days_before_1, data.days_before_2, data.days_before_3, data.enabled ? 1 : 0]);
-}
-
-function getUpcomingDeadlines() {
-  return query(`
-    SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, 
-           CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining
-    FROM cases c
-    WHERE c.deadline_date IS NOT NULL 
-      AND c.deadline_date != '' 
-      AND c.status != 'closed'
-      AND julianday(c.deadline_date) - julianday('now') > -1
-    ORDER BY days_remaining ASC
-  `);
-}
-
-function getUpcomingHearings() {
-  return query(`
-    SELECT p.id, p.date as hearing_date, p.type, p.description,
-           c.id as case_id, c.case_number, c.title as case_title,
-           CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining
-    FROM procedures p
-    JOIN cases c ON p.affaire_id = c.id
-    WHERE p.date >= date('now')
-      AND c.status != 'closed'
-    ORDER BY days_remaining ASC
-  `);
-}
-
+function getAlertSettings() { const rows = query('SELECT * FROM alert_settings WHERE id = 1'); return rows.length ? rows[0] : { days_before_1: 7, days_before_2: 3, days_before_3: 1, enabled: 1 }; }
+function updateAlertSettings(data) { mutate('UPDATE alert_settings SET days_before_1 = ?, days_before_2 = ?, days_before_3 = ?, enabled = ? WHERE id = 1', [data.days_before_1, data.days_before_2, data.days_before_3, data.enabled ? 1 : 0]); }
+function getUpcomingDeadlines() { return query(`SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) - julianday('now') > -1 ORDER BY days_remaining ASC`); }
+function getUpcomingHearings() { return query(`SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed' ORDER BY days_remaining ASC`); }
 function getTodayProcedures() {
   const todayStr = new Date().toISOString().split('T')[0];
-  return query(`
-    SELECT p.*, c.case_number, c.title as case_title 
-    FROM procedures p
-    JOIN cases c ON p.affaire_id = c.id
-    WHERE p.date = ?
-    ORDER BY p.id ASC
-  `, [todayStr]);
+  return query(`SELECT p.*, c.case_number, c.title as case_title FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date = ? ORDER BY p.id ASC`, [todayStr]);
 }
-
-function getBackupSettings() {
-  const rows = query('SELECT * FROM backup_settings WHERE id = 1');
-  return rows.length ? rows[0] : { auto_enabled: 1, frequency_hours: 24, keep_count: 30, last_backup_at: null };
-}
-
-function updateBackupSettings(data) {
-  mutate('UPDATE backup_settings SET auto_enabled = ?, frequency_hours = ?, keep_count = ? WHERE id = 1',
-    [data.auto_enabled ? 1 : 0, data.frequency_hours, data.keep_count]);
-}
+function getBackupSettings() { const rows = query('SELECT * FROM backup_settings WHERE id = 1'); return rows.length ? rows[0] : { auto_enabled: 1, frequency_hours: 24, keep_count: 30, last_backup_at: null }; }
+function updateBackupSettings(data) { mutate('UPDATE backup_settings SET auto_enabled = ?, frequency_hours = ?, keep_count = ? WHERE id = 1', [data.auto_enabled ? 1 : 0, data.frequency_hours, data.keep_count]); }
 
 function createBackup(reason) {
   const data = db.export();
   const buffer = Buffer.from(data);
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
-  const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) +
-    '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+  const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
   const filename = 'backup_' + ts + '_' + reason + '.db';
   const filepath = path.join(BACKUP_DIR, filename);
   fs.writeFileSync(filepath, buffer);
-
   mutate("UPDATE backup_settings SET last_backup_at = ? WHERE id = 1", [now.toISOString()]);
-
   const settings = getBackupSettings();
   const maxKeep = settings.keep_count || 30;
-  const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.endsWith('.db'))
-    .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
-    .sort((a, b) => b.mtime - a.mtime);
-
-  if (files.length > maxKeep) {
-    files.slice(maxKeep).forEach(f => {
-      try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) {}
-    });
-  }
-
+  const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db')).map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs })).sort((a, b) => b.mtime - a.mtime);
+  if (files.length > maxKeep) { files.slice(maxKeep).forEach(f => { try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) {} }); }
   return filename;
 }
 
 function listBackups() {
-  const files = fs.readdirSync(BACKUP_DIR)
-    .filter(f => f.endsWith('.db'))
-    .map(f => {
-      const stat = fs.statSync(path.join(BACKUP_DIR, f));
-      return { name: f, size: stat.size, mtime: stat.mtime.toISOString() };
-    })
-    .sort((a, b) => b.mtime.localeCompare(a.mtime));
-  return files;
+  return fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db')).map(f => { const stat = fs.statSync(path.join(BACKUP_DIR, f)); return { name: f, size: stat.size, mtime: stat.mtime.toISOString() }; }).sort((a, b) => b.mtime.localeCompare(a.mtime));
 }
 
 function restoreFromBuffer(buffer) {
-  if (buffer.length > 100 * 1024 * 1024) {
-    throw new Error('الملف كبير جداً (أقصى 100MB) / Fichier trop volumineux (max 100MB)');
-  }
+  if (buffer.length > 100 * 1024 * 1024) throw new Error('الملف كبير جداً (أقصى 100MB) / Fichier trop volumineux (max 100MB)');
   const newDb = new SQL.Database(buffer);
   const tables = newDb.exec("SELECT name FROM sqlite_master WHERE type='table'");
   const tableNames = tables.length > 0 ? tables[0].values.map(v => v[0]) : [];
-  if (!tableNames.includes('cases') || !tableNames.includes('clients')) {
-    throw new Error('ملف غير صالح - الجداول الأساسية مفقودة / Fichier invalide');
-  }
+  if (!tableNames.includes('cases') || !tableNames.includes('clients')) throw new Error('ملف غير صالح - الجداول الأساسية مفقودة / Fichier invalide');
   db = newDb;
   db.run('PRAGMA foreign_keys = ON;');
   saveDb();
 }
 
 function exportTableCSV(tableName) {
-  if (tableName !== 'cases' && tableName !== 'clients') {
-    throw new Error('الجدول غير مدعوم للتصدير / Table non prise en charge');
-  }
+  if (tableName !== 'cases' && tableName !== 'clients') throw new Error('الجدول غير مدعوم للتصدير / Table non prise en charge');
   const rows = query('SELECT * FROM ' + tableName);
   if (rows.length === 0) return '';
-
   const headers = Object.keys(rows[0]);
   const escapeCSV = (val) => {
     const s = val == null ? '' : String(val);
-    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) {
-      return '"' + s.replace(/"/g, '""') + '"';
-    }
+    if (s.includes(',') || s.includes('"') || s.includes('\n') || s.includes('\r')) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   };
-
-  const lines = [];
-  lines.push(headers.map(escapeCSV).join(','));
-  rows.forEach(row => {
-    const vals = headers.map(h => escapeCSV(row[h]));
-    lines.push(vals.join(','));
-  });
+  const lines = [headers.map(escapeCSV).join(',')];
+  rows.forEach(row => lines.push(headers.map(h => escapeCSV(row[h])).join(',')));
   return lines.join('\n');
 }
 
@@ -1561,10 +1198,7 @@ function exportFullArchive() {
   const filename = 'archive_' + ts + '.db';
   const filepath = path.join(BACKUP_DIR, filename);
   fs.writeFileSync(filepath, buffer);
-  const meta = {
-    timestamp: now.toISOString(), version: '2.0',
-    stats: { cases: getAllCases().length, clients: getAllClients().length, tasks: getAllTasks().length, events: getAllEvents().length }
-  };
+  const meta = { timestamp: now.toISOString(), version: '2.0', stats: { cases: getAllCases().length, clients: getAllClients().length, tasks: getAllTasks().length, events: getAllEvents().length } };
   return { filename, size: buffer.length, meta };
 }
 
@@ -1576,26 +1210,17 @@ module.exports = {
   getProcedures, addProcedure,
   getPaiements, addPaiement,
   getTodayProcedures,
-  getAlertSettings,
-  updateAlertSettings,
-  getUpcomingDeadlines,
-  getUpcomingHearings,
-  getBackupSettings,
-  updateBackupSettings,
-  createBackup,
-  addDocumentText,
-  getDocumentText,
-  globalSearch, getSearchIndex,
-  addCommunication,
-  getClientCommunications,
-  addLog,
-  getLogs, listBackups, validateBackupFile, deleteBackupFile, restoreFromBackup, exportFullArchive,
-  getChartData,
-  updateCaseStatus,
-  updateCaseNotes,
-  archiveCase,
-  unarchiveCase,
-  autoArchive,
-  getUsers, addUser, updateUser, deleteUser,
-  integrityCheck, repairOrphans, transaction
+  getAlertSettings, updateAlertSettings,
+  getUpcomingDeadlines, getUpcomingHearings,
+  getBackupSettings, updateBackupSettings,
+  createBackup, addDocumentText, getDocumentText,
+  globalSearch, getSearchIndex, syncSearchIndex, rebuildSearchIndex,
+  addCommunication, getClientCommunications,
+  addLog, getLogs, listBackups, validateBackupFile, deleteBackupFile, restoreFromBackup, exportFullArchive,
+  getChartData, updateCaseStatus, updateCaseNotes, archiveCase, unarchiveCase, autoArchive,
+  getUsers, getAllUsers, addUser, updateUser, deleteUser,
+  integrityCheck, repairOrphans, transaction,
+  checkPermission, getPermissions,
+  getEventsByDate, getTomorrowHearings,
+  isSent, markSent, cleanOldSentNotifications
 };

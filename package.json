@@ -42,14 +42,12 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
-    "sql.js": "^1.11.0",
+    "sql.js": "^1.14.1",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
     "electron": "^42.4.1",
     "electron-builder": "^24.0.0"
   },
-  "allowScripts": {
-    "electron@28.3.3": true
-  }
+  "allowScripts": {}
 }

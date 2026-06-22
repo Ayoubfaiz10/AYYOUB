@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const A = window.App;
+  var A = window.App;
   A.state.ipc = window.ipcRenderer;
 
   if (A.Logger) A.Logger.init();

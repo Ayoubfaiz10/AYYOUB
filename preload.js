@@ -9,7 +9,7 @@ const MAX_REQUESTS_PER_WINDOW = 60;
 
 const VALID_CHANNELS = [
   'auth:boot', 'auth:hasPassword', 'auth:login', 'auth:setPassword', 'auth:hashPassword',
-  'auth:setCurrentUser', 'auth:getCurrentUser', 'auth:getUsers', 'auth:addUser',
+  'auth:setCurrentUser', 'auth:getCurrentUser', 'auth:getPermissions', 'auth:getUsers', 'auth:addUser',
   'auth:updateUser', 'auth:deleteUser',
   'db:getAllCases', 'db:addCase', 'db:deleteCase', 'db:getCasesByClient',
   'db:getAllClients', 'db:addClient', 'db:deleteClient', 'db:updateClientNotes',
@@ -39,7 +39,8 @@ const VALID_CHANNELS = [
   'logger:log', 'logger:getLogs', 'logger:export', 'logger:clear', 'logger:stats',
   'ai:ask', 'ai:askContextual', 'ai:getSmartInsights',
   'ai:generateTimeline', 'ai:summarizeDocument', 'ai:detectRisks',
-  'ai:getConfig', 'ai:saveConfig'
+  'ai:getConfig', 'ai:saveConfig',
+  'app:navigateToCase'
 ];
 
 function validateArgs(channel, args) {

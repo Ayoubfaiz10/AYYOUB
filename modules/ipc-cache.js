@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 const CACHE_TTL = 30000;
 const MAX_CACHE_SIZE = 200;

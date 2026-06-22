@@ -53,7 +53,7 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; font-src 'self' https://cdn.jsdelivr.net; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.groq.com"]
+        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.groq.com"]
       }
     });
   });
@@ -86,9 +86,13 @@ process.on('unhandledRejection', (reason) => {
 function wrapHandler(name, fn) {
   return async (event, ...args) => {
     try {
+      if (!name.startsWith('auth:') && !currentUser) {
+        throw new Error('Unauthorized');
+      }
       return await fn(event, ...args);
     } catch (err) {
-      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 500), args: JSON.stringify(args).slice(0, 200) });
+      const safeArgs = JSON.stringify(args).replace(/(apiKey|api_key|key|token|secret)(["']?\s*[:=]\s*["']?)[^"',}\s]{4,}/gi, '$1$2***REDACTED***').slice(0, 200);
+      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 500), args: safeArgs });
       throw err;
     }
   };
@@ -108,8 +112,28 @@ function wrapDbCall(name, fn) {
 // ─── Safe IPC helper: catches errors, logs them, returns structured response ───
 function safeIpc(name, fn) {
   return async (event, ...args) => {
+    if (!name.startsWith('auth:') && !name.startsWith('app:') && !name.startsWith('notif:') && !currentUser) {
+      return { error: 'Unauthorized: الرجاء تسجيل الدخول أولاً' };
+    }
     try {
       return await fn(event, ...args);
+    } catch (err) {
+      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
+      return { error: 'حدث خطأ: ' + (err.message || 'خطأ غير معروف') };
+    }
+  };
+}
+
+// ─── Mutate IPC helper: same as safeIpc but also persists DB after every mutation ───
+function mutateIpc(name, fn) {
+  return async (event, ...args) => {
+    if (!name.startsWith('auth:') && !currentUser) {
+      return { error: 'Unauthorized: الرجاء تسجيل الدخول أولاً' };
+    }
+    try {
+      const result = await fn(event, ...args);
+      await db.saveDb();
+      return result;
     } catch (err) {
       logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
       return { error: 'حدث خطأ: ' + (err.message || 'خطأ غير معروف') };
@@ -131,88 +155,89 @@ async function init() {
 
   // ─── DB IPC Handlers ───
 
-  ipcMain.handle('db:getAllCases', () => db.getAllCases());
-  ipcMain.handle('db:addCase', safeIpc('addCase', (_e, data) => {
+  ipcMain.handle('db:getAllCases', withPerm('view_case')(() => db.getAllCases()));
+  ipcMain.handle('db:addCase', mutateIpc('addCase', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addCase(data);
     if (result && result.id) db.addLog('add_case', `إضافة قضية ${data.case_number || ''} - ${data.title || ''}`);
     return result;
-  }));
-  ipcMain.handle('db:deleteCase', safeIpc('deleteCase', (_e, id) => {
+  })));
+  ipcMain.handle('db:deleteCase', mutateIpc('deleteCase', withPerm('delete_case')(async (_e, id) => {
     if (id == null) return;
     const c = db.getAllCases().find(x => x.id === id);
     db.deleteCase(id);
     db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id}`);
-  }));
-  ipcMain.handle('db:getCasesByClient', safeIpc('getCasesByClient', (_e, clientId) => db.getCasesByClient(clientId)));
-  ipcMain.handle('db:getAllClients', () => db.getAllClients());
-  ipcMain.handle('db:addClient', safeIpc('addClient', (_e, data) => {
+  })));
+  ipcMain.handle('db:getCasesByClient', withPerm('view_case')(safeIpc('getCasesByClient', (_e, clientId) => db.getCasesByClient(clientId))));
+  ipcMain.handle('db:getAllClients', withPerm('view_case')(() => db.getAllClients()));
+  ipcMain.handle('db:addClient', mutateIpc('addClient', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addClient(data);
     if (result && result.id) db.addLog('add_client', `إضافة موكل ${data.name || ''}`);
     return result;
-  }));
-  ipcMain.handle('db:deleteClient', safeIpc('deleteClient', (_e, id) => {
+  })));
+  ipcMain.handle('db:deleteClient', mutateIpc('deleteClient', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
     const c = db.getAllClients().find(x => x.id === id);
     db.deleteClient(id);
     db.addLog('delete_client', `حذف موكل ${c ? c.name : '#' + id}`);
-  }));
-  ipcMain.handle('db:getAllTasks', (_e, includeArchived) => db.getAllTasks(includeArchived));
-  ipcMain.handle('db:getTask', (_e, id) => db.getTask(id));
-  ipcMain.handle('db:addTask', safeIpc('addTask', (_e, data) => {
+  })));
+  ipcMain.handle('db:getAllTasks', safeIpc('getAllTasks', (_e, includeArchived) => db.getAllTasks(includeArchived)));
+  ipcMain.handle('db:getTask', safeIpc('getTask', (_e, id) => db.getTask(id)));
+  ipcMain.handle('db:addTask', mutateIpc('addTask', withPerm('manage_tasks')(async (_e, data) => {
     data = nullGuard(data);
     if (data.case_id && !db.validateRef('cases', data.case_id)) return { error: 'القضية غير موجودة' };
     const id = db.addTask(data);
     return { id };
-  }));
-  ipcMain.handle('db:updateTask', safeIpc('updateTask', (_e, id, data) => db.updateTask(id, data)));
-  ipcMain.handle('db:deleteTask', safeIpc('deleteTask', (_e, id) => db.deleteTask(id)));
-  ipcMain.handle('db:getSubtasks', (_e, taskId) => db.getSubtasks(taskId));
-  ipcMain.handle('db:addSubtask', safeIpc('addSubtask', (_e, data) => db.addSubtask(nullGuard(data))));
-  ipcMain.handle('db:toggleSubtask', safeIpc('toggleSubtask', (_e, id) => db.toggleSubtask(id)));
-  ipcMain.handle('db:deleteSubtask', safeIpc('deleteSubtask', (_e, id) => db.deleteSubtask(id)));
-  ipcMain.handle('db:getComments', (_e, taskId) => db.getComments(taskId));
-  ipcMain.handle('db:addComment', safeIpc('addComment', (_e, data) => db.addComment(nullGuard(data))));
-  ipcMain.handle('db:getAllWorkflows', () => db.getAllWorkflows());
-  ipcMain.handle('db:addWorkflow', safeIpc('addWorkflow', (_e, data) => db.addWorkflow(nullGuard(data))));
-  ipcMain.handle('db:applyWorkflow', safeIpc('applyWorkflow', (_e, args) => {
+  })));
+  ipcMain.handle('db:updateTask', mutateIpc('updateTask', withPerm('manage_tasks')(async (_e, id, data) => db.updateTask(id, data))));
+  ipcMain.handle('db:deleteTask', mutateIpc('deleteTask', withPerm('manage_tasks')(async (_e, id) => db.deleteTask(id))));
+  ipcMain.handle('db:getSubtasks', safeIpc('getSubtasks', (_e, taskId) => db.getSubtasks(taskId)));
+  ipcMain.handle('db:addSubtask', mutateIpc('addSubtask', withPerm('manage_tasks')(async (_e, data) => db.addSubtask(nullGuard(data)))));
+  ipcMain.handle('db:toggleSubtask', mutateIpc('toggleSubtask', withPerm('manage_tasks')(async (_e, id) => db.toggleSubtask(id))));
+  ipcMain.handle('db:deleteSubtask', mutateIpc('deleteSubtask', withPerm('manage_tasks')(async (_e, id) => db.deleteSubtask(id))));
+  ipcMain.handle('db:getComments', safeIpc('getComments', (_e, taskId) => db.getComments(taskId)));
+  ipcMain.handle('db:addComment', mutateIpc('addComment', withPerm('manage_tasks')(async (_e, data) => db.addComment(nullGuard(data)))));
+  ipcMain.handle('db:getAllWorkflows', safeIpc('getAllWorkflows', () => db.getAllWorkflows()));
+  ipcMain.handle('db:addWorkflow', mutateIpc('addWorkflow', withPerm('manage_tasks')(async (_e, data) => db.addWorkflow(nullGuard(data)))));
+  ipcMain.handle('db:applyWorkflow', mutateIpc('applyWorkflow', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, workflowId } = nullGuard(args);
     return db.applyWorkflow(caseId, workflowId);
-  }));
-  ipcMain.handle('db:deleteWorkflow', safeIpc('deleteWorkflow', (_e, id) => db.deleteWorkflow(id)));
-  ipcMain.handle('db:getAllTemplates', () => db.getAllTemplates());
-  ipcMain.handle('db:addTemplate', safeIpc('addTemplate', (_e, data) => db.addTemplate(nullGuard(data))));
-  ipcMain.handle('db:applyTemplate', safeIpc('applyTemplate', (_e, args) => {
+  })));
+  ipcMain.handle('db:deleteWorkflow', mutateIpc('deleteWorkflow', withPerm('manage_tasks')(async (_e, id) => db.deleteWorkflow(id))));
+  ipcMain.handle('db:getAllTemplates', safeIpc('getAllTemplates', () => db.getAllTemplates()));
+  ipcMain.handle('db:addTemplate', mutateIpc('addTemplate', withPerm('manage_tasks')(async (_e, data) => db.addTemplate(nullGuard(data)))));
+  ipcMain.handle('db:applyTemplate', mutateIpc('applyTemplate', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, templateId } = nullGuard(args);
     return db.applyTemplate(caseId, templateId);
-  }));
-  ipcMain.handle('db:getTaskAnalytics', () => db.getTaskAnalytics());
-  ipcMain.handle('db:getDashboardStats', () => db.getDashboardStats());
-  ipcMain.handle('db:getDocuments', (_e, caseId) => db.getDocuments(caseId));
-  ipcMain.handle('db:uploadDocument', safeIpc('uploadDocument', async (_e, args) => {
+  })));
+  ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', () => db.getTaskAnalytics()));
+  ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', () => db.getDashboardStats()));
+  ipcMain.handle('db:getDocuments', safeIpc('getDocuments', (_e, caseId) => db.getDocuments(caseId)));
+  ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'مسار الملف مطلوب' };
     if (!db.validateRef('cases', caseId)) return { error: 'القضية غير موجودة' };
     const caseDir = path.join(db.STORAGE_DIR, String(caseId));
-    if (!fs.existsSync(caseDir)) fs.mkdirSync(caseDir, { recursive: true });
+    try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
     const filename = path.basename(sourcePath);
     const destPath = path.join(caseDir, filename);
     let finalPath = destPath;
     let count = 1;
-    while (fs.existsSync(finalPath)) {
+    while (true) {
+      try { await fsp.access(finalPath); } catch { break; }
       const ext = path.extname(filename);
       const base = path.basename(filename, ext);
       finalPath = path.join(caseDir, `${base}_(${count})${ext}`);
       count++;
     }
-    fs.copyFileSync(sourcePath, finalPath);
+    await fsp.copyFile(sourcePath, finalPath);
     const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType });
     setTimeout(() => indexDocument(docId), 100);
     db.addLog('upload_document', `رفع وثيقة ${path.basename(finalPath)} للقضية #${caseId} (${docType})`);
     return docId;
-  }));
-  ipcMain.handle('db:selectAndUpload', safeIpc('selectAndUpload', async (_e, args) => {
+  })));
+  ipcMain.handle('db:selectAndUpload', mutateIpc('selectAndUpload', withPerm('upload_doc')(async (_e, args) => {
     const { caseId, docType, tags } = nullGuard(args);
     if (!db.validateRef('cases', caseId)) return { error: 'القضية غير موجودة' };
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -229,15 +254,15 @@ async function init() {
     const MAX_FILE_SIZE = 50 * 1024 * 1024;
     for (const sourcePath of result.filePaths) {
       try {
-        const stats = fs.statSync(sourcePath);
+        const stats = await fsp.stat(sourcePath);
         if (stats.size > MAX_FILE_SIZE) throw new Error(`${path.basename(sourcePath)} كبير جداً (الحد 50MB)`);
         const ext = path.extname(sourcePath).toLowerCase();
         if (!ALLOWED_EXTENSIONS.includes(ext)) throw new Error(`نوع غير مدعوم: ${path.basename(sourcePath)}`);
         const caseDir = path.join(db.STORAGE_DIR, String(caseId));
-        if (!fs.existsSync(caseDir)) fs.mkdirSync(caseDir, { recursive: true });
+        try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
         const filename = path.basename(sourcePath);
         const finalPath = path.join(caseDir, Date.now() + '_' + filename);
-        fs.copyFileSync(sourcePath, finalPath);
+        await fsp.copyFile(sourcePath, finalPath);
         const docId = db.addDocument({ case_id: caseId, filename, file_path: finalPath, doc_type: docType });
         if (tags) db.updateDocument(docId, { tags });
         setTimeout(() => indexDocument(docId), 100);
@@ -246,109 +271,106 @@ async function init() {
       } catch (e) { console.error('Upload error:', sourcePath, e.message); }
     }
     return uploaded.length ? uploaded : null;
-  }));
-  ipcMain.handle('db:globalSearch', (_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : ''));
-  ipcMain.handle('db:getSearchIndex', () => db.getSearchIndex());
-  ipcMain.handle('db:openDocument', async (_e, docId) => {
+  })));
+  ipcMain.handle('db:globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : '')));
+  ipcMain.handle('db:getSearchIndex', withPerm('view_case')(() => db.getSearchIndex()));
+  ipcMain.handle('db:rebuildSearchIndex', mutateIpc('rebuildSearchIndex', withPerm('manage_users')(async () => { db.rebuildSearchIndex(); db.addLog('rebuild_search', 'إعادة بناء فهرس البحث'); })));
+  ipcMain.handle('db:openDocument', withPerm('view_case')(async (_e, docId) => {
     if (docId == null) return;
     try {
       const doc = db.getDocument(docId);
       if (doc && doc.file_path && fs.existsSync(doc.file_path)) shell.openPath(doc.file_path);
     } catch (e) { logToLogger(2, 'openDocument', e.message); }
-  });
-  ipcMain.handle('db:updateDocNotes', safeIpc('updateDocNotes', (_e, args) => {
+  }));
+  ipcMain.handle('db:updateDocNotes', mutateIpc('updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
     const { id, notes } = nullGuard(args);
     if (id == null) return;
     db.updateDocument(id, { notes: notes || '' });
     db.addLog('update_doc_notes', `تحديث ملاحظات الوثيقة #${id}`);
-  }));
-  ipcMain.handle('db:getProcedures', (_e, affaireId) => db.getProcedures(affaireId));
-  ipcMain.handle('db:addProcedure', safeIpc('addProcedure', (_e, data) => {
+  })));
+  ipcMain.handle('db:getProcedures', withPerm('view_case')((_e, affaireId) => db.getProcedures(affaireId)));
+  ipcMain.handle('db:addProcedure', mutateIpc('addProcedure', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
     const id = db.addProcedure(data);
     db.addLog('add_procedure', `إضافة إجراء للقضية #${data.affaire_id}: ${data.type || ''} - ${data.date || ''}`);
     return { id };
-  }));
-  ipcMain.handle('db:getPaiements', (_e, affaireId) => db.getPaiements(affaireId));
-  ipcMain.handle('db:addPaiement', safeIpc('addPaiement', (_e, data) => {
+  })));
+  ipcMain.handle('db:getPaiements', withPerm('view_finance')((_e, affaireId) => db.getPaiements(affaireId)));
+  ipcMain.handle('db:addPaiement', mutateIpc('addPaiement', withPerm('view_finance')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
     const id = db.addPaiement(data);
     db.addLog('add_paiement', `إضافة دفعة ${data.montant || 0} درهم للقضية #${data.affaire_id}`);
     return { id };
-  }));
-  ipcMain.handle('db:getChartData', () => db.getChartData());
-  ipcMain.handle('db:archiveCase', safeIpc('archiveCase', (_e, id) => { if (id != null) db.archiveCase(id); }));
-  ipcMain.handle('db:unarchiveCase', safeIpc('unarchiveCase', (_e, id) => { if (id != null) db.unarchiveCase(id); }));
-  ipcMain.handle('db:updateCaseStatus', safeIpc('updateCaseStatus', (_e, data) => {
+  })));
+  ipcMain.handle('db:getChartData', withPerm('view_finance')(() => db.getChartData()));
+  ipcMain.handle('db:archiveCase', mutateIpc('archiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.archiveCase(id); })));
+  ipcMain.handle('db:unarchiveCase', mutateIpc('unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); })));
+  ipcMain.handle('db:updateCaseStatus', mutateIpc('updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null && data.status) db.updateCaseStatus(data.id, data.status);
-  }));
-  ipcMain.handle('db:updateCaseNotes', safeIpc('updateCaseNotes', (_e, data) => {
+  })));
+  ipcMain.handle('db:updateCaseNotes', mutateIpc('updateCaseNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateCaseNotes(data.id, data.notes || '');
-  }));
-  ipcMain.handle('db:getArchivedCases', () => db.getAllCases(true).filter(c => c.archived === 1));
-  ipcMain.handle('db:addCommunication', safeIpc('addCommunication', (_e, data) => {
+  })));
+  ipcMain.handle('db:getArchivedCases', withPerm('view_case')(() => db.getAllCases(true).filter(c => c.archived === 1)));
+  ipcMain.handle('db:addCommunication', mutateIpc('addCommunication', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const id = db.addCommunication(data);
     db.addLog('add_communication', `تسجيل اتصال مع الموكل #${data.client_id} - ${data.type || ''}`);
     return id;
-  }));
-  ipcMain.handle('db:getClientCommunications', (_e, clientId) => db.getClientCommunications(clientId));
-  ipcMain.handle('db:updateClientNotes', safeIpc('updateClientNotes', (_e, data) => {
+  })));
+  ipcMain.handle('db:getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId)));
+  ipcMain.handle('db:updateClientNotes', mutateIpc('updateClientNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateClient(data);
-  }));
-  ipcMain.handle('db:getTodayProcedures', () => db.getTodayProcedures());
-  ipcMain.handle('db:getAlertSettings', () => db.getAlertSettings());
-  ipcMain.handle('db:updateAlertSettings', safeIpc('updateAlertSettings', (_e, data) => {
+  })));
+  ipcMain.handle('db:getTodayProcedures', safeIpc('getTodayProcedures', () => db.getTodayProcedures()));
+  ipcMain.handle('db:getAlertSettings', safeIpc('getAlertSettings', () => db.getAlertSettings()));
+  ipcMain.handle('db:updateAlertSettings', mutateIpc('updateAlertSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateAlertSettings(nullGuard(data));
     db.addLog('update_alert_settings', `تعديل إعدادات التنبيهات`);
-  }));
-  ipcMain.handle('db:getUpcomingDeadlines', () => db.getUpcomingDeadlines());
-  ipcMain.handle('db:getUpcomingHearings', () => db.getUpcomingHearings());
-  ipcMain.handle('db:getBackupSettings', () => db.getBackupSettings());
-  ipcMain.handle('db:updateBackupSettings', safeIpc('updateBackupSettings', (_e, data) => {
+  })));
+  ipcMain.handle('db:getUpcomingDeadlines', withPerm('view_case')(() => db.getUpcomingDeadlines()));
+  ipcMain.handle('db:getUpcomingHearings', withPerm('view_case')(() => db.getUpcomingHearings()));
+  ipcMain.handle('db:getBackupSettings', withPerm('manage_users')(() => db.getBackupSettings()));
+  ipcMain.handle('db:updateBackupSettings', mutateIpc('updateBackupSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateBackupSettings(nullGuard(data));
     db.addLog('update_backup_settings', `تعديل إعدادات النسخ الاحتياطي`);
-  }));
-  ipcMain.handle('db:createBackup', () => {
-    try {
-      const name = db.createBackup('manual');
-      db.addLog('create_backup', `إنشاء نسخة احتياطية يدوية: ${name}`);
-      return name;
-    } catch (e) { logToLogger(2, 'createBackup', e.message); return { error: e.message }; }
-  });
-  ipcMain.handle('db:listBackups', () => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } });
-  ipcMain.handle('db:validateBackup', (_e, filename) => {
+  })));
+  ipcMain.handle('db:createBackup', mutateIpc('createBackup', withPerm('manage_users')(async () => {
+    const name = db.createBackup('manual');
+    db.addLog('create_backup', `إنشاء نسخة احتياطية يدوية: ${name}`);
+    return name;
+  })));
+  ipcMain.handle('db:listBackups', withPerm('manage_users')(() => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } }));
+  ipcMain.handle('db:validateBackup', withPerm('manage_users')((_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     return db.validateBackupFile(filename);
-  });
-  ipcMain.handle('db:restoreBackup', safeIpc('restoreBackup', async (_e, filename) => {
+  }));
+  ipcMain.handle('db:restoreBackup', mutateIpc('restoreBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     const result = db.restoreFromBackup(filename);
     db.addLog('restore_backup', `استعادة نسخة احتياطية: ${filename}`);
     return result;
-  }));
-  ipcMain.handle('db:deleteBackup', safeIpc('deleteBackup', (_e, filename) => {
+  })));
+  ipcMain.handle('db:deleteBackup', mutateIpc('deleteBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     const result = db.deleteBackupFile(filename);
     db.addLog('delete_backup', `حذف نسخة احتياطية: ${filename}`);
     return result;
-  }));
-  ipcMain.handle('db:exportArchive', () => {
-    try {
-      const result = db.exportFullArchive();
-      db.addLog('export_archive', `تصدير أرشيف كامل: ${result.filename}`);
-      return result;
-    } catch (e) { logToLogger(2, 'exportArchive', e.message); return { error: e.message }; }
-  });
-  ipcMain.handle('db:getLogs', (_e, filters) => db.getLogs(filters));
-  ipcMain.handle('db:addLog', safeIpc('addLog', (_e, action, details) => { if (action) db.addLog(action, details || ''); }));
-  ipcMain.handle('db:integrityCheck', () => db.integrityCheck());
-  ipcMain.handle('db:repairOrphans', () => db.repairOrphans());
+  })));
+  ipcMain.handle('db:exportArchive', mutateIpc('exportArchive', withPerm('export_data')(async () => {
+    const result = db.exportFullArchive();
+    db.addLog('export_archive', `تصدير أرشيف كامل: ${result.filename}`);
+    return result;
+  })));
+  ipcMain.handle('db:getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters)));
+  ipcMain.handle('db:addLog', mutateIpc('addLog', (_e, action, details) => { if (action) db.addLog(action, details || ''); }));
+  ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', () => db.integrityCheck()));
+  ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', () => db.repairOrphans()));
 
   // ─── Logger IPC ───
   ipcMain.handle('logger:log', (_e, level, context, message) => {
@@ -357,10 +379,10 @@ async function init() {
     logToLogger(lvl, context || 'renderer', message || '');
   });
 
-  ipcMain.handle('logger:getLogs', (_e, filters) => logger.getLogs(filters));
-  ipcMain.handle('logger:export', (_e, format) => logger.exportLogs(format || 'json'));
-  ipcMain.handle('logger:clear', () => logger.clearLogs());
-  ipcMain.handle('logger:stats', () => logger.getStats());
+  ipcMain.handle('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters)));
+  ipcMain.handle('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json')));
+  ipcMain.handle('logger:clear', withPerm('manage_users')(() => logger.clearLogs()));
+  ipcMain.handle('logger:stats', withPerm('view_audit')(() => logger.getStats()));
 
   createWindow();
 
@@ -371,9 +393,16 @@ async function init() {
     memoryEstimate: sentNotifications.size * 128
   }));
 
+  ipcMain.handle('app:navigateToCase', (_e, caseId) => {
+    if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
+    if (caseId) mainWindow?.webContents.send('app:navigateToCase', caseId);
+  });
+
   mainWindow.webContents.once('did-finish-load', () => {
     checkAndNotify();
+    checkUpcomingEvents();
     setInterval(checkAndNotify, 3600000);
+    setInterval(checkUpcomingEvents, 21600000);
     setInterval(cleanupSentNotifications, NOTIF_GC_INTERVAL);
 
     try {
@@ -386,6 +415,8 @@ async function init() {
         }
       }
     } catch (e) { console.error('Auto-backup error:', e); }
+
+    setInterval(() => { try { db.cleanOldSentNotifications(); } catch (e) { /* ignore */ } }, 86400000);
 
     setInterval(() => {
       try {
@@ -465,6 +496,41 @@ function checkAndNotify() {
   } catch (e) { console.error('checkAndNotify error:', e); }
 }
 
+function checkUpcomingEvents() {
+  try {
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const events = db.getEventsByDate(tomorrow);
+    const hearings = db.getTomorrowHearings();
+
+    events.forEach(ev => {
+      const key = 'upcoming_event_' + ev.id;
+      if (db.isSent(key)) return;
+      db.markSent(key);
+      const caseInfo = ev.case_number ? `قضية ${ev.case_number}` : '';
+      const body = `تذكير: عندك ${ev.type} — ${ev.title}${caseInfo ? ` فـ ${caseInfo}` : ''}${ev.court ? ` فـ ${ev.court}` : ''}`;
+      const n = new Notification({ title: 'تذكير بموعد غداً', body });
+      n.on('click', () => {
+        if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
+        if (ev.case_id) mainWindow?.webContents.send('app:navigateToCase', ev.case_id);
+      });
+      n.show();
+    });
+
+    hearings.forEach(h => {
+      const key = 'upcoming_hearing_' + h.id;
+      if (db.isSent(key)) return;
+      db.markSent(key);
+      const body = `تذكير: عندك جلسة غداً فـ قضية ${h.case_number}${h.court ? ` فـ ${h.court}` : ''}`;
+      const n = new Notification({ title: 'تذكير بجلسة غداً', body });
+      n.on('click', () => {
+        if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
+        if (h.case_id) mainWindow?.webContents.send('app:navigateToCase', h.case_id);
+      });
+      n.show();
+    });
+  } catch (e) { console.error('checkUpcomingEvents error:', e); }
+}
+
 async function indexDocument(docId) {
   if (!Tesseract) return;
   try {
@@ -481,30 +547,31 @@ async function indexDocument(docId) {
     if (text.trim()) {
       db.addDocumentText(docId, text.trim());
       console.log('Indexed document', docId, '(' + text.trim().length + ' chars)');
+      if (doc.case_id) db.syncSearchIndex(doc.case_id);
     }
   } catch (e) { console.error('indexDocument error for', docId, ':', e.message); }
 }
 
 // ─── Events System ───
 
-ipcMain.handle('events:getAll', () => db.getAllEvents());
-ipcMain.handle('events:get', (_e, id) => db.getEvent(id));
-ipcMain.handle('events:add', safeIpc('events:add', (_e, data) => {
+ipcMain.handle('events:getAll', safeIpc('events:getAll', () => db.getAllEvents()));
+ipcMain.handle('events:get', safeIpc('events:get', (_e, id) => db.getEvent(id)));
+ipcMain.handle('events:add', mutateIpc('events:add', withPerm('edit_case')(async (_e, data) => {
   if (!data) return { error: 'البيانات مطلوبة' };
   const id = db.addEvent(data);
   if (id) db.addLog('add_event', `إضافة حدث ${data.title || ''} - ${data.date || ''}`);
   return id;
-}));
-ipcMain.handle('events:update', safeIpc('events:update', (_e, id, data) => {
+})));
+ipcMain.handle('events:update', mutateIpc('events:update', withPerm('edit_case')(async (_e, id, data) => {
   if (id == null || !data) return;
   db.updateEvent(id, data);
   db.addLog('update_event', `تحديث حدث #${id}`);
-}));
-ipcMain.handle('events:delete', safeIpc('events:delete', (_e, id) => {
+})));
+ipcMain.handle('events:delete', mutateIpc('events:delete', withPerm('edit_case')(async (_e, id) => {
   if (id == null) return;
   db.deleteEvent(id);
   db.addLog('delete_event', `حذف حدث #${id}`);
-}));
+})));
 // ─── Auth ───
 
 const BCRYPT_SALT_ROUNDS = 12;
@@ -557,6 +624,21 @@ function verifyPassword(pwd, storedHash) {
 }
 
 let currentUser = null;
+
+function checkPermission(permission) {
+  if (!currentUser) return false;
+  try { return db.checkPermission(currentUser.role, permission); }
+  catch (e) { return false; }
+}
+
+function withPerm(perm) {
+  return function(handler) {
+    return async (event, ...args) => {
+      if (!checkPermission(perm)) return { error: 'ليس لديك صلاحية: ' + perm };
+      return handler(event, ...args);
+    };
+  };
+}
 
 function handleError(name, err) {
   logToLogger(2, 'auth:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
@@ -631,24 +713,31 @@ ipcMain.handle('auth:hashPassword', (_e, pwd) => {
 
 ipcMain.handle('auth:setCurrentUser', (_e, user) => { currentUser = user; return true; });
 ipcMain.handle('auth:getCurrentUser', () => currentUser);
+ipcMain.handle('auth:getPermissions', () => {
+  if (!currentUser) return {};
+  try { return db.getPermissions(currentUser.role); } catch (e) { return {}; }
+});
 
 ipcMain.handle('auth:getUsers', () => {
   try {
-    return db.getUsers() || [];
+    return db.getAllUsers() || [];
   } catch (e) {
     handleError('getUsers', e);
     return [];
   }
 });
 
-ipcMain.handle('auth:addUser', (_e, data) => {
+ipcMain.handle('auth:addUser', async (_e, data) => {
   try {
+    const userCount = db.getUsers().length;
+    if (userCount > 0 && !checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لإضافة مستخدمين' };
     if (!data || !data.name) return { ok: false, error: 'الاسم مطلوب' };
     const pwd = data.password || '123456';
     if (pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
     data.password_hash = hashBcrypt(pwd);
     data._userId = currentUser?.id; data._userName = currentUser?.name;
     const id = db.addUser(data);
+    await db.saveDb();
     return id ? { ok: true, id } : { ok: false, error: 'فشل إضافة المستخدم' };
   } catch (e) {
     handleError('addUser', e);
@@ -656,10 +745,12 @@ ipcMain.handle('auth:addUser', (_e, data) => {
   }
 });
 
-ipcMain.handle('auth:updateUser', (_e, id, data) => {
+ipcMain.handle('auth:updateUser', async (_e, id, data) => {
+  if (!checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لتحديث المستخدمين' };
   try {
     if (!id || typeof id !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     db.updateUser(id, data);
+    await db.saveDb();
     return { ok: true };
   } catch (e) {
     handleError('updateUser', e);
@@ -667,9 +758,11 @@ ipcMain.handle('auth:updateUser', (_e, id, data) => {
   }
 });
 
-ipcMain.handle('auth:deleteUser', (_e, id) => {
+ipcMain.handle('auth:deleteUser', async (_e, id) => {
+  if (!checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لحذف المستخدمين' };
   try {
     db.deleteUser(id);
+    await db.saveDb();
     return { ok: true };
   } catch (e) {
     handleError('deleteUser', e);
@@ -849,41 +942,106 @@ async function callAI(systemPrompt, message, context) {
   };
 }
 
+function sanitizeContext(text) {
+  if (!text) return '';
+  return text
+    .replace(/0[567]\d{8}/g, '[رقم هاتف]')
+    .replace(/00212[567]\d{8}/g, '[رقم هاتف]')
+    .replace(/\+212[567]\d{8}/g, '[رقم هاتف]')
+    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[بريد إلكتروني]')
+    .replace(/\b\d{16,}\b/g, '[رقم بطاقة]');
+}
+
 function buildCaseContext(c) {
   if (!c) return '';
-  return `رقم القضية: ${c.case_number}\nالعنوان: ${c.title}\nالموكل: ${c.client_name||''}\nالمحكمة: ${c.court||''}\nالحالة: ${c.status}\nالنوع: ${c.case_type||''}\nالأولوية: ${c.priority}\nتاريخ الإنشاء: ${c.created_date||''}\nآخر جلسة: ${c.next_hearing||'لا توجد'}\nالموعد النهائي: ${c.deadline_date||'لا يوجد'}\nالملاحظات: ${c.notes||''}\nالرسوم: ${c.total_fees||0}`;
+  return sanitizeContext(`رقم القضية: ${c.case_number || ''}
+العنوان: ${c.title || ''}
+الموكل: ${c.client_name || 'غير محدد'}
+المحكمة: ${c.court || 'غير محددة'}
+الحالة: ${c.status || ''}
+النوع: ${c.case_type || ''}
+الأولوية: ${c.priority || 'medium'}
+تاريخ الإنشاء: ${c.created_date || ''}
+آخر جلسة: ${c.next_hearing || 'لا توجد'}
+الموعد النهائي: ${c.deadline_date || 'لا يوجد'}
+الملاحظات: ${c.notes || ''}
+الرسوم الإجمالية: ${c.total_fees || 0}
+المدفوع: ${c.paid_fees || 0}
+المتبقي: ${(c.total_fees || 0) - (c.paid_fees || 0)}
+المصاريف: ${c.expenses || 0}`);
 }
 
 function buildClientContext(cl) {
   if (!cl) return '';
-  return `الاسم: ${cl.name}\nالهاتف: ${cl.phone||''}\nالبريد: ${cl.email||''}\nالعنوان: ${cl.address||''}\nالوسوم: ${cl.tags||''}\nالحالة: ${cl.status}\nالملاحظات: ${cl.notes||''}`;
+  return sanitizeContext(`الاسم: ${cl.name || ''}
+الهاتف: محذوف للخصوصية
+البريد: محذوف للخصوصية
+العنوان: ${cl.address || ''}
+الوسوم: ${cl.tags || ''}
+الحالة: ${cl.status || ''}
+الملاحظات: ${cl.notes || ''}`);
 }
 
-ipcMain.handle('ai:ask', wrapHandler('ai:ask', async (_e, { mode, message, context }) => {
+ipcMain.handle('ai:ask', wrapHandler('ai:ask', withPerm('use_ai')(async (_e, { mode, message, context }) => {
   const prompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.chat;
   return callAI(prompt, message, context);
-}));
+})));
 
-ipcMain.handle('ai:askContextual', wrapHandler('ai:askContextual', async (_e, { mode, message, contextType, contextId }) => {
+ipcMain.handle('ai:askContextual', wrapHandler('ai:askContextual', withPerm('use_ai')(async (_e, { mode, message, contextType, contextId }) => {
   let context = '';
   if (contextType === 'case') {
     const c = db.getAllCases().find(x => x.id === contextId);
-    context = buildCaseContext(c);
+    if (!c) return { text: '', error: 'القضية غير موجودة', friendlyError: 'القضية غير موجودة' };
+    const allTasks = db.getAllTasks();
+    const caseTasks = allTasks.filter(t => t.case_id === contextId);
     const events = db.getEventsByCase(contextId);
-    if (events.length) context += `\nالأحداث (${events.length}): ${events.slice(0,5).map(e => `${e.date} ${e.type}: ${e.title}`).join(' | ')}`;
     const docs = db.getDocuments(contextId);
-    if (docs.length) context += `\nالوثائق (${docs.length}): ${docs.slice(0,5).map(d => d.filename).join(', ')}`;
+
+    context = `أنت مساعد قانوني لمكتب محاماة مغربي.\n
+القضية الحالية: ${c.case_number || ''} — ${c.title || ''}
+الموكل: ${c.client_name || 'غير محدد'}
+المحكمة: ${c.court || 'غير محددة'}
+الحالة: ${c.status || ''}  النوع: ${c.case_type || ''}  الأولوية: ${c.priority || 'medium'}
+تاريخ الإنشاء: ${c.created_date || ''}
+الموعد النهائي: ${c.deadline_date || 'لا يوجد'}`;
+
+    const tomorrow = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+    const upcomingEvents = events.filter(e => e.date >= new Date().toISOString().slice(0, 10)).sort((a, b) => a.date.localeCompare(b.date));
+    const nextHearing = upcomingEvents.find(e => e.type === 'hearing');
+    if (nextHearing) context += `\nالجلسة القادمة: ${nextHearing.date || ''} | ${nextHearing.title || ''}${nextHearing.court ? ' | ' + nextHearing.court : ''}`;
+    else if (c.next_hearing) context += `\nالجلسة القادمة: ${c.next_hearing}`;
+
+    const today = new Date().toISOString().slice(0, 10);
+    const todayEvents = events.filter(e => e.date === today && e.status !== 'cancelled');
+    if (todayEvents.length) context += `\nأحداث اليوم: ${todayEvents.map(e => e.title).join(', ')}`;
+    if (upcomingEvents.length) context += `\nالأحداث القادمة (${upcomingEvents.length}): ${upcomingEvents.slice(0, 5).map(e => `${e.date} ${e.type}: ${e.title}`).join(' | ')}`;
+
+    const overdue = caseTasks.filter(t => t.status !== 'done' && t.due_date && t.due_date < today);
+    if (caseTasks.length) {
+      const done = caseTasks.filter(t => t.status === 'done').length;
+      context += `\nالمهام: ${caseTasks.length} (${done} منجزة، ${caseTasks.length - done} قيد الانتظار)`;
+      if (overdue.length) context += ` — ${overdue.length} مهمة متأخرة: ${overdue.slice(0, 3).map(t => t.title).join(', ')}`;
+    }
+
+    if (docs.length) context += `\nالوثائق: ${docs.length} وثيقة`;
+
+    const remaining = (c.total_fees || 0) - (c.paid_fees || 0);
+    context += `\nالرسوم: ${c.total_fees || 0} درهم | المدفوع: ${c.paid_fees || 0} درهم | المتبقي: ${remaining > 0 ? remaining + ' درهم' : 'مسدد بالكامل'}`;
+
+    context = sanitizeContext(context);
   } else if (contextType === 'client') {
     const cl = db.getAllClients().find(x => x.id === contextId);
     context = buildClientContext(cl);
     const cases = db.getCasesByClient(contextId);
     if (cases.length) context += `\nالقضايا: ${cases.map(c => `${c.case_number} (${c.status})`).join(', ')}`;
+    context = sanitizeContext(context);
   } else if (contextType === 'document') {
     const doc = db.getDocument(contextId);
     if (doc) {
       context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\nالملاحظات: ${doc.notes||''}`;
       const txt = db.getDocumentText(contextId);
       if (txt) context += `\n\nالنص المستخرج:\n${txt.extracted_text?.slice(0, 3000)}`;
+      context = sanitizeContext(context);
     }
   } else if (contextType === 'hearing') {
     const ev = db.getEvent(contextId);
@@ -893,13 +1051,14 @@ ipcMain.handle('ai:askContextual', wrapHandler('ai:askContextual', async (_e, { 
         const c = db.getAllCases().find(x => x.id === ev.case_id);
         if (c) context += `\n\nمعلومات القضية:\n${buildCaseContext(c)}`;
       }
+      context = sanitizeContext(context);
     }
   }
   const prompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.chat;
   return callAI(prompt, message, context);
-}));
+})));
 
-ipcMain.handle('ai:getSmartInsights', wrapHandler('ai:getSmartInsights', async () => {
+ipcMain.handle('ai:getSmartInsights', wrapHandler('ai:getSmartInsights', withPerm('use_ai')(async () => {
   const cases = db.getAllCases();
   const events = db.getAllEvents();
   const tasks = db.getAllTasks();
@@ -922,9 +1081,9 @@ ipcMain.handle('ai:getSmartInsights', wrapHandler('ai:getSmartInsights', async (
   const completedTasksThisWeek = tasks.filter(t => t.status === 'done' && t.updated_at && t.updated_at >= new Date(Date.now()-7*86400000).toISOString()).length;
   const summary = `لديك ${activeCases} قضية نشطة (من أصل ${totalCases})، ${totalClients} موكل، ${completedTasksThisWeek} مهمة منجزة هذا الأسبوع.`;
   return { insights: insights.slice(0, 5), summary };
-}));
+})));
 
-ipcMain.handle('ai:generateTimeline', wrapHandler('ai:generateTimeline', async (_e, { caseId }) => {
+ipcMain.handle('ai:generateTimeline', wrapHandler('ai:generateTimeline', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'لا توجد معلومات كافية لإنشاء الجدول الزمني', friendlyError: 'لا توجد معلومات كافية لإنشاء الجدول الزمني' };
   const events = db.getEventsByCase(caseId);
@@ -935,10 +1094,10 @@ ipcMain.handle('ai:generateTimeline', wrapHandler('ai:generateTimeline', async (
   if (events.length) context += `\nالأحداث (${events.length}):\n${events.slice(0,10).map(e => `- ${e.date} | ${e.type} | ${e.title}${e.status ? ` (${e.status})` : ''}${e.court ? ` | ${e.court}` : ''}`).join('\n')}\n`;
   if (tasks.length) context += `\nالمهام: ${tasks.map(t => `${t.title} (${t.status})`).join(', ')}\n`;
   if (docs.length) context += `\nالوثائق (${docs.length}): ${docs.slice(0,8).map(d => d.filename).join(', ')}\n`;
-  return callAI('أنت خبير في إعداد الجداول الزمنية للقضايا القانونية. قم بإنشاء جدول زمني منظم (timeline) بالعربية لهذه القضية بناءً على البيانات التالية.', 'أنشئ جدولاً زمنياً مفصلاً لهذه القضية.', context);
-}));
+  return callAI('أنت خبير في إعداد الجداول الزمنية للقضايا القانونية. قم بإنشاء جدول زمني منظم (timeline) بالعربية لهذه القضية بناءً على البيانات التالية.', 'أنشئ جدولاً زمنياً مفصلاً لهذه القضية.', sanitizeContext(context));
+})));
 
-ipcMain.handle('ai:summarizeDocument', wrapHandler('ai:summarizeDocument', async (_e, { docId }) => {
+ipcMain.handle('ai:summarizeDocument', wrapHandler('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const doc = db.getDocument(docId);
   if (!doc) return { text: '', error: 'الوثيقة غير موجودة', friendlyError: 'الوثيقة غير موجودة' };
   const txt = db.getDocumentText(docId);
@@ -946,9 +1105,9 @@ ipcMain.handle('ai:summarizeDocument', wrapHandler('ai:summarizeDocument', async
   if (!text || text.length < 50) return { text: '', error: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص', friendlyError: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص' };
   let context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
   return callAI('أنت خبير في تحليل وثائق المحاماة. لخص هذه الوثيقة القانونية بالعربية في 3-5 نقاط واضحة.', 'لخص هذه الوثيقة بالعربية.', context);
-}));
+})));
 
-ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', async (_e, { caseId }) => {
+ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'القضية غير موجودة', friendlyError: 'القضية غير موجودة' };
   const events = db.getEventsByCase(caseId);
@@ -962,7 +1121,7 @@ ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', async (_e, { case
   const upcoming = events.filter(e => e.status !== 'cancelled' && e.date && new Date(e.date) >= now).sort((a,b) => new Date(a.date)-new Date(b.date));
   if (upcoming.length) context += `\nالأحداث القادمة: ${upcoming.slice(0,5).map(e => `${e.date} ${e.title}`).join(', ')}\n`;
   return callAI('أنت خبير في تقييم المخاطر القانونية. قم بتحليل القضية التالية وحدد المخاطر المحتملة مع اقتراحات للتخفيف منها. أجب بالعربية.', 'حلل المخاطر القانونية لهذه القضية.', context);
-}));
+})));
 
 function getAiConfig() {
   try {
@@ -975,13 +1134,13 @@ function getAiConfig() {
           const apiKey = decrypt(data.encrypted, password);
           return { apiKey, provider: data.provider || 'groq' };
         } catch (e) {
-          console.warn('فشل فك تشفير مفتاح API، استخدم التنسيق القديم');
+          console.warn('فشل فك تشفير مفتاح API');
           return { provider: data.provider || 'groq' };
         }
       }
       
       if (data.apiKey) {
-        console.warn('تم اكتشاف مفتاح API غير مشفر — جاري التشفير...');
+        console.warn('تم اكتشاف مفتاح API غير مشفر');
         const encrypted = encrypt(data.apiKey, password);
         const provider = data.provider || 'groq';
         try {
@@ -1015,12 +1174,12 @@ function saveAiConfig(config) {
     
     console.log('تم حفظ مفتاح API مشفراً بنجاح');
   } catch (e) {
-    console.error('AI config save error:', e);
+    console.error('AI config save error:', e.message || e);
   }
 }
 
-ipcMain.handle('ai:getConfig', () => getAiConfig());
-ipcMain.handle('ai:saveConfig', (_e, config) => saveAiConfig(config));
+ipcMain.handle('ai:getConfig', withPerm('use_ai')(() => getAiConfig()));
+ipcMain.handle('ai:saveConfig', withPerm('use_ai')((_e, config) => saveAiConfig(config)));
 
 app.whenReady().then(init);
 

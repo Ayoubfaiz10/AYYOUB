@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 let modalCallback = null;
 let modalDraftCleanup = null;

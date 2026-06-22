@@ -1,5 +1,4 @@
-window.App = window.App || {};
-const A = window.App;
+var A = window.App = window.App || {};
 
 A.state.aiMode = 'chat';
 A.state.aiConfigured = false;

@@ -13,7 +13,7 @@ describe('Database Schema', () => {
   before(async () => { db = await createDb(); });
 
   it('creates all 17 tables', () => {
-    const tables = query(db, "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name");
+    const tables = query(db, "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT LIKE 'search_index_%' ORDER BY name");
     const names = tables.map(t => t.name).sort();
     assert.ok(names.includes('clients'));
     assert.ok(names.includes('cases'));
@@ -37,7 +37,8 @@ describe('Database Schema', () => {
     assert.ok(names.includes('permissions'));
     assert.ok(names.includes('case_permissions'));
     assert.ok(names.includes('activity_log'));
-    assert.equal(names.length, 22); // 17 business + 5 aux
+    assert.ok(names.includes('search_index'));
+    assert.equal(names.length, 23); // 17 business + 5 aux + 1 FTS4
   });
 
   it('seeds default admin user', () => {
