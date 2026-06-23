@@ -137,10 +137,10 @@ async function initDb() {
     UNIQUE(role, permission)
   )`);
   const defaultPerms = {
-    admin: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data','manage_users','view_audit'],
-    senior_lawyer: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data'],
-    junior_lawyer: ['view_case','edit_case','upload_doc','manage_tasks','use_ai'],
-    assistant: ['view_case','upload_doc','manage_tasks','view_calendar'],
+    admin: ['view_case','edit_case','delete_case','upload_doc','delete_document','view_finance','manage_tasks','use_ai','export_data','manage_users','view_audit'],
+    senior_lawyer: ['view_case','edit_case','delete_case','upload_doc','delete_document','view_finance','manage_tasks','use_ai','export_data'],
+    junior_lawyer: ['view_case','edit_case','upload_doc','delete_document','manage_tasks','use_ai'],
+    assistant: ['view_case','upload_doc','delete_document','manage_tasks','view_calendar'],
     intern: ['view_case'],
     external: ['view_case']
   };
@@ -362,7 +362,7 @@ function addCase(data) {
   if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
   if (data.client_id && !validateRef('clients', data.client_id)) return { error: 'الموكل غير موجود' };
   mutate('INSERT INTO cases (case_number, title, client_id, client_name, court, status, description, next_hearing, total_fees, paid_fees, expenses, deadline_date, honoraires_totaux, priority, case_type, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', 
-  [data.case_number, data.title, data.client_id, data.client_name || '', data.court, data.status, data.description, data.next_hearing, data.total_fees, data.paid_fees, data.expenses, data.deadline_date, data.total_fees, data.priority || 'medium', data.case_type || 'مدني', data.created_date || new Date().toISOString().slice(0,10)]);
+  [data.case_number, data.title, data.client_id, data.client_name || '', data.court, data.status, data.description, data.next_hearing, data.total_fees, data.paid_fees, data.expenses, data.deadline_date, 0, data.priority || 'medium', data.case_type || 'مدني', data.created_date || new Date().toISOString().slice(0,10)]);
   const res = query('SELECT last_insert_rowid() as id');
   const id = res.length ? res[0].id : null;
   if (id) syncSearchIndex(id);
@@ -372,12 +372,6 @@ function addCase(data) {
 function deleteCase(id) {
   if (!id || typeof id !== 'number') return;
   transaction(() => {
-    const docs = query('SELECT file_path FROM documents WHERE case_id = ?', [id]);
-    docs.forEach(d => {
-      try { if (d.file_path && fs.existsSync(d.file_path)) fs.unlinkSync(d.file_path); } catch (e) { /* best effort */ }
-    });
-    const caseDir = path.join(STORAGE_DIR, String(id));
-    try { if (fs.existsSync(caseDir)) fs.rmSync(caseDir, { recursive: true, force: true }); } catch (e) { /* best effort */ }
     mutate('DELETE FROM tasks WHERE case_id = ?', [id]);
     mutate('DELETE FROM events WHERE case_id = ?', [id]);
     mutate('DELETE FROM communications WHERE case_id = ?', [id]);
@@ -1043,6 +1037,7 @@ function addPaiement(data) {
   mutate('INSERT INTO paiements (affaire_id, date, montant, mode_paiement, remarque) VALUES (?, ?, ?, ?, ?)', [data.affaire_id, data.date, parseFloat(data.montant), data.mode_paiement, data.remarque]);
   const res = query('SELECT last_insert_rowid() as id');
   syncPaidFees(data.affaire_id);
+  updateHonorairesTotaux(data.affaire_id, parseFloat(data.montant));
   return res.length ? res[0].id : null;
 }
 function updatePaiement(id, data) {
@@ -1062,6 +1057,9 @@ function deletePaiement(id) {
 function syncPaidFees(affaireId) {
   const rows = query('SELECT COALESCE(SUM(montant), 0) as total FROM paiements WHERE affaire_id = ?', [affaireId]);
   mutate('UPDATE cases SET paid_fees = ? WHERE id = ?', [rows.length ? rows[0].total : 0, affaireId]);
+}
+function updateHonorairesTotaux(caseId, montant) {
+  mutate('UPDATE cases SET honoraires_totaux = COALESCE(honoraires_totaux, 0) + ? WHERE id = ?', [montant, caseId]);
 }
 
 function getWeekDeadlines() { return query(`SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days') ORDER BY days_remaining ASC`); }
@@ -1269,7 +1267,7 @@ module.exports = {
   globalSearch, getSearchIndex, syncSearchIndex, rebuildSearchIndex,
   addCommunication, getClientCommunications,
   addLog, getLogs, listBackups, validateBackupFile, deleteBackupFile, restoreFromBackup, exportFullArchive,
-  getChartData, updateCaseStatus, updateCaseNotes, archiveCase, unarchiveCase, autoArchive,
+  getChartData, updateCaseStatus, updateCaseNotes, archiveCase, unarchiveCase, autoArchive, updateHonorairesTotaux,
   getUsers, getAllUsers, addUser, updateUser, deleteUser,
   integrityCheck, repairOrphans, transaction,
   checkPermission, getPermissions,

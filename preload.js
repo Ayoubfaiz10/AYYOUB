@@ -3,6 +3,8 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const MAX_ARGS_SIZE = 100 * 1024; // 100KB max per invocation
 
+const PUSH_CHANNELS = ['app:navigateToCase', 'app:notification', 'app:updateAvailable'];
+
 const rateLimits = new Map();
 const RATE_LIMIT_WINDOW = 60000;
 const MAX_REQUESTS_PER_WINDOW = 60;
@@ -23,7 +25,7 @@ const VALID_CHANNELS = [
   'db:globalSearch', 'db:getSearchIndex',
   'db:openDocument', 'db:updateDocNotes',
   'db:getProcedures', 'db:addProcedure',
-  'db:getPaiements', 'db:addPaiement',
+  'db:getPaiements', 'db:addPaiement', 'db:updateHonorairesTotaux',
   'db:getChartData', 'db:archiveCase', 'db:unarchiveCase', 'db:updateCaseStatus',
   'db:updateCaseNotes', 'db:getArchivedCases',
   'db:addCommunication', 'db:getClientCommunications',
@@ -34,13 +36,15 @@ const VALID_CHANNELS = [
   'db:getBackupSettings', 'db:updateBackupSettings',
   'db:createBackup', 'db:listBackups', 'db:validateBackup', 'db:restoreBackup', 'db:deleteBackup', 'db:exportArchive',
   'db:getLogs', 'db:addLog', 'db:integrityCheck', 'db:repairOrphans',
+  'db:cleanOrphanedFiles', 'db:rebuildSearchIndex',
   'events:getAll', 'events:get', 'events:add', 'events:update', 'events:delete',
   'notif:getCacheStats',
   'logger:log', 'logger:getLogs', 'logger:export', 'logger:clear', 'logger:stats',
   'ai:ask', 'ai:askContextual', 'ai:getSmartInsights',
   'ai:generateTimeline', 'ai:summarizeDocument', 'ai:detectRisks',
-  'ai:getConfig', 'ai:saveConfig',
-  'app:navigateToCase'
+  'ai:getConfig', 'ai:saveConfig', 'ai:analyzeDocument',
+  'app:navigateToCase',
+  'app:checkMasterKey'
 ];
 
 function validateArgs(channel, args) {
@@ -152,6 +156,27 @@ function validateArgs(channel, args) {
     'db:openDocument': (args) => {
       if (typeof args[0] !== 'number') return { valid: false, error: 'docId must be a number' };
       return { valid: true };
+    },
+    'ai:analyzeDocument': (args) => {
+      const data = args[0];
+      if (!data || typeof data !== 'object') return { valid: false, error: 'Data must be an object' };
+      if (typeof data.docId !== 'number') return { valid: false, error: 'docId must be a number' };
+      return { valid: true };
+    },
+    'db:cleanOrphanedFiles': (args) => {
+      if (args.length > 0) return { valid: false, error: 'No arguments expected' };
+      return { valid: true };
+    },
+    'db:rebuildSearchIndex': (args) => {
+      if (args.length > 0) return { valid: false, error: 'No arguments expected' };
+      return { valid: true };
+    },
+    'db:updateHonorairesTotaux': (args) => {
+      const data = args[0];
+      if (!data || typeof data !== 'object') return { valid: false, error: 'Data must be an object' };
+      if (typeof data.caseId !== 'number') return { valid: false, error: 'caseId must be a number' };
+      if (typeof data.montant !== 'number') return { valid: false, error: 'montant must be a number' };
+      return { valid: true };
     }
   };
 
@@ -198,7 +223,12 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     }
     return ipcRenderer.invoke(channel, ...args);
   },
-  on: () => () => {},
+  on: (channel, callback) => {
+    if (!PUSH_CHANNELS.includes(channel)) return () => {};
+    const subscription = (_event, ...args) => callback(...args);
+    ipcRenderer.on(channel, subscription);
+    return () => ipcRenderer.removeListener(channel, subscription);
+  },
   send: () => {}
 });
 

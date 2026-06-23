@@ -34,10 +34,10 @@ async function createDb() {
 
   // Seed default permissions
   const defaultPerms = {
-    admin: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data','manage_users','view_audit'],
-    senior_lawyer: ['view_case','edit_case','delete_case','upload_doc','view_finance','manage_tasks','use_ai','export_data'],
-    junior_lawyer: ['view_case','edit_case','upload_doc','manage_tasks','use_ai'],
-    assistant: ['view_case','upload_doc','manage_tasks','view_calendar'],
+    admin: ['view_case','edit_case','delete_case','upload_doc','delete_document','view_finance','manage_tasks','use_ai','export_data','manage_users','view_audit'],
+    senior_lawyer: ['view_case','edit_case','delete_case','upload_doc','delete_document','view_finance','manage_tasks','use_ai','export_data'],
+    junior_lawyer: ['view_case','edit_case','upload_doc','delete_document','manage_tasks','use_ai'],
+    assistant: ['view_case','upload_doc','delete_document','manage_tasks','view_calendar'],
     intern: ['view_case'],
     external: ['view_case']
   };

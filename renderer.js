@@ -90,6 +90,14 @@ document.addEventListener('DOMContentLoaded', () => {
   A.loadAiInsights = A.loadSmartInsights;
   window.loadAiInsights = A.loadSmartInsights;
 
+  // Listen for push events from main process
+  if (A.state.ipc) {
+    A.state.ipc.on('app:navigateToCase', (caseId) => {
+      A.navigateTo('cases');
+      if (typeof A.openCase === 'function') setTimeout(() => A.openCase(caseId), 200);
+    });
+  }
+
   // Start app
   A.checkAuth();
   // Load search index after auth (preloads all data for instant local search)

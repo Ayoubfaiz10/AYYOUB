@@ -56,8 +56,7 @@ A.initAI = function() {
       const model = config.model || '';
       A.state.aiProvider = provider;
       A.state.aiModel = model;
-      if (config.apiKey) {
-        apiKeyEl.value = config.apiKey;
+      if (config.hasKey) {
         A.state.aiConfigured = true;
         aiSetup.style.display = 'none';
         aiChat.style.display = 'flex';
@@ -76,10 +75,14 @@ A.initAI = function() {
     const model = document.getElementById('aiModelSelect')?.value || '';
     if (!key) { A.showToast('الرجاء إدخال مفتاح API', 'error'); return; }
     A.state.aiModel = model;
-    await A.mutate('ai:saveConfig', { apiKey: key, provider: A.state.aiProvider, model: model });
-    A.state.aiConfigured = true;
-    aiSetup.style.display = 'none';
-    aiChat.style.display = 'flex';
+    const result = await A.mutate('ai:saveConfig', { apiKey: key, provider: A.state.aiProvider, model: model });
+    if (result && result.ok) {
+      A.state.aiConfigured = true;
+      aiSetup.style.display = 'none';
+      aiChat.style.display = 'flex';
+    } else {
+      A.showToast(result?.error || 'فشل حفظ مفتاح API', 'error');
+    }
   });
 
   document.getElementById('aiChangeKeyBtn')?.addEventListener('click', () => {

@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 const db = require('./db');
 const logger = require('./logger');
+require('dotenv').config();
 
 /* ─── Write Lock: sequential DB writes ─── */
 let _writeQueue = Promise.resolve();
@@ -144,21 +145,6 @@ process.on('unhandledRejection', (reason) => {
   logToLogger(2, 'unhandledRejection', msg, { stack: (reason?.stack || '').slice(0, 500) });
 });
 
-function wrapHandler(name, fn) {
-  return async (event, ...args) => {
-    try {
-      if (!name.startsWith('auth:') && !currentUser) {
-        throw new Error('Unauthorized');
-      }
-      return await fn(event, ...args);
-    } catch (err) {
-      const safeArgs = JSON.stringify(args).replace(/(apiKey|api_key|key|token|secret)(["']?\s*[:=]\s*["']?)[^"',}\s]{4,}/gi, '$1$2***REDACTED***').slice(0, 200);
-      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 500), args: safeArgs });
-      throw err;
-    }
-  };
-}
-
 function wrapDbCall(name, fn) {
   return (...args) => {
     try {
@@ -214,9 +200,33 @@ async function init() {
     return obj;
   }
 
+  // ─── MASTER_KEY check at startup ───
+  if (!process.env.MASTER_KEY) {
+    logToLogger(2, 'app', 'MASTER_KEY environment variable is not set — AI API keys cannot be saved');
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        dialog.showMessageBox(mainWindow, {
+          type: 'warning',
+          title: 'تحذير أمني',
+          message: 'MASTER_KEY غير مضبوط',
+          detail: 'لحماية مفاتيح API، الرجاء إنشاء ملف .env في مجلد البرنامج وإضافة:\n\nMASTER_KEY=your-strong-random-key-here\n\nبدون هذا المفتاح، لا يمكن حفظ مفتاح AI API بشكل آمن.',
+          buttons: ['فهمت']
+        });
+      } else {
+        dialog.showMessageBox({
+          type: 'warning',
+          title: 'تحذير أمني',
+          message: 'MASTER_KEY غير مضبوط',
+          detail: 'لحماية مفاتيح API، الرجاء إنشاء ملف .env في مجلد البرنامج وإضافة:\n\nMASTER_KEY=your-strong-random-key-here\n\nبدون هذا المفتاح، لا يمكن حفظ مفتاح AI API بشكل آمن.',
+          buttons: ['فهمت']
+        });
+      }
+    }, 3000);
+  }
+
   // ─── DB IPC Handlers ───
 
-  ipcMain.handle('db:getAllCases', withPerm('view_case')(() => db.getAllCases()));
+  ipcMain.handle('db:getAllCases', safeIpc('getAllCases', withPerm('view_case')(() => db.getAllCases())));
   ipcMain.handle('db:addCase', mutateIpc('addCase', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addCase(data);
@@ -246,8 +256,8 @@ async function init() {
 
     db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id} مع جميع ملفاتها`);
   })));
-  ipcMain.handle('db:getCasesByClient', withPerm('view_case')(safeIpc('getCasesByClient', (_e, clientId) => db.getCasesByClient(clientId))));
-  ipcMain.handle('db:getAllClients', withPerm('view_case')(() => db.getAllClients()));
+  ipcMain.handle('db:getCasesByClient', safeIpc('getCasesByClient', withPerm('view_case')((_e, clientId) => db.getCasesByClient(clientId))));
+  ipcMain.handle('db:getAllClients', safeIpc('getAllClients', withPerm('view_case')(() => db.getAllClients())));
   ipcMain.handle('db:addClient', mutateIpc('addClient', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addClient(data);
@@ -288,6 +298,12 @@ async function init() {
   ipcMain.handle('db:applyTemplate', mutateIpc('applyTemplate', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, templateId } = nullGuard(args);
     return db.applyTemplate(caseId, templateId);
+  })));
+  ipcMain.handle('db:deleteTemplate', mutateIpc('deleteTemplate', withPerm('manage_tasks')(async (_e, id) => {
+    if (id == null) return { ok: false, error: 'معرف القالب مطلوب' };
+    db.deleteTemplate(id);
+    db.addLog('delete_template', `حذف قالب #${id}`);
+    return { ok: true };
   })));
   ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', () => db.getTaskAnalytics()));
   ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', () => db.getDashboardStats()));
@@ -341,10 +357,10 @@ async function init() {
     }
     return uploaded.length ? uploaded : null;
   })));
-  ipcMain.handle('db:globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : '')));
-  ipcMain.handle('db:getSearchIndex', withPerm('view_case')(() => db.getSearchIndex()));
+  ipcMain.handle('db:globalSearch', safeIpc('globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : ''))));
+  ipcMain.handle('db:getSearchIndex', safeIpc('getSearchIndex', withPerm('view_case')(() => db.getSearchIndex())));
   ipcMain.handle('db:rebuildSearchIndex', mutateIpc('rebuildSearchIndex', withPerm('manage_users')(async () => { db.rebuildSearchIndex(); db.addLog('rebuild_search', 'إعادة بناء فهرس البحث'); })));
-  ipcMain.handle('db:openDocument', withPerm('view_case')(async (_e, docId) => {
+  ipcMain.handle('db:openDocument', safeIpc('openDocument', withPerm('view_case')(async (_e, docId) => {
     if (docId == null) return;
     try {
       const doc = db.getDocument(docId);
@@ -357,7 +373,18 @@ async function init() {
     db.updateDocument(id, { notes: notes || '' });
     db.addLog('update_doc_notes', `تحديث ملاحظات الوثيقة #${id}`);
   })));
-  ipcMain.handle('db:getProcedures', withPerm('view_case')((_e, affaireId) => db.getProcedures(affaireId)));
+  ipcMain.handle('db:deleteDocument', mutateIpc('deleteDocument', withPerm('delete_document')(async (_e, id) => {
+    if (id == null) return { ok: false, error: 'معرف الوثيقة مطلوب' };
+    const doc = db.getDocument(id);
+    if (!doc) return { ok: false, error: 'الوثيقة غير موجودة' };
+    if (doc.file_path) {
+      try { if (fs.existsSync(doc.file_path)) fs.unlinkSync(doc.file_path); } catch (e) { console.error(`Failed to delete document file #${id}:`, e.message); }
+    }
+    db.deleteDocument(id);
+    db.addLog('delete_document', `حذف وثيقة ${doc.filename || '#' + id}`);
+    return { ok: true };
+  })));
+  ipcMain.handle('db:getProcedures', safeIpc('getProcedures', withPerm('view_case')((_e, affaireId) => db.getProcedures(affaireId))));
   ipcMain.handle('db:addProcedure', mutateIpc('addProcedure', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
@@ -365,7 +392,7 @@ async function init() {
     db.addLog('add_procedure', `إضافة إجراء للقضية #${data.affaire_id}: ${data.type || ''} - ${data.date || ''}`);
     return { id };
   })));
-  ipcMain.handle('db:getPaiements', withPerm('view_finance')((_e, affaireId) => db.getPaiements(affaireId)));
+  ipcMain.handle('db:getPaiements', safeIpc('getPaiements', withPerm('view_finance')((_e, affaireId) => db.getPaiements(affaireId))));
   ipcMain.handle('db:addPaiement', mutateIpc('addPaiement', withPerm('view_finance')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
@@ -373,7 +400,15 @@ async function init() {
     db.addLog('add_paiement', `إضافة دفعة ${data.montant || 0} درهم للقضية #${data.affaire_id}`);
     return { id };
   })));
-  ipcMain.handle('db:getChartData', withPerm('view_finance')(() => db.getChartData()));
+  ipcMain.handle('db:updateHonorairesTotaux', mutateIpc('updateHonorairesTotaux', withPerm('view_finance')(async (_e, data) => {
+    data = nullGuard(data);
+    if (data.caseId == null || data.montant === undefined) return { error: 'caseId و montant مطلوبان' };
+    if (!db.validateRef('cases', data.caseId)) return { error: 'القضية غير موجودة' };
+    db.updateHonorairesTotaux(data.caseId, parseFloat(data.montant) || 0);
+    db.addLog('update_honoraires', `تحديث مجموع الأتعاب للقضية #${data.caseId}: ${data.montant} درهم`);
+    return { ok: true };
+  })));
+  ipcMain.handle('db:getChartData', safeIpc('getChartData', withPerm('view_finance')(() => db.getChartData())));
   ipcMain.handle('db:archiveCase', mutateIpc('archiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.archiveCase(id); })));
   ipcMain.handle('db:unarchiveCase', mutateIpc('unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); })));
   ipcMain.handle('db:updateCaseStatus', mutateIpc('updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
@@ -384,14 +419,14 @@ async function init() {
     data = nullGuard(data);
     if (data.id != null) db.updateCaseNotes(data.id, data.notes || '');
   })));
-  ipcMain.handle('db:getArchivedCases', withPerm('view_case')(() => db.getAllCases(true).filter(c => c.archived === 1)));
+  ipcMain.handle('db:getArchivedCases', safeIpc('getArchivedCases', withPerm('view_case')(() => db.getAllCases(true).filter(c => c.archived === 1))));
   ipcMain.handle('db:addCommunication', mutateIpc('addCommunication', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const id = db.addCommunication(data);
     db.addLog('add_communication', `تسجيل اتصال مع الموكل #${data.client_id} - ${data.type || ''}`);
     return id;
   })));
-  ipcMain.handle('db:getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId)));
+  ipcMain.handle('db:getClientCommunications', safeIpc('getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId))));
   ipcMain.handle('db:updateClientNotes', mutateIpc('updateClientNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateClient(data);
@@ -402,9 +437,9 @@ async function init() {
     db.updateAlertSettings(nullGuard(data));
     db.addLog('update_alert_settings', `تعديل إعدادات التنبيهات`);
   })));
-  ipcMain.handle('db:getUpcomingDeadlines', withPerm('view_case')(() => db.getUpcomingDeadlines()));
-  ipcMain.handle('db:getUpcomingHearings', withPerm('view_case')(() => db.getUpcomingHearings()));
-  ipcMain.handle('db:getBackupSettings', withPerm('manage_users')(() => db.getBackupSettings()));
+  ipcMain.handle('db:getUpcomingDeadlines', safeIpc('getUpcomingDeadlines', withPerm('view_case')(() => db.getUpcomingDeadlines())));
+  ipcMain.handle('db:getUpcomingHearings', safeIpc('getUpcomingHearings', withPerm('view_case')(() => db.getUpcomingHearings())));
+  ipcMain.handle('db:getBackupSettings', safeIpc('getBackupSettings', withPerm('manage_users')(() => db.getBackupSettings())));
   ipcMain.handle('db:updateBackupSettings', mutateIpc('updateBackupSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateBackupSettings(nullGuard(data));
     db.addLog('update_backup_settings', `تعديل إعدادات النسخ الاحتياطي`);
@@ -414,8 +449,8 @@ async function init() {
     db.addLog('create_backup', `إنشاء نسخة احتياطية يدوية: ${name}`);
     return name;
   })));
-  ipcMain.handle('db:listBackups', withPerm('manage_users')(() => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } }));
-  ipcMain.handle('db:validateBackup', withPerm('manage_users')((_e, filename) => {
+  ipcMain.handle('db:listBackups', safeIpc('listBackups', withPerm('manage_users')(() => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } })));
+  ipcMain.handle('db:validateBackup', safeIpc('validateBackup', withPerm('manage_users')((_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     return db.validateBackupFile(filename);
   }));
@@ -436,7 +471,7 @@ async function init() {
     db.addLog('export_archive', `تصدير أرشيف كامل: ${result.filename}`);
     return result;
   })));
-  ipcMain.handle('db:getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters)));
+  ipcMain.handle('db:getLogs', safeIpc('getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters))));
   ipcMain.handle('db:addLog', mutateIpc('addLog', (_e, action, details) => { if (action) db.addLog(action, details || ''); }));
   ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', () => db.integrityCheck()));
   ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', () => db.repairOrphans()));
@@ -453,10 +488,10 @@ async function init() {
     logToLogger(lvl, context || 'renderer', message || '');
   });
 
-  ipcMain.handle('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters)));
-  ipcMain.handle('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json')));
-  ipcMain.handle('logger:clear', withPerm('manage_users')(() => logger.clearLogs()));
-  ipcMain.handle('logger:stats', withPerm('view_audit')(() => logger.getStats()));
+  ipcMain.handle('logger:getLogs', safeIpc('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters))));
+  ipcMain.handle('logger:export', safeIpc('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json'))));
+  ipcMain.handle('logger:clear', safeIpc('logger:clear', withPerm('manage_users')(() => logger.clearLogs())));
+  ipcMain.handle('logger:stats', safeIpc('logger:stats', withPerm('view_audit')(() => logger.getStats())));
 
   createWindow();
 
@@ -466,6 +501,10 @@ async function init() {
     ttlMs: NOTIF_TTL_MS,
     memoryEstimate: sentNotifications.size * 128
   }));
+
+  ipcMain.handle('app:checkMasterKey', () => {
+    return { hasMasterKey: !!process.env.MASTER_KEY };
+  });
 
   ipcMain.handle('app:navigateToCase', (_e, caseId) => {
     if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
@@ -478,32 +517,22 @@ async function init() {
     setInterval(checkAndNotify, 3600000);
     setInterval(checkUpcomingEvents, 21600000);
     setInterval(cleanupSentNotifications, NOTIF_GC_INTERVAL);
-
-    try {
-      const settings = db.getBackupSettings();
-      if (settings.auto_enabled) {
-        const freqMs = (settings.frequency_hours || 24) * 3600000;
-        if (!settings.last_backup_at || (Date.now() - new Date(settings.last_backup_at).getTime()) >= freqMs) {
-          const name = db.createBackup('auto');
-          db.addLog('auto_backup', `نسخة احتياطية تلقائية: ${name}`);
-        }
-      }
-    } catch (e) { console.error('Auto-backup error:', e); }
-
     setInterval(() => { try { db.cleanOldSentNotifications(); } catch (e) { /* ignore */ } }, 86400000);
 
-    setInterval(() => {
-      try {
-        const s = db.getBackupSettings();
-        if (s.auto_enabled) {
-          const freqMs = (s.frequency_hours || 24) * 3600000;
-          if (!s.last_backup_at || (Date.now() - new Date(s.last_backup_at).getTime()) >= freqMs) {
-            const name = db.createBackup('auto');
-            db.addLog('auto_backup', `نسخة احتياطية تلقائية: ${name}`);
+    setTimeout(() => {
+      setInterval(() => {
+        try {
+          const s = db.getBackupSettings();
+          if (s.auto_enabled) {
+            const freqMs = (s.frequency_hours || 24) * 3600000;
+            if (!s.last_backup_at || (Date.now() - new Date(s.last_backup_at).getTime()) >= freqMs) {
+              const name = db.createBackup('auto');
+              db.addLog('auto_backup', `نسخة احتياطية تلقائية: ${name}`);
+            }
           }
-        }
-      } catch (e) { console.error('Auto-backup interval error:', e); }
-    }, 3600000);
+        } catch (e) { console.error('Auto-backup interval error:', e); }
+      }, 3600000);
+    }, 5000);
   });
 }
 
@@ -745,17 +774,26 @@ ipcMain.handle('auth:hasPassword', () => {
   }
 });
 
-ipcMain.handle('auth:login', (_e, pwd) => {
+ipcMain.handle('auth:login', (_e, { userId, password }) => {
   try {
-    if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
+    if (!password || typeof password !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
     const stored = getPasswordHash();
     if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
     if (!stored) return { ok: true, firstTime: true };
-    if (!verifyPassword(pwd, stored)) return { ok: false, error: 'كلمة السر خطأ' };
+    if (!verifyPassword(password, stored)) return { ok: false, error: 'كلمة السر خطأ' };
     if (isSHA256Hash(stored)) {
-      setPasswordHash(hashBcrypt(pwd));
+      setPasswordHash(hashBcrypt(password));
     }
-    return { ok: true };
+    // Fetch user from DB — never trust renderer-provided role/name
+    let sessionUser = null;
+    if (userId) {
+      const users = db.getUsers();
+      const dbUser = users.find(u => u.id === userId);
+      if (!dbUser) return { ok: false, error: 'المستخدم غير موجود' };
+      sessionUser = { id: dbUser.id, name: dbUser.name, role: dbUser.role };
+    }
+    currentUser = sessionUser;
+    return { ok: true, user: sessionUser };
   } catch (e) {
     handleError('login', e);
     return { ok: false, error: 'حدث خطأ في تسجيل الدخول' };
@@ -787,7 +825,6 @@ ipcMain.handle('auth:hashPassword', (_e, pwd) => {
   }
 });
 
-ipcMain.handle('auth:setCurrentUser', (_e, user) => { currentUser = user; return true; });
 ipcMain.handle('auth:getCurrentUser', () => currentUser);
 ipcMain.handle('auth:getPermissions', () => {
   if (!currentUser) return {};
@@ -1129,12 +1166,12 @@ function buildClientContext(cl) {
 الملاحظات: ${cl.notes || ''}`);
 }
 
-ipcMain.handle('ai:ask', wrapHandler('ai:ask', withPerm('use_ai')(async (_e, { mode, message, context }) => {
+ipcMain.handle('ai:ask', safeIpc('ai:ask', withPerm('use_ai')(async (_e, { mode, message, context }) => {
   const prompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.chat;
   return callAI(prompt, message, context);
 })));
 
-ipcMain.handle('ai:askContextual', wrapHandler('ai:askContextual', withPerm('use_ai')(async (_e, { mode, message, contextType, contextId }) => {
+ipcMain.handle('ai:askContextual', safeIpc('ai:askContextual', withPerm('use_ai')(async (_e, { mode, message, contextType, contextId }) => {
   let context = '';
   if (contextType === 'case') {
     const c = db.getAllCases().find(x => x.id === contextId);
@@ -1205,7 +1242,7 @@ ipcMain.handle('ai:askContextual', wrapHandler('ai:askContextual', withPerm('use
   return callAI(prompt, message, context);
 })));
 
-ipcMain.handle('ai:getSmartInsights', wrapHandler('ai:getSmartInsights', withPerm('use_ai')(async () => {
+ipcMain.handle('ai:getSmartInsights', safeIpc('ai:getSmartInsights', withPerm('use_ai')(async () => {
   const cases = db.getAllCases();
   const events = db.getAllEvents();
   const tasks = db.getAllTasks();
@@ -1230,7 +1267,7 @@ ipcMain.handle('ai:getSmartInsights', wrapHandler('ai:getSmartInsights', withPer
   return { insights: insights.slice(0, 5), summary };
 })));
 
-ipcMain.handle('ai:generateTimeline', wrapHandler('ai:generateTimeline', withPerm('use_ai')(async (_e, { caseId }) => {
+ipcMain.handle('ai:generateTimeline', safeIpc('ai:generateTimeline', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'لا توجد معلومات كافية لإنشاء الجدول الزمني', friendlyError: 'لا توجد معلومات كافية لإنشاء الجدول الزمني' };
   const events = db.getEventsByCase(caseId);
@@ -1244,7 +1281,7 @@ ipcMain.handle('ai:generateTimeline', wrapHandler('ai:generateTimeline', withPer
   return callAI('أنت خبير في إعداد الجداول الزمنية للقضايا القانونية. قم بإنشاء جدول زمني منظم (timeline) بالعربية لهذه القضية بناءً على البيانات التالية.', 'أنشئ جدولاً زمنياً مفصلاً لهذه القضية.', sanitizeContext(context));
 })));
 
-ipcMain.handle('ai:summarizeDocument', wrapHandler('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
+ipcMain.handle('ai:summarizeDocument', safeIpc('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const doc = db.getDocument(docId);
   if (!doc) return { text: '', error: 'الوثيقة غير موجودة', friendlyError: 'الوثيقة غير موجودة' };
   const txt = db.getDocumentText(docId);
@@ -1254,7 +1291,7 @@ ipcMain.handle('ai:summarizeDocument', wrapHandler('ai:summarizeDocument', withP
   return callAI('أنت خبير في تحليل وثائق المحاماة. لخص هذه الوثيقة القانونية بالعربية في 3-5 نقاط واضحة.', 'لخص هذه الوثيقة بالعربية.', context);
 })));
 
-ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', withPerm('use_ai')(async (_e, { caseId }) => {
+ipcMain.handle('ai:detectRisks', safeIpc('ai:detectRisks', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'القضية غير موجودة', friendlyError: 'القضية غير موجودة' };
   const events = db.getEventsByCase(caseId);
@@ -1270,7 +1307,7 @@ ipcMain.handle('ai:detectRisks', wrapHandler('ai:detectRisks', withPerm('use_ai'
   return callAI('أنت خبير في تقييم المخاطر القانونية. قم بتحليل القضية التالية وحدد المخاطر المحتملة مع اقتراحات للتخفيف منها. أجب بالعربية.', 'حلل المخاطر القانونية لهذه القضية.', context);
 })));
 
-ipcMain.handle('ai:analyzeDocument', wrapHandler('ai:analyzeDocument', withPerm('use_ai')(async (_e, { docId }) => {
+ipcMain.handle('ai:analyzeDocument', safeIpc('ai:analyzeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const doc = db.getDocument(docId);
   if (!doc) return { error: 'الوثيقة غير موجودة' };
 
@@ -1300,11 +1337,19 @@ ipcMain.handle('ai:analyzeDocument', wrapHandler('ai:analyzeDocument', withPerm(
   return { analysis: result.text || result.friendlyError || 'تعذر تحليل الوثيقة', cached: false, doc };
 })));
 
+function getMasterKeyOrThrow() {
+  const key = process.env.MASTER_KEY;
+  if (!key) {
+    throw new Error('MASTER_KEY environment variable is required — الرجاء تعيين MASTER_KEY في ملف .env');
+  }
+  return key;
+}
+
 function getAiConfig() {
   try {
     if (fs.existsSync(AI_CONFIG_PATH)) {
       const data = JSON.parse(fs.readFileSync(AI_CONFIG_PATH, 'utf8'));
-      const password = process.env.MASTER_KEY || 'default-key-change-me';
+      const password = getMasterKeyOrThrow();
       
       if (data.encrypted) {
         try {
@@ -1340,7 +1385,7 @@ function saveAiConfig(config) {
     const dir = path.dirname(AI_CONFIG_PATH);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     
-    const password = process.env.MASTER_KEY || 'default-key-change-me';
+    const password = getMasterKeyOrThrow();
     const apiKey = config.apiKey;
     
     const encrypted = encrypt(apiKey, password);
@@ -1358,8 +1403,23 @@ function saveAiConfig(config) {
   }
 }
 
-ipcMain.handle('ai:getConfig', withPerm('use_ai')(() => getAiConfig()));
-ipcMain.handle('ai:saveConfig', withPerm('use_ai')((_e, config) => saveAiConfig(config)));
+ipcMain.handle('ai:getConfig', safeIpc('ai:getConfig', withPerm('use_ai')(() => {
+  try {
+    const config = getAiConfig();
+    return { provider: config.provider || 'groq', model: config.model || '', hasKey: !!config.apiKey };
+  } catch (e) {
+    console.warn('ai:getConfig error:', e.message);
+    return { provider: 'groq', model: '', hasKey: false };
+  }
+}));
+ipcMain.handle('ai:saveConfig', safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
+  try {
+    saveAiConfig(config);
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
+  }
+}));
 
 app.whenReady().then(init);
 

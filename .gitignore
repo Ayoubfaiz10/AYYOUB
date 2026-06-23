@@ -28,6 +28,10 @@ Thumbs.db
 *.swo
 *~
 
+# Environment variables
+.env
+.env.local
+
 # OpenCode config
 .opencode/
 

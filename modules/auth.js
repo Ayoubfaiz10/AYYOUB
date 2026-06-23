@@ -70,25 +70,22 @@ A.initAuth = function() {
       return;
     }
 
-    A.state.ipc.invoke('auth:login', password).then(function(result) {
+    var userId = null;
+    if (userSelect) {
+      var selectedOption = userSelect.options[userSelect.selectedIndex];
+      if (selectedOption && selectedOption.value) {
+        userId = parseInt(selectedOption.value);
+      }
+    }
+
+    A.state.ipc.invoke('auth:login', { userId: userId, password: password }).then(function(result) {
       if (result.ok) {
-        var selectedOption = userSelect ? userSelect.options[userSelect.selectedIndex] : null;
-        var user = { id: 1, name: 'المحامي', role: 'admin' };
-        if (selectedOption && selectedOption.value) {
-          user = {
-            id: parseInt(selectedOption.value),
-            name: selectedOption.getAttribute('data-name') || 'المحامي',
-            role: selectedOption.getAttribute('data-role') || 'admin'
-          };
-        }
-        A.state.ipc.invoke('auth:setCurrentUser', user).then(function() {
-          var loginOverlay = document.getElementById('loginOverlay');
-          var appEl = document.getElementById('app');
-          if (loginOverlay) loginOverlay.style.display = 'none';
-          if (appEl) appEl.style.display = 'flex';
-          if (errorEl) errorEl.style.display = 'none';
-          if (typeof A.loadDashboard === 'function') A.loadDashboard();
-        });
+        var loginOverlay = document.getElementById('loginOverlay');
+        var appEl = document.getElementById('app');
+        if (loginOverlay) loginOverlay.style.display = 'none';
+        if (appEl) appEl.style.display = 'flex';
+        if (errorEl) errorEl.style.display = 'none';
+        if (typeof A.loadDashboard === 'function') A.loadDashboard();
       } else {
         if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = result.error || 'كلمة السر خطأ'; }
       }
