@@ -20,7 +20,7 @@ A.initDarkMode = function() {
 
 A.initDate = function() {
   const el = document.getElementById('currentDate');
-  if (el) el.textContent = new Date().toLocaleDateString('ar-MA', { year: 'numeric', month: 'long', day: 'numeric' });
+  if (el) el.textContent = new Date().toLocaleDateString(A.getLocale(), { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
 A.initQuickAdd = function() {

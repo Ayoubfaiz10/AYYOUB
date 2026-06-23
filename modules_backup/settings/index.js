@@ -137,7 +137,7 @@ A.initSettings = function() {
       if (badgeEl) badgeEl.textContent = `(${backups.length})`;
       if (statusEl) statusEl.textContent = '';
       const formatSize = (bytes) => { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB'; return (bytes/1048576).toFixed(1) + ' MB'; };
-      const formatDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString('ar-MA') + ' ' + d.toLocaleTimeString('ar-MA', {hour:'2-digit',minute:'2-digit'}); };
+      const formatDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString(A.getLocale()) + ' ' + d.toLocaleTimeString(A.getLocale(), {hour:'2-digit',minute:'2-digit'}); };
       const getType = (name) => name.includes('manual') ? 'يدوي' : name.includes('auto') ? 'تلقائي' : name.includes('archive') ? 'أرشيف' : '—';
       const getValidationStatus = (name) => { const v = A.state._backupValidations || {}; return v[name]; };
       A.safeSet(listEl, esc => `<table class="table" style="font-size:12px;"><thead><tr><th>الملف</th><th>التاريخ</th><th>الحجم</th><th>النوع</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>${backups.map(b => {

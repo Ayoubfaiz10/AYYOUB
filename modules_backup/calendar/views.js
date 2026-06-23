@@ -23,8 +23,8 @@ A.renderCalendar = function() {
 A.renderMonthView = function() {
   const grid = document.getElementById('calGrid');
   const { start, end, year, month, firstDay, lastDay } = A.getCalEvents();
-  document.getElementById('calTitle').textContent = new Intl.DateTimeFormat('ar', { month: 'long', year: 'numeric' }).format(A.state.calDate);
-  const weekdays = ['الأحد','الإثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+  document.getElementById('calTitle').textContent = new Intl.DateTimeFormat(A.getLocale(), { month: 'long', year: 'numeric' }).format(A.state.calDate);
+  const weekdays = A.getDayNames('long');
   const today = new Date().toISOString().slice(0,10);
   let html = weekdays.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
 
@@ -56,11 +56,11 @@ A.renderWeekView = function() {
   const startOfWeek = new Date(A.state.calDate);
   startOfWeek.setDate(A.state.calDate.getDate() - A.state.calDate.getDay());
   const hours = Array.from({length: 12}, (_, i) => `${String(i+8).padStart(2,'0')}:00`);
+  var shortDays = A.getShortDayNames();
   let html = '<div class="cal-week-header">الوقت</div>' +
     Array.from({length: 7}, (_, i) => {
       const d = new Date(startOfWeek); d.setDate(startOfWeek.getDate() + i);
-      const days = ['ح','ن','ث','ر','خ','ج','س'];
-      return `<div class="cal-week-header">${days[i]}<br><span style="font-size:13px;">${d.getDate()}</span></div>`;
+      return `<div class="cal-week-header">${shortDays[i]}<br><span style="font-size:13px;">${d.getDate()}</span></div>`;
     }).join('');
   hours.forEach(h => {
     html += `<div class="cal-week-time">${h}</div>`;
@@ -88,8 +88,8 @@ A.renderDayView = function() {
   const hours = Array.from({length: 14}, (_, i) => `${String(i+7).padStart(2,'0')}:00`);
   A.safeSet(grid, esc => {
     let h = `<div class="cal-week-header" style="grid-column:span 2;text-align:right;padding:var(--space-3);font-size:var(--font-size-base);">
-      ${new Intl.DateTimeFormat('ar', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(A.state.calDate)}
-      ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;">اليوم</span>' : ''}
+      ${new Intl.DateTimeFormat(A.getLocale(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(A.state.calDate)}
+      ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;" data-i18n="statusToday">اليوم</span>' : ''}
     </div>`;
     hours.forEach(hour => {
       const evts = A.state.allEvents.filter(e => e.date === dateStr && e.time && e.time.startsWith(hour.slice(0,2)) && e.status !== 'cancelled');
@@ -113,9 +113,9 @@ A.renderAgendaView = function() {
   A.safeSet(container, esc => Object.keys(grouped).length ? Object.entries(grouped).map(([date, events]) => {
     const d = new Date(date + 'T12:00:00');
     const isToday = date === today;
-    const dayName = new Intl.DateTimeFormat('ar', { weekday: 'long', month: 'long', day: 'numeric' }).format(d);
+    const dayName = new Intl.DateTimeFormat(A.getLocale(), { weekday: 'long', month: 'long', day: 'numeric' }).format(d);
     return `<div class="cal-agenda-day">
-      <div class="cal-agenda-date">${isToday ? 'اليوم — ' : ''}${dayName}</div>
+      <div class="cal-agenda-date">${isToday ? window._t('statusToday') + ' — ' : ''}${dayName}</div>
       ${events.map(e => `<div class="cal-agenda-event" onclick="openEventDetail(${e.id})">
         <div class="cal-agenda-dot" style="background:${typeColors[e.type] || 'var(--gray-300)'};"></div>
         <div class="cal-agenda-time">${esc(e.time || 'كل اليوم')}</div>

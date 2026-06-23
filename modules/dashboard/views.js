@@ -36,7 +36,7 @@ A.loadWelcomeSection = function(totalCases) {
   const quoteEl = document.getElementById('dashQuote');
   if (greetEl) greetEl.textContent = greeting;
   if (userEl) userEl.textContent = 'محامي';
-  if (dateEl) dateEl.textContent = new Date().toLocaleDateString('ar-MA', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  if (dateEl) dateEl.textContent = new Date().toLocaleDateString(A.getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   if (quoteEl) quoteEl.textContent = A.state.quotes[totalCases % A.state.quotes.length];
 };
 
@@ -210,10 +210,11 @@ A.renderMiniCalendar = function() {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = now.getDate();
-  const monthName = new Intl.DateTimeFormat('ar', { month: 'long' }).format(now);
+  const monthName = new Intl.DateTimeFormat(A.getLocale(), { month: 'long' }).format(now);
+  var shortDays = A.getShortDayNames();
   let html = `<div style="text-align:center;font-weight:var(--font-weight-semibold);color:var(--navy);margin-bottom:var(--space-2);">${monthName} ${year}</div>`;
   html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;text-align:center;">';
-  ['ح','ن','ث','ر','خ','ج','س'].forEach(d => { html += `<div style="color:var(--gray-400);padding:4px 0;">${d}</div>`; });
+  shortDays.forEach(d => { html += `<div style="color:var(--gray-400);padding:4px 0;">${d}</div>`; });
   for (let i = 0; i < firstDay; i++) html += '<div></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;

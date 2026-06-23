@@ -153,3 +153,9 @@ npm run build                # Build Windows installer
 - Backups: `C:\Users\FAIZ\Dropbox\OPEN CODE\B3\backups\`
 - Uploads: `C:\Users\FAIZ\Dropbox\OPEN CODE\B3\storage\affaires\`
 - Tests: `C:\Users\FAIZ\Dropbox\OPEN CODE\B3\tests\unit\*.test.js`
+
+## I18n Notes
+- `A.updateUI()` scans `[data-i18n]` elements and sets `textContent` (or `placeholder` for INPUT/TEXTAREA/SELECT)
+- For buttons/elements with icon `<i>` children, wrap the text in `<span data-i18n="key">text</span>` to avoid losing the icon
+- `<select>` elements should NOT have `data-i18n` (it only sets non-visible placeholder attribute)
+- All `data-i18n` keys in `index.html` must have a corresponding entry in `i18n.js` or `shared.js`

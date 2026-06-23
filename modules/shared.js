@@ -168,7 +168,7 @@ A.VirtualScroll = {
   }
 };
 
-A.i18n = {
+A.sharedI18n = {
   locale: localStorage.getItem('locale') || 'ar',
   messages: {
     ar: {
@@ -260,9 +260,12 @@ A.i18n = {
     if (this.messages[locale]) {
       this.locale = locale;
       localStorage.setItem('locale', locale);
-      document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
-      document.documentElement.lang = locale;
-      window.location.reload();
+      if (typeof A.setLanguage === 'function') {
+        A.setLanguage(locale);
+      } else {
+        document.documentElement.dir = locale === 'ar' ? 'rtl' : 'ltr';
+        document.documentElement.lang = locale;
+      }
     }
   },
   
@@ -276,7 +279,7 @@ A.formatDate = function(isoStr, options) {
   try {
     const d = new Date(isoStr + (isoStr.includes('T') ? '' : 'T12:00:00'));
     if (isNaN(d.getTime())) return isoStr;
-    return d.toLocaleDateString('ar-MA', options || { year: 'numeric', month: 'short', day: 'numeric' });
+    return d.toLocaleDateString(A.getLocale(), options || { year: 'numeric', month: 'short', day: 'numeric' });
   } catch { return isoStr; }
 };
 
@@ -285,7 +288,7 @@ A.formatDateTime = function(isoStr) {
   try {
     const d = new Date(isoStr);
     if (isNaN(d.getTime())) return isoStr;
-    return d.toLocaleDateString('ar-MA', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString(A.getLocale(), { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   } catch { return isoStr; }
 };
 
