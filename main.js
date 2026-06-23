@@ -366,7 +366,7 @@ async function init() {
       const doc = db.getDocument(docId);
       if (doc && doc.file_path && fs.existsSync(doc.file_path)) shell.openPath(doc.file_path);
     } catch (e) { logToLogger(2, 'openDocument', e.message); }
-  }));
+  })));
   ipcMain.handle('db:updateDocNotes', mutateIpc('updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
     const { id, notes } = nullGuard(args);
     if (id == null) return;
@@ -453,7 +453,7 @@ async function init() {
   ipcMain.handle('db:validateBackup', safeIpc('validateBackup', withPerm('manage_users')((_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     return db.validateBackupFile(filename);
-  }));
+  })));
   ipcMain.handle('db:restoreBackup', mutateIpc('restoreBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     const result = db.restoreFromBackup(filename);
@@ -1411,7 +1411,7 @@ ipcMain.handle('ai:getConfig', safeIpc('ai:getConfig', withPerm('use_ai')(() => 
     console.warn('ai:getConfig error:', e.message);
     return { provider: 'groq', model: '', hasKey: false };
   }
-}));
+})));
 ipcMain.handle('ai:saveConfig', safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
   try {
     saveAiConfig(config);
@@ -1419,7 +1419,7 @@ ipcMain.handle('ai:saveConfig', safeIpc('ai:saveConfig', withPerm('use_ai')(asyn
   } catch (e) {
     return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
   }
-}));
+})));
 
 app.whenReady().then(init);
 
