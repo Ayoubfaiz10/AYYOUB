@@ -82,7 +82,7 @@ A.renderPriorityView = function() {
     const items = A.state.allTasks.filter(t => t.priority === g.key && t.status !== 'done');
     if (!items.length) return '';
     return `<div class="priority-group">
-      <div class="priority-group-header"><span class="priority-dot" style="background:${g.color};"></span>${g.label} <span style="font-size:11px;color:var(--gray-400);font-weight:normal;">(${items.length})</span></div>
+      <div class="priority-group-header"><span class="priority-dot" style="background:${g.color};"></span>${esc(g.label)} <span style="font-size:11px;color:var(--gray-400);font-weight:normal;">(${items.length})</span></div>
       ${items.map(t => `<div class="task-card-v8" onclick="openTaskDetail(${t.id})" style="padding:var(--space-2) var(--space-3);">
         <div class="priority-indicator" style="background:${g.color};height:24px;"></div>
         <div class="task-body">
@@ -99,13 +99,13 @@ A.renderTaskAnalytics = async function() {
   if (!container || !A.state.ipc) return;
   const stats = await A.cachedInvoke('db:getTaskAnalytics');
   A.safeSetStatic(container, `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);margin-bottom:var(--space-4);">
-    <div class="task-analytics-card"><h4>إجمالي المهام</h4><div class="task-analytics-number">${stats.total}</div></div>
-    <div class="task-analytics-card"><h4>منجز هذا الأسبوع</h4><div class="task-analytics-number">${stats.completedThisWeek}</div></div>
-    <div class="task-analytics-card"><h4>متأخرة</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--danger)' : 'var(--success)'};">${stats.overdue}</div></div>
+    <div class="task-analytics-card"><h4>إجمالي المهام</h4><div class="task-analytics-number">${esc(String(stats.total))}</div></div>
+    <div class="task-analytics-card"><h4>منجز هذا الأسبوع</h4><div class="task-analytics-number">${esc(String(stats.completedThisWeek))}</div></div>
+    <div class="task-analytics-card"><h4>متأخرة</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--danger)' : 'var(--success)'};">${A.escapeHtml(String(stats.overdue))}</div></div>
   </div>
   <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-4);">
-    <div class="task-analytics-card"><h4>متروكة</h4><div class="task-analytics-number">${stats.byStatus.backlog||0}</div></div>
-    <div class="task-analytics-card"><h4>قيد التنفيذ</h4><div class="task-analytics-number">${(stats.byStatus.todo||0)+(stats.byStatus.in_progress||0)}</div></div>
-    <div class="task-analytics-card"><h4>معدل الإنجاز</h4><div class="task-analytics-number" style="font-size:20px;">${stats.avgCompletionDays} يوم</div></div>
+    <div class="task-analytics-card"><h4>متروكة</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.byStatus.backlog||0))}</div></div>
+    <div class="task-analytics-card"><h4>قيد التنفيذ</h4><div class="task-analytics-number">${A.escapeHtml(String((stats.byStatus.todo||0)+(stats.byStatus.in_progress||0)))}</div></div>
+    <div class="task-analytics-card"><h4>معدل الإنجاز</h4><div class="task-analytics-number" style="font-size:20px;">${A.escapeHtml(String(stats.avgCompletionDays))} يوم</div></div>
   </div>`);
 };

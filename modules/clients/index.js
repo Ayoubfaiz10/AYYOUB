@@ -18,8 +18,8 @@ A.loadClients = async function(filter) {
     A.renderClientSegments(list);
   } catch (e) {
     A.logError('loadClients', e);
-    if (mainEl) A.showError(mainEl, 'تعذر تحميل قائمة الموكلين.', () => A.loadClients(filter));
-    A.showEmpty('clientsCardGrid', 'ri-user-3-line', 'حاول مرة أخرى لاحقاً');
+    if (mainEl) A.showError(mainEl, _t('failedLoadClients'), () => A.loadClients(filter));
+    A.showEmpty('clientsCardGrid', 'ri-user-3-line', _t('tryAgainLater'));
   }
 };
 
@@ -33,7 +33,7 @@ A.openClientDetail = async function(id) {
 
   document.getElementById('clTitle').textContent = c.name;
   document.getElementById('clAvatarSm').textContent = (c.name||'?').charAt(0);
-  document.getElementById('clStatusBadge').textContent = 'نشط';
+  document.getElementById('clStatusBadge').textContent = _t('activeBadge');
 
   A.loadWsClOverview(c);
   A.loadWsClCases(c);
@@ -67,19 +67,19 @@ A.initClients = function() {
     const viewMap = { table: 'clientsTableView', card: 'clientsCardView', segment: 'clientsSegmentView' };
     document.getElementById(viewMap[btn.dataset.view]).classList.add('active');
   }));
-  document.getElementById('addClientBtn')?.addEventListener('click', () => A.showModal('موكل جديد', `
+  document.getElementById('addClientBtn')?.addEventListener('click', () => A.showModal(_t('newClientTitle'), `
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
-      <div class="input-group"><label class="input-label">الاسم الكامل <span style="color:var(--danger);">*</span></label><input type="text" id="fClName" class="input" placeholder="الاسم"></div>
-      <div class="input-group"><label class="input-label">الهاتف</label><input type="text" id="fClPhone" class="input" placeholder="06xxxxxxxx"></div>
-      <div class="input-group"><label class="input-label">البريد الإلكتروني</label><input type="email" id="fClEmail" class="input" placeholder="email@example.com"></div>
-      <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fClAddress" class="input" placeholder="العنوان"></div>
-      <div class="input-group"><label class="input-label">رقم البطاقة الوطنية</label><input type="text" id="fClIdNum" class="input" placeholder="اختياري"></div>
-      <div class="input-group"><label class="input-label">تصنيفات (tags)</label><input type="text" id="fClTags" class="input" placeholder="مفصولة بفواصل"></div>
+      <div class="input-group"><label class="input-label">${_t('fullNameLabel')} <span style="color:var(--danger);">*</span></label><input type="text" id="fClName" class="input" placeholder="${_t('fullNameLabel')}"></div>
+      <div class="input-group"><label class="input-label">${_t('phoneLabel')}</label><input type="text" id="fClPhone" class="input" placeholder="06xxxxxxxx"></div>
+      <div class="input-group"><label class="input-label">${_t('emailLabel')}</label><input type="email" id="fClEmail" class="input" placeholder="email@example.com"></div>
+      <div class="input-group"><label class="input-label">${_t('addressLabel')}</label><input type="text" id="fClAddress" class="input" placeholder="${_t('addressLabel')}"></div>
+      <div class="input-group"><label class="input-label">${_t('nationalIdLabel')}</label><input type="text" id="fClIdNum" class="input" placeholder="${_t('optionalPlaceholder')}"></div>
+      <div class="input-group"><label class="input-label">${_t('tagsLabel')}</label><input type="text" id="fClTags" class="input" placeholder="${_t('tagsSeparatedPlaceholder')}"></div>
     </div>
-    <div class="input-group" style="margin-top:var(--space-3);"><label class="input-label">ملاحظات</label><textarea id="fClNotes" class="input" rows="2"></textarea></div>
+    <div class="input-group" style="margin-top:var(--space-3);"><label class="input-label">${_t('notesLabel')}</label><textarea id="fClNotes" class="input" rows="2"></textarea></div>
   `, async () => {
     const name = document.getElementById('fClName').value.trim();
-    if (!name) { A.showToast('الاسم إجباري', 'error'); return; }
+    if (!name) { A.showToast(_t('nameRequired'), 'error'); return; }
     try {
       const res = await A.mutate('db:addClient', {
         name, phone: document.getElementById('fClPhone').value,
@@ -90,9 +90,9 @@ A.initClients = function() {
         tags: document.getElementById('fClTags').value
       });
       if (res && res.error) { A.showToast(res.error, 'error'); return; }
-      if (res && res.duplicate) { A.showToast('موكل مكرر: ' + (res.existing || []).map(e => e.name).join(', '), 'error'); return; }
-      A.hideModal(); A.loadClients(); A.showToast('تم إضافة الموكل بنجاح', 'success');
-    } catch (e) { A.logError('addClient', e); A.showToast('فشل إضافة الموكل', 'error'); }
+      if (res && res.duplicate) { A.showToast(_t('duplicateClientPrefix') + (res.existing || []).map(e => e.name).join(', '), 'error'); return; }
+      A.hideModal(); A.loadClients(); A.showToast(_t('clientAdded'), 'success');
+    } catch (e) { A.logError('addClient', e); A.showToast(_t('clientAddFailed'), 'error'); }
   }));
   document.querySelectorAll('#clientDetailOverlay .ws-tab').forEach(btn => btn.addEventListener('click', () => {
     document.querySelectorAll('#clientDetailOverlay .ws-tab').forEach(b => b.classList.remove('active'));
@@ -105,18 +105,18 @@ A.initClients = function() {
   document.getElementById('clientDetailCloseBtn')?.addEventListener('click', () => document.getElementById('clientDetailOverlay').style.display = 'none');
   document.getElementById('clEditBtn')?.addEventListener('click', () => {
     if (!A.state.currentClientId) return;
-    A.showToast('سيتم إضافة تعديل الموكل قريباً', 'info');
+    A.showToast(_t('editClientComing'), 'info');
   });
   document.getElementById('clArchiveBtn')?.addEventListener('click', async () => {
     if (!A.state.currentClientId) return;
-    if (await A.showConfirm('أرشفة هذا الموكل؟', 'أرشفة', 'warning')) {
-      A.showToast('تم أرشفة الموكل', 'success');
+    if (await A.showConfirm(_t('archiveClientConfirm'), _t('archiveBtn'), 'warning')) {
+      A.showToast(_t('clientArchived'), 'success');
     }
   });
   document.getElementById('clAiBtn')?.addEventListener('click', () => {
     A.navigateTo('ai');
     setTimeout(() => {
-      const label = document.getElementById('clTitle')?.textContent || 'موكل';
+      const label = document.getElementById('clTitle')?.textContent || _t('clientLabel');
       window.setAiContext('client', A.state.currentClientId, label);
     }, 200);
   });

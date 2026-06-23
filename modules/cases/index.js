@@ -22,7 +22,7 @@ A.loadCases = async function(filter) {
   } catch (e) {
     A.logError('loadCases', e);
     const mainEl = document.getElementById('casesBody')?.parentElement;
-    if (mainEl) A.showError(mainEl, 'تعذر تحميل قائمة القضايا.', () => A.loadCases(filter));
+    if (mainEl) A.showError(mainEl, _t('failedLoadCases'), () => A.loadCases(filter));
   }
 };
 
@@ -70,17 +70,17 @@ A.wsAIAction = async function(actionFn, loadingText, userText) {
     A.addWsAIMessage(res.friendlyError || res.text || '', false);
   } catch (e) {
     loadingEl.remove();
-    A.addWsAIMessage('حدث خطأ في الاتصال بالمساعد الذكي. حاول مرة أخرى.', false);
+    A.addWsAIMessage(_t('aiErrorMsg'), false);
     A.logError('wsAIAction', e);
   }
 };
 
 A.wsAiTimeline = async function() {
-  await A.wsAIAction(() => A.state.ipc.invoke('ai:generateTimeline', { caseId: A.state.currentCaseId }), '🤖 جاري إنشاء الجدول الزمني...', 'أنشئ جدولاً زمنياً لهذه القضية');
+  await A.wsAIAction(() => A.state.ipc.invoke('ai:generateTimeline', { caseId: A.state.currentCaseId }), _t('aiLoadingMsg'), 'أنشئ جدولاً زمنياً لهذه القضية');
 };
 
 A.wsAiRisk = async function() {
-  await A.wsAIAction(() => A.state.ipc.invoke('ai:detectRisks', { caseId: A.state.currentCaseId }), '🤖 جاري تحليل المخاطر...', 'حلل المخاطر القانونية لهذه القضية');
+  await A.wsAIAction(() => A.state.ipc.invoke('ai:detectRisks', { caseId: A.state.currentCaseId }), _t('aiLoadingMsg'), 'حلل المخاطر القانونية لهذه القضية');
 };
 
 A.wsAiSummarizeDoc = async function(docId, docName) {
@@ -93,7 +93,7 @@ A.wsAiSummarizeDoc = async function(docId, docName) {
   A.addWsAIMessage(`لخص "${docName}"`, true);
   const loadingEl = document.createElement('div');
   loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--gray-400);font-size:12px;';
-  loadingEl.textContent = `🤖 جاري تلخيص "${docName}"...`;
+  loadingEl.textContent = _t('aiLoadingMsg');
   container.appendChild(loadingEl);
   try {
     const res = await A.state.ipc.invoke('ai:summarizeDocument', { docId });
@@ -101,7 +101,7 @@ A.wsAiSummarizeDoc = async function(docId, docName) {
     A.addWsAIMessage(res.friendlyError || res.text || '', false);
   } catch (e) {
     loadingEl.remove();
-    A.addWsAIMessage('حدث خطأ في الاتصال بالمساعد الذكي. حاول مرة أخرى.', false);
+    A.addWsAIMessage(_t('aiErrorMsg'), false);
     A.logError('wsAiSummarize', e);
   }
 };
@@ -138,28 +138,28 @@ A.initCases = function() {
     const clients = (await A.cachedInvoke('db:getAllClients')) || [];
     const esc = A.escapeHtml;
     const opts = clients.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
-    const courts = ['المحكمة الابتدائية', 'محكمة الاستئناف', 'محكمة النقض', 'المحكمة الإدارية', 'المحكمة التجارية', 'المجلس الأعلى'];
+    const courts = [_t('court1stInstance'), _t('courtAppeal'), _t('courtCassation'), _t('courtAdmin'), _t('courtCommercial'), _t('courtSupreme')];
     const courtOpts = courts.map(c => `<option value="${c}">${c}</option>`).join('');
-    A.showModal('قضية جديدة', `
+    A.showModal(_t('newCaseTitle'), `
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
-        <div class="input-group"><label class="input-label">رقم القضية</label><input type="text" id="fCaseNumber" class="input" placeholder="مثال: 2024/123"></div>
-        <div class="input-group"><label class="input-label">الموضوع</label><input type="text" id="fTitle" class="input" placeholder="موضوع القضية"></div>
-        <div class="input-group"><label class="input-label">الموكل</label><select id="fClientId" class="input"><option value="">-- اختر --</option>${opts}</select></div>
-        <div class="input-group"><label class="input-label">الخصم</label><input type="text" id="fOpponent" class="input" placeholder="الطرف المقابل"></div>
-        <div class="input-group"><label class="input-label">المحكمة</label><select id="fCourt" class="input"><option value="">-- اختر --</option>${courtOpts}</select></div>
-        <div class="input-group"><label class="input-label">النوع</label><select id="fCaseType" class="input"><option value="مدني">مدني</option><option value="تجاري">تجاري</option><option value="إداري">إداري</option><option value="جنائي">جنائي</option><option value="أحوال شخصية">أحوال شخصية</option><option value="اجتماعي">اجتماعي</option><option value="عقاري">عقاري</option></select></div>
-        <div class="input-group"><label class="input-label">الحالة</label><select id="fStatus" class="input"><option value="active">نشطة</option><option value="pending">معلقة</option><option value="closed">مغلقة</option></select></div>
-        <div class="input-group"><label class="input-label">الأولوية</label><select id="fPriority" class="input"><option value="medium">متوسطة</option><option value="high">عالية</option><option value="low">منخفضة</option></select></div>
-        <div class="input-group"><label class="input-label">تاريخ الفتح</label><input type="date" id="fCreatedDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
-        <div class="input-group"><label class="input-label">الأجل الحسمي</label><input type="date" id="fDeadline" class="input"></div>
-        <div class="input-group"><label class="input-label">القاضي المقرر</label><input type="text" id="fJudge" class="input"></div>
-        <div class="input-group"><label class="input-label">الأتعاب</label><input type="number" id="fFees" class="input" placeholder="0.00" step="0.01"></div>
+        <div class="input-group"><label class="input-label">${_t('caseNumberLabel')}</label><input type="text" id="fCaseNumber" class="input" placeholder="${_t('exampleCaseNumber')}"></div>
+        <div class="input-group"><label class="input-label">${_t('subjectLabel')}</label><input type="text" id="fTitle" class="input" placeholder="${_t('subjectPlaceholder')}"></div>
+        <div class="input-group"><label class="input-label">${_t('clientSelectLabel')}</label><select id="fClientId" class="input"><option value="">${_t('selectPlaceholder')}</option>${opts}</select></div>
+        <div class="input-group"><label class="input-label">${_t('opponentLabel')}</label><input type="text" id="fOpponent" class="input" placeholder="${_t('opponentPlaceholder')}"></div>
+        <div class="input-group"><label class="input-label">${_t('courtSelectLabel')}</label><select id="fCourt" class="input"><option value="">${_t('selectPlaceholder')}</option>${courtOpts}</select></div>
+        <div class="input-group"><label class="input-label">${_t('caseTypeLabel')}</label><select id="fCaseType" class="input"><option value="مدني">مدني</option><option value="تجاري">تجاري</option><option value="إداري">إداري</option><option value="جنائي">جنائي</option><option value="أحوال شخصية">أحوال شخصية</option><option value="اجتماعي">اجتماعي</option><option value="عقاري">عقاري</option></select></div>
+        <div class="input-group"><label class="input-label">${_t('statusHeader')}</label><select id="fStatus" class="input"><option value="active">${_t('activeF')}</option><option value="pending">${_t('pendingF')}</option><option value="closed">${_t('closedF')}</option></select></div>
+        <div class="input-group"><label class="input-label">${_t('priorityHeader')}</label><select id="fPriority" class="input"><option value="medium">${_t('mediumLabel')}</option><option value="high">${_t('highLabel')}</option><option value="low">${_t('lowLabel')}</option></select></div>
+        <div class="input-group"><label class="input-label">${_t('openDateLabel')}</label><input type="date" id="fCreatedDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
+        <div class="input-group"><label class="input-label">${_t('deadlineDateLabel')}</label><input type="date" id="fDeadline" class="input"></div>
+        <div class="input-group"><label class="input-label">${_t('judgeLabel')}</label><input type="text" id="fJudge" class="input"></div>
+        <div class="input-group"><label class="input-label">${_t('feesLabelCase')}</label><input type="number" id="fFees" class="input" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="input-group" style="margin-top:var(--space-3);"><label class="input-label">ملاحظات</label><textarea id="fDescription" class="input" rows="2"></textarea></div>
+      <div class="input-group" style="margin-top:var(--space-3);"><label class="input-label">${_t('notesLabelCase')}</label><textarea id="fDescription" class="input" rows="2"></textarea></div>
     `, async () => {
       const cn = document.getElementById('fCaseNumber').value.trim();
       const ti = document.getElementById('fTitle').value.trim();
-      if (!cn || !ti) { A.showToast('رقم القضية والموضوع إجباريان', 'error'); return; }
+      if (!cn || !ti) { A.showToast(_t('caseFieldsRequired'), 'error'); return; }
       try {
         const res = await A.mutate('db:addCase', {
           case_number: cn, title: ti,
@@ -174,9 +174,9 @@ A.initCases = function() {
           description: document.getElementById('fDescription').value
         });
         if (res && res.error) { A.showToast(res.error, 'error'); return; }
-        if (res && res.duplicate) { A.showToast('رقم القضية مكرر: ' + (res.existing?.case_number || ''), 'error'); return; }
-        A.hideModal(); A.loadCases(); A.showToast('تم إنشاء القضية بنجاح', 'success');
-      } catch (e) { A.logError('addCase', e); A.showToast('فشل إنشاء القضية', 'error'); }
+        if (res && res.duplicate) { A.showToast(_t('caseDuplicateNumber').replace('{n}', res.existing?.case_number || ''), 'error'); return; }
+        A.hideModal(); A.loadCases(); A.showToast(_t('caseCreated'), 'success');
+      } catch (e) { A.logError('addCase', e); A.showToast(_t('caseCreateFailed'), 'error'); }
     });
   });
 
@@ -192,23 +192,23 @@ A.initCases = function() {
 
   document.getElementById('cdArchiveBtn')?.addEventListener('click', async () => {
     if (!A.state.currentCaseId) return;
-    if (await A.showConfirm('أرشفة هذه القضية؟', 'أرشفة', 'warning')) {
-      try { await A.mutate('db:archiveCase', A.state.currentCaseId); } catch (e) { A.logError('archiveCase', e); A.showToast('فشل الأرشفة', 'error'); return; }
+    if (await A.showConfirm(_t('archiveCaseConfirm'), _t('archiveBtn'), 'warning')) {
+      try { await A.mutate('db:archiveCase', A.state.currentCaseId); } catch (e) { A.logError('archiveCase', e); A.showToast(_t('archiveFailed'), 'error'); return; }
       A.loadCases();
       document.getElementById('caseDetailOverlay').style.display = 'none';
-      A.showToast('تم أرشفة القضية بنجاح', 'success');
+      A.showToast(_t('caseArchivedSuccess'), 'success');
     }
   });
 
   document.getElementById('cdEditBtn')?.addEventListener('click', () => {
     if (!A.state.currentCaseId) return;
-    A.showToast('سيتم إضافة تعديل القضية قريباً', 'info');
+    A.showToast(_t('editCaseComing'), 'info');
   });
 
   document.getElementById('cdAiBtn')?.addEventListener('click', () => {
     A.navigateTo('ai');
     setTimeout(() => {
-      const label = document.getElementById('cdTitle')?.textContent || 'قضية';
+      const label = document.getElementById('cdTitle')?.textContent || _t('caseLabel');
       window.setAiContext('case', A.state.currentCaseId, label);
     }, 200);
   });
@@ -218,47 +218,47 @@ A.initCases = function() {
     const workflows = await A.cachedInvoke('db:getAllWorkflows');
     const templates = await A.cachedInvoke('db:getAllTemplates');
     const cases = await A.cachedInvoke('db:getAllCases');
-    const caseOpts = cases.map(c => `<option value="${c.id}">${c.case_number}</option>`).join('');
+    const caseOpts = cases.map(c => `<option value="${c.id}">${A.escapeHtml(c.case_number)}</option>`).join('');
 
-    document.getElementById('workflowModalTitle').textContent = 'سير العمل والقالب';
+    document.getElementById('workflowModalTitle').textContent = _t('workflowsTitle');
     A.safeSet(document.getElementById('workflowModalBody'), esc => `
       <div style="margin-bottom:var(--space-4);">
-        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">تطبيق سير عمل على قضية</h4>
+        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">${_t('applyWorkflowHeading')}</h4>
         <div class="info-grid-2">
           <select id="wfCaseSelect" class="input">${caseOpts}</select>
           <div style="display:flex;gap:var(--space-2);">
             <select id="wfSelect" class="input" style="flex:1;">
-              <option value="">اختر سير عمل...</option>
-              ${workflows.map(w => `<option value="${w.id}">${esc(w.name)} (${w.step_count||0} خطوات)</option>`).join('')}
+              <option value="">${_t('selectWorkflow')}</option>
+              ${workflows.map(w => `<option value="${w.id}">${esc(w.name)} (${_t('stepsCount').replace('{n}', w.step_count||0)})</option>`).join('')}
             </select>
-            <button class="btn btn-primary btn-sm" onclick="applyWorkflow()">تطبيق</button>
+            <button class="btn btn-primary btn-sm" onclick="applyWorkflow()">${_t('applyBtnLabel')}</button>
           </div>
         </div>
       </div>
       <div style="margin-bottom:var(--space-4);">
-        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">تطبيق قالب على قضية</h4>
+        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">${_t('applyTemplateHeading')}</h4>
         <div class="info-grid-2">
           <select id="tmplCaseSelect" class="input">${caseOpts}</select>
           <div style="display:flex;gap:var(--space-2);">
             <select id="tmplSelect" class="input" style="flex:1;">
-              <option value="">اختر قالب...</option>
+              <option value="">${_t('selectTemplate')}</option>
               ${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
             </select>
-            <button class="btn btn-primary btn-sm" onclick="applyTemplate()">تطبيق</button>
+            <button class="btn btn-primary btn-sm" onclick="applyTemplate()">${_t('applyBtnLabel')}</button>
           </div>
         </div>
       </div>
       <hr style="border:none;border-top:1px solid var(--gray-100);margin:var(--space-4) 0;">
       <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-3);">
-        <button class="btn btn-secondary btn-sm" onclick="showNewWorkflowForm()">+ سير عمل جديد</button>
-        <button class="btn btn-secondary btn-sm" onclick="showNewTemplateForm()">+ قالب جديد</button>
+        <button class="btn btn-secondary btn-sm" onclick="showNewWorkflowForm()">+ ${_t('newWorkflowBtn')}</button>
+        <button class="btn btn-secondary btn-sm" onclick="showNewTemplateForm()">+ ${_t('newTemplateBtn')}</button>
       </div>
-      <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">سير العمل الحالية</h4>
+      <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">${_t('currentWorkflows')}</h4>
       <div id="workflowList">${workflows.map(w => `<div class="workflow-card">
         <h4>${esc(w.name)}</h4>
-        <p>${esc(w.description||'')} · ${w.step_count||0} خطوات</p>
+        <p>${esc(w.description||'')} · ${_t('stepsCount').replace('{n}', w.step_count||0)}</p>
         <button class="btn-icon" onclick="deleteWorkflowItem(${w.id})" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
-      </div>`).join('') || '<p style="color:var(--gray-300);">لا توجد سير عمل</p>'}</div>
+      </div>`).join('') || `<p style="color:var(--gray-300);">${_t('noWorkflowsLabel')}</p>`}</div>
     `);
     document.getElementById('workflowModalOverlay').style.display = 'flex';
   });

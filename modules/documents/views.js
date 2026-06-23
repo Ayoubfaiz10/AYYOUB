@@ -18,12 +18,12 @@ A._renderDocCards = function(displayed, container) {
       <div class="doc-card-footer">
         <span class="badge badge-gold" style="font-size:9px;">${esc(d.doc_type)}</span>
         <div class="doc-card-actions">
-          <button onclick="event.stopPropagation();(async()=>{try{await A.state.ipc.invoke('db:openDocument',${d.id})}catch(e){A.logError('openDoc',e);A.showToast('تعذر فتح الملف','error')}})()" title="فتح"><i class="ri-external-link-line"></i></button>
-          <button onclick="event.stopPropagation();openDocViewer(${d.id})" title="تفاصيل"><i class="ri-eye-line"></i></button>
-          <button onclick="event.stopPropagation();analyzeDoc(${d.id})" title="تحليل بالذكاء الاصطناعي" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button>
+          <button onclick="event.stopPropagation();(async()=>{try{await A.state.ipc.invoke('db:openDocument',${d.id})}catch(e){A.logError('openDoc',e);A.showToast(_t('failedOpenFile'),'error')}})()" title="${_t('openBtnTooltip')}"><i class="ri-external-link-line"></i></button>
+          <button onclick="event.stopPropagation();openDocViewer(${d.id})" title="${_t('detailsBtnTooltip')}"><i class="ri-eye-line"></i></button>
+          <button onclick="event.stopPropagation();analyzeDoc(${d.id})" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button>
         </div>
       </div>
-    </div>`).join('') : '<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">لا توجد وثائق</p></div>');
+    </div>`).join('') : '<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">${_t('noDocsLabel')}</p></div>');
 };
 
 A.renderDocGrid = function() {
@@ -41,19 +41,19 @@ A.renderDocTable = function() {
       <td>${esc(d.case_number || '')}</td>
       <td>${esc(d.client_name || '')}</td>
       <td style="font-size:11px;color:var(--gray-400);">${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</td>
-      <td><span class="badge badge-active">نهائي</span></td>
+      <td><span class="badge badge-active">${_t('docFinalBadge')}</span></td>
       <td>${(d.tags||'').split(',').filter(Boolean).slice(0,2).map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`).join('') || '-'}</td>
-      <td><button class="btn-icon" onclick="openDocViewer(${d.id})" title="تفاصيل"><i class="ri-eye-line"></i></button><button class="btn-icon" onclick="analyzeDoc(${d.id})" title="تحليل بالذكاء الاصطناعي" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
-    </tr>`).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">لا توجد وثائق</td></tr>');
+      <td><button class="btn-icon" onclick="openDocViewer(${d.id})" title="${_t('detailsBtnTooltip')}"><i class="ri-eye-line"></i></button><button class="btn-icon" onclick="analyzeDoc(${d.id})" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
+    </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">${_t('noDocsLabel')}</td></tr>`);
 };
 
 A.renderDocFolders = function() {
   const container = document.getElementById('docFolderView');
   const groups = {};
-  A.state.allDocs.forEach(d => { const key = d.case_number || 'عام'; if (!groups[key]) groups[key] = []; groups[key].push(d); });
+  A.state.allDocs.forEach(d => { const key = d.case_number || _t('defaultFolderName'); if (!groups[key]) groups[key] = []; groups[key].push(d); });
   A.safeSet(container, esc => Object.entries(groups).map(([name, docs]) => `<div class="doc-folder-card" data-folder="${esc(name)}" onclick="document.getElementById('searchDocs').value=this.dataset.folder;A.renderDocGrid();A.renderDocTable();">
       <i class="ri-folder-5-line doc-folder-icon"></i>
       <div class="doc-folder-name">${esc(name)}</div>
-      <div class="doc-folder-count">${docs.length} وثيقة</div>
-    </div>`).join('') || '<div style="text-align:center;padding:40px;color:var(--gray-300);grid-column:1/-1;">لا توجد مجلدات</div>');
+      <div class="doc-folder-count">${_t('docCountLabel').replace('{n}', docs.length)}</div>
+    </div>`).join('') || `<div style="text-align:center;padding:40px;color:var(--gray-300);grid-column:1/-1;">${_t('noFoldersLabel')}</div>`);
 };

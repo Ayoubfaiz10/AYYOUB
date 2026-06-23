@@ -50,17 +50,17 @@ function searchLocal(q) {
 function renderSearchResults(results, q, container, inputEl) {
   container.innerHTML = '';
   if (!results.length) {
-    A.safeSetStatic(container, '<div class="gsr-empty">لا توجد نتائج</div>');
+    A.safeSetStatic(container, '<div class="gsr-empty">' + _t('noResultsLabel') + '</div>');
     container.style.display = 'block';
     return;
   }
   const escQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const hl = (t) => t ? A.escapeHtml(t).replace(new RegExp('(' + escQ.split(/\s+/).join('|') + ')', 'gi'), '<span class="gsr-highlight">$1</span>') : '';
-  const groupLabels = { case: 'القضايا', client: 'الموكلين', hearing: 'الجلسات', document: 'الوثائق', task: 'المهام', expense: 'المصاريف' };
+  const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
   const groupIcons = { case: 'ri-briefcase-line', client: 'ri-user-shared-line', hearing: 'ri-calendar-event-line', document: 'ri-file-line', task: 'ri-task-line', expense: 'ri-money-dollar-circle-line' };
   const groups = {};
   results.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
-  let html = '<div class="gsr-nav-hint"><kbd>↑</kbd><kbd>↓</kbd> تنقل <kbd>↵</kbd> فتح <kbd>Esc</kbd> إغلاق</div>';
+  let html = '<div class="gsr-nav-hint"><kbd>↑</kbd><kbd>↓</kbd> ' + _t('navHint') + ' <kbd>↵</kbd> ' + _t('openHint') + ' <kbd>Esc</kbd> ' + _t('closeHint') + '</div>';
   Object.keys(groups).forEach(type => {
     const items = groups[type];
     html += `<div class="gsr-group"><i class="${groupIcons[type] || 'ri-search-line'}"></i> ${groupLabels[type] || type} (${items.length})</div>`;
@@ -143,33 +143,33 @@ A.loadRecentItems = function() {
 
 // ─── Navigation commands ───
 const CMD_NAV_ACTIONS = [
-  { text: 'لوحة القيادة', sub: 'الانتقال إلى dashboard', words: 'dashboard لوحة القيادة الرئيسية الرئيسي home accueil', nav: 'dashboard', icon: 'ri-dashboard-line', kbd: '1' },
-  { text: 'القضايا', sub: 'عرض جميع القضايا', words: 'cases قضايا ملفات affaires', nav: 'cases', icon: 'ri-briefcase-line', kbd: '2' },
-  { text: 'الموكلين', sub: 'عرض جميع الموكلين', words: 'clients موكلين عملاء clients', nav: 'clients', icon: 'ri-user-3-line', kbd: '3' },
-  { text: 'الوثائق', sub: 'إدارة الوثائق والملفات', words: 'documents وثائق ملفات مستندات documents', nav: 'documents', icon: 'ri-file-4-line', kbd: '4' },
-  { text: 'التقويم', sub: 'عرض الجلسات والمواعيد', words: 'calendar تقويم جلسات مواعيد calendrier rendez-vous', nav: 'calendar', icon: 'ri-calendar-event-line', kbd: '5' },
-  { text: 'المهام', sub: 'إدارة المهام', words: 'tasks مهام مهمات taches', nav: 'tasks', icon: 'ri-task-line', kbd: '6' },
-  { text: 'البحث المتقدم', sub: 'بحث شامل في جميع البيانات', words: 'search بحث متقدم recherche avancée', nav: 'search', icon: 'ri-search-line', kbd: '7' },
-  { text: 'الإعدادات', sub: 'تعديل الإعدادات', words: 'settings إعدادات parametres configuration', nav: 'settings', icon: 'ri-settings-4-line', kbd: '8' },
-  { text: 'التقارير', sub: 'التقارير والإحصائيات', words: 'reports تقارير rapports statistiques', nav: 'reports', icon: 'ri-bar-chart-line', kbd: '9' },
-  { text: 'المساعد الذكي', sub: 'AI Assistant', words: 'ai مساعد ذكي robot intelligence artificielle', nav: 'ai', icon: 'ri-robot-3-line', kbd: '0' },
-  { text: 'المصاريف', sub: 'عرض المصاريف والمدفوعات', words: 'expenses مصاريف مدفوعات dépenses paiements', nav: 'expenses', icon: 'ri-money-dollar-circle-line' },
-  { text: 'الأرشيف', sub: 'القضايا المؤرشفة', words: 'archive أرشيف archivées', nav: 'archive', icon: 'ri-archive-line' },
+  { text: _t('cmdDashboard'), sub: _t('cmdDashboardSub'), words: 'dashboard لوحة القيادة الرئيسية الرئيسي home accueil', nav: 'dashboard', icon: 'ri-dashboard-line', kbd: '1' },
+  { text: _t('cmdCases'), sub: _t('cmdCasesSub'), words: 'cases قضايا ملفات affaires', nav: 'cases', icon: 'ri-briefcase-line', kbd: '2' },
+  { text: _t('cmdClients'), sub: _t('cmdClientsSub'), words: 'clients موكلين عملاء clients', nav: 'clients', icon: 'ri-user-3-line', kbd: '3' },
+  { text: _t('cmdDocs'), sub: _t('cmdDocsSub'), words: 'documents وثائق ملفات مستندات documents', nav: 'documents', icon: 'ri-file-4-line', kbd: '4' },
+  { text: _t('cmdCalendar'), sub: _t('cmdCalendarSub'), words: 'calendar تقويم جلسات مواعيد calendrier rendez-vous', nav: 'calendar', icon: 'ri-calendar-event-line', kbd: '5' },
+  { text: _t('cmdTasks'), sub: _t('cmdTasksSub'), words: 'tasks مهام مهمات taches', nav: 'tasks', icon: 'ri-task-line', kbd: '6' },
+  { text: _t('cmdAdvancedSearch'), sub: _t('cmdAdvancedSearchSub'), words: 'search بحث متقدم recherche avancée', nav: 'search', icon: 'ri-search-line', kbd: '7' },
+  { text: _t('cmdSettings'), sub: _t('cmdSettingsSub'), words: 'settings إعدادات parametres configuration', nav: 'settings', icon: 'ri-settings-4-line', kbd: '8' },
+  { text: _t('cmdReports'), sub: _t('cmdReportsSub'), words: 'reports تقارير rapports statistiques', nav: 'reports', icon: 'ri-bar-chart-line', kbd: '9' },
+  { text: _t('cmdAI'), sub: _t('cmdAISub'), words: 'ai مساعد ذكي robot intelligence artificielle', nav: 'ai', icon: 'ri-robot-3-line', kbd: '0' },
+  { text: _t('cmdExpenses'), sub: _t('cmdExpensesSub'), words: 'expenses مصاريف مدفوعات dépenses paiements', nav: 'expenses', icon: 'ri-money-dollar-circle-line' },
+  { text: _t('cmdArchive'), sub: _t('cmdArchiveSub'), words: 'archive أرشيف archivées', nav: 'archive', icon: 'ri-archive-line' },
 ];
 
 const CMD_CREATE_ACTIONS = [
-  { icon: 'ri-add-line', iconBg: '#1E2A38', text: 'قضية جديدة', sub: 'إنشاء قضية جديدة', action: 'newcase', kbd: 'C' },
-  { icon: 'ri-user-add-line', iconBg: '#1E2A38', text: 'موكل جديد', sub: 'إضافة موكل جديد', action: 'newclient', kbd: 'U' },
-  { icon: 'ri-file-add-line', iconBg: '#C6A15B', text: 'رفع وثيقة', sub: 'تحميل مستند جديد', action: 'doc', kbd: 'D' },
-  { icon: 'ri-task-add-line', iconBg: '#C6A15B', text: 'مهمة جديدة', sub: 'إضافة مهمة جديدة', action: 'task', kbd: 'T' },
-  { icon: 'ri-scales-line', iconBg: '#C6A15B', text: 'جلسة جديدة', sub: 'تسجيل جلسة جديدة', action: 'hearing', kbd: 'H' },
+  { icon: 'ri-add-line', iconBg: '#1E2A38', text: _t('cmdNewCase'), sub: _t('cmdNewCaseSub'), action: 'newcase', kbd: 'C' },
+  { icon: 'ri-user-add-line', iconBg: '#1E2A38', text: _t('cmdNewClient'), sub: _t('cmdNewClientSub'), action: 'newclient', kbd: 'U' },
+  { icon: 'ri-file-add-line', iconBg: '#C6A15B', text: _t('cmdUploadDoc'), sub: _t('cmdUploadDocSub'), action: 'doc', kbd: 'D' },
+  { icon: 'ri-task-add-line', iconBg: '#C6A15B', text: _t('cmdNewTask'), sub: _t('cmdNewTaskSub'), action: 'task', kbd: 'T' },
+  { icon: 'ri-scales-line', iconBg: '#C6A15B', text: _t('cmdNewHearing'), sub: _t('cmdNewHearingSub'), action: 'hearing', kbd: 'H' },
 ];
 
 const CMD_QUICK_ACTIONS = [
-  { text: 'إنشاء نسخة احتياطية', sub: 'Backup يدوي', words: 'backup نسخة احتياطية sauvegarde', action: 'backup', icon: 'ri-save-3-line', iconBg: '#1E2A38' },
-  { text: 'التحقق من سلامة البيانات', sub: 'Integrity Check', words: 'integrity سلامة بيانات تحقق vérification', action: 'integrity', icon: 'ri-check-double-line', iconBg: '#C6A15B' },
-  { text: 'إصلاح البيانات', sub: 'Repair Orphans', words: 'repair إصلاح بيانات correction', action: 'repair', icon: 'ri-tools-line', iconBg: '#C6A15B' },
-  { text: 'عرض لوحة المعلومات', sub: 'Dashboard', words: 'dashboard home الرئيسية', action: 'nav_dashboard', icon: 'ri-dashboard-line', iconBg: '#1E2A38' },
+  { text: _t('cmdCreateBackup'), sub: _t('cmdCreateBackupSub'), words: 'backup نسخة احتياطية sauvegarde', action: 'backup', icon: 'ri-save-3-line', iconBg: '#1E2A38' },
+  { text: _t('cmdIntegrityCheck'), sub: _t('cmdIntegrityCheckSub'), words: 'integrity سلامة بيانات تحقق vérification', action: 'integrity', icon: 'ri-check-double-line', iconBg: '#C6A15B' },
+  { text: _t('cmdRepairData'), sub: _t('cmdRepairDataSub'), words: 'repair إصلاح بيانات correction', action: 'repair', icon: 'ri-tools-line', iconBg: '#C6A15B' },
+  { text: _t('cmdViewDashboard'), sub: _t('cmdViewDashboardSub'), words: 'dashboard home الرئيسية', action: 'nav_dashboard', icon: 'ri-dashboard-line', iconBg: '#1E2A38' },
 ];
 
 function matchNavAction(q, action) {
@@ -231,22 +231,22 @@ A.initCommandPalette = function() {
 
     // Empty state
     if (!hasQuery && !recent.length && !createItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">ابدأ الكتابة للبحث...</p><p style="font-size:11px;margin-top:4px;">ابحث عن قضايا، موكلين، وثائق، مهام، أو اكتب أمراً</p></div>';
+      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdEmptyTitle') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdEmptyDesc') + '</p></div>';
     }
     if (hasQuery && !searchResults.length && !navItems.length && !createItems.length && !quickItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">لا توجد نتائج لـ "<strong style="color:var(--gray-400);">' + A.escapeHtml(query) + '</strong>"</p><p style="font-size:11px;margin-top:4px;">جرب كلمات مختلفة أو استخدم البحث المتقدم</p></div>';
+      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdNoResults').replace('{q}', '<strong style="color:var(--gray-400);">' + A.escapeHtml(query) + '</strong>') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdTryDifferent') + '</p></div>';
     }
 
     const esc = A.escapeHtml;
     const groupIcons = { case: 'ri-briefcase-line', client: 'ri-user-3-line', hearing: 'ri-calendar-event-line', document: 'ri-file-4-line', task: 'ri-task-line', expense: 'ri-money-dollar-circle-line' };
-    const groupLabels = { case: 'القضايا', client: 'الموكلين', hearing: 'الجلسات', document: 'الوثائق', task: 'المهام', expense: 'المصاريف' };
+    const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
     const actionMap = { case: 'case', client: 'client', hearing: 'hearing', document: 'docopen', task: 'task', expense: 'expense' };
 
     let h = '';
 
     // Recent items
     if (recent.length) {
-      h += '<div class="cmd-category">آخر العناصر</div>';
+      h += '<div class="cmd-category">' + _t('cmdRecentItems') + '</div>';
       recent.forEach(r => {
         const type = r.type || 'case';
         h += `<div class="cmd-item" data-action="${actionMap[type] || 'case'}" data-id="${r.id}" data-label="${esc(r.label)}" data-sub="${esc(r.sub)}" data-section="${esc(r.nav)}">
@@ -259,7 +259,7 @@ A.initCommandPalette = function() {
 
     // Navigation
     if (navItems.length) {
-      h += '<div class="cmd-category">التنقل</div>';
+      h += '<div class="cmd-category">' + _t('cmdNavCategory') + '</div>';
       navItems.forEach(a => {
         h += `<div class="cmd-item" data-action="nav" data-section="${a.nav}">
           <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--navy);"><i class="${a.icon}"></i></div>
@@ -286,9 +286,9 @@ A.initCommandPalette = function() {
 
     // Create actions
     if (createItems.length) {
-      h += '<div class="cmd-category">إنشاء</div>';
+      h += '<div class="cmd-category">' + _t('cmdCreateCategory') + '</div>';
       createItems.forEach(a => {
-        h += `<div class="cmd-item" data-action="${a.action}">
+        h += `<div class="cmd-item" data-action="${esc(a.action)}">
           <div class="cmd-item-icon" style="background:${a.iconBg}15;color:${a.iconBg};"><i class="${a.icon}"></i></div>
           <div class="cmd-item-text"><div class="cmd-item-title">${esc(a.text)}</div><div class="cmd-item-sub">${esc(a.sub)}</div></div>
           ${a.kbd ? `<span class="cmd-item-kbd">${a.kbd}</span>` : ''}
@@ -298,9 +298,9 @@ A.initCommandPalette = function() {
 
     // Quick actions
     if (quickItems.length) {
-      h += '<div class="cmd-category">إجراءات سريعة</div>';
+      h += '<div class="cmd-category">' + _t('cmdQuickActionsCategory') + '</div>';
       quickItems.forEach(a => {
-        h += `<div class="cmd-item" data-action="${a.action}">
+        h += `<div class="cmd-item" data-action="${esc(a.action)}">
           <div class="cmd-item-icon" style="background:${a.iconBg}15;color:${a.iconBg};"><i class="${a.icon}"></i></div>
           <div class="cmd-item-text"><div class="cmd-item-title">${esc(a.text)}</div><div class="cmd-item-sub">${esc(a.sub)}</div></div>
         </div>`;
@@ -379,7 +379,7 @@ A.initAdvancedSearch = function() {
     const esc = A.escapeHtml;
     const items = [];
     if (local.length) {
-      const groupLabels = { case: 'القضايا', client: 'الموكلين', hearing: 'الجلسات', document: 'الوثائق', task: 'المهام', expense: 'المصاريف' };
+      const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
       const groups = {};
       local.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
       Object.keys(groups).forEach(type => {
@@ -394,7 +394,7 @@ A.initAdvancedSearch = function() {
     }
     if (items.length) {
       const hl = (t) => t ? esc(t).replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split(/\s+/).join('|') + ')', 'gi'), '<span class="gsr-highlight">$1</span>') : '';
-      const groupLabels = { case: 'القضايا', client: 'الموكلين', hearing: 'الجلسات', document: 'الوثائق', task: 'المهام' };
+      const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks') };
       const groups = {};
       items.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
       Object.keys(groups).forEach(type => {
@@ -404,7 +404,7 @@ A.initAdvancedSearch = function() {
         });
       });
     } else {
-      html = '<p class="empty-state">لا توجد نتائج</p>';
+      html = '<p class="empty-state">' + _t('noResultsLabel') + '</p>';
     }
     A.safeSetStatic(container, html);
   });

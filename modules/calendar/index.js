@@ -13,7 +13,7 @@ A.loadCalendar = async function() {
     A.renderMiniCalendar();
   } catch (e) {
     A.logError('loadCalendar', e);
-    if (grid) A.showError(grid, 'تعذر تحميل التقويم.', () => A.loadCalendar());
+    if (grid) A.showError(grid, _t('failedLoadCalendar'), () => A.loadCalendar());
   }
 };
 
@@ -24,38 +24,38 @@ A.showEventForm = async function(editData) {
   const caseOpts = cases.map(c => `<option value="${c.id}" ${editData && editData.case_id === c.id ? 'selected' : ''}>${esc(c.case_number)} - ${esc(c.title)}</option>`).join('');
   const clientOpts = clients.map(c => `<option value="${c.id}" ${editData && editData.client_id === c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('');
   const isEdit = !!editData;
-  const typeOpts = ['hearing','deadline','meeting','task','document','payment'].map(t => `<option value="${t}" ${editData && editData.type === t ? 'selected' : ''}>${{hearing:'⚖️ جلسة',deadline:'⏰ موعد نهائي',meeting:'📋 اجتماع',task:'✅ مهمة',document:'📄 تقديم وثائق',payment:'💰 دفعة'}[t]}</option>`).join('');
-  const statusOpts = ['scheduled','postponed','completed','cancelled'].map(s => `<option value="${s}" ${editData && editData.status === s ? 'selected' : ''}>${{scheduled:'مجدول',postponed:'مؤجل',completed:'مكتمل',cancelled:'ملغي'}[s]}</option>`).join('');
+  const typeOpts = ['hearing','deadline','meeting','task','document','payment'].map(t => `<option value="${t}" ${editData && editData.type === t ? 'selected' : ''}>${{hearing:_t('eventTypeHearing'),deadline:_t('eventTypeDeadline'),meeting:_t('eventTypeMeeting'),task:_t('eventTypeTask'),document:_t('eventTypeDocument'),payment:_t('eventTypePayment')}[t]}</option>`).join('');
+  const statusOpts = ['scheduled','postponed','completed','cancelled'].map(s => `<option value="${s}" ${editData && editData.status === s ? 'selected' : ''}>${{scheduled:_t('eventStatusScheduled'),postponed:_t('eventStatusPostponed'),completed:_t('eventStatusCompleted'),cancelled:_t('eventStatusCancelled')}[s]}</option>`).join('');
 
-  A.showModal(isEdit ? 'تعديل الحدث' : 'حدث جديد', `
-    <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fEventTitle" class="input" value="${esc(editData ? editData.title : '')}" placeholder="عنوان الحدث"></div>
+  A.showModal(isEdit ? _t('editEventTitle') : _t('newEventTitle'), `
+    <div class="input-group"><label class="input-label">${_t('eventTitleLabel')}</label><input type="text" id="fEventTitle" class="input" value="${esc(editData ? editData.title : '')}" placeholder="${_t('eventTitlePlaceholder')}"></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">القضية</label><select id="fEventCase" class="input"><option value="">-- اختياري --</option>${caseOpts}</select></div>
-      <div class="input-group"><label class="input-label">الموكل</label><select id="fEventClient" class="input"><option value="">-- اختياري --</option>${clientOpts}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventCaseLabel')}</label><select id="fEventCase" class="input"><option value="">${_t('eventOptional')}</option>${caseOpts}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventClientLabel')}</label><select id="fEventClient" class="input"><option value="">${_t('eventOptional')}</option>${clientOpts}</select></div>
     </div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">النوع</label><select id="fEventType" class="input">${typeOpts}</select></div>
-      <div class="input-group"><label class="input-label">الحالة</label><select id="fEventStatus" class="input">${statusOpts}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventTypeLabel')}</label><select id="fEventType" class="input">${typeOpts}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventStatusLabel')}</label><select id="fEventStatus" class="input">${statusOpts}</select></div>
     </div>
     <div class="info-grid-3">
-      <div class="input-group"><label class="input-label">التاريخ</label><input type="date" id="fEventDate" class="input" value="${esc(editData ? editData.date : new Date().toISOString().slice(0,10))}"></div>
-      <div class="input-group"><label class="input-label">من</label><input type="time" id="fEventTime" class="input" value="${esc(editData ? editData.time || '' : '')}"></div>
-      <div class="input-group"><label class="input-label">إلى</label><input type="time" id="fEventEndTime" class="input" value="${esc(editData ? editData.end_time || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventDateLabel')}</label><input type="date" id="fEventDate" class="input" value="${esc(editData ? editData.date : new Date().toISOString().slice(0,10))}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventFromLabel')}</label><input type="time" id="fEventTime" class="input" value="${esc(editData ? editData.time || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventToLabel')}</label><input type="time" id="fEventEndTime" class="input" value="${esc(editData ? editData.end_time || '' : '')}"></div>
     </div>
     <div class="info-grid-3">
-      <div class="input-group"><label class="input-label">المحكمة</label><input type="text" id="fEventCourt" class="input" value="${esc(editData ? editData.court || '' : '')}"></div>
-      <div class="input-group"><label class="input-label">القاضي</label><input type="text" id="fEventJudge" class="input" value="${esc(editData ? editData.judge || '' : '')}"></div>
-      <div class="input-group"><label class="input-label">الغرفة</label><input type="text" id="fEventRoom" class="input" value="${esc(editData ? editData.room || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventCourtLabel')}</label><input type="text" id="fEventCourt" class="input" value="${esc(editData ? editData.court || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventJudgeLabel')}</label><input type="text" id="fEventJudge" class="input" value="${esc(editData ? editData.judge || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventRoomLabel')}</label><input type="text" id="fEventRoom" class="input" value="${esc(editData ? editData.room || '' : '')}"></div>
     </div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">الأولوية</label><select id="fEventUrgency" class="input">${['low','medium','high','critical'].map(u => `<option value="${u}" ${editData && editData.urgency === u ? 'selected' : ''}>${{low:'منخفضة',medium:'متوسطة',high:'عالية',critical:'حرجة'}[u]}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">تكرار</label><select id="fEventRecurring" class="input">${['none','daily','weekly','monthly','yearly'].map(r => `<option value="${r}" ${editData && editData.recurring_type === r ? 'selected' : ''}>${{none:'بدون',daily:'يومي',weekly:'أسبوعي',monthly:'شهري',yearly:'سنوي'}[r]}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventPriorityLabel')}</label><select id="fEventUrgency" class="input">${['low','medium','high','critical'].map(u => `<option value="${u}" ${editData && editData.urgency === u ? 'selected' : ''}>${{low:_t('eventUrgencyLow'),medium:_t('eventUrgencyMedium'),high:_t('eventUrgencyHigh'),critical:_t('eventUrgencyCritical')}[u]}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('eventRepeatLabel')}</label><select id="fEventRecurring" class="input">${['none','daily','weekly','monthly','yearly'].map(r => `<option value="${r}" ${editData && editData.recurring_type === r ? 'selected' : ''}>${{none:_t('eventRecurNone'),daily:_t('eventRecurDaily'),weekly:_t('eventRecurWeekly'),monthly:_t('eventRecurMonthly'),yearly:_t('eventRecurYearly')}[r]}</option>`).join('')}</select></div>
     </div>
-    <div class="input-group"><label class="input-label">ملاحظات</label><textarea id="fEventNotes" class="input" rows="3">${esc(editData ? editData.notes || '' : '')}</textarea></div>
-    <div class="input-group"><label class="input-label">النتيجة (للجلسات المنجزة)</label><textarea id="fEventOutcome" class="input" rows="2">${esc(editData ? editData.outcome || '' : '')}</textarea></div>
+    <div class="input-group"><label class="input-label">${_t('eventNotesPlaceholder')}</label><textarea id="fEventNotes" class="input" rows="3">${esc(editData ? editData.notes || '' : '')}</textarea></div>
+    <div class="input-group"><label class="input-label">${_t('eventOutcomeLabel')}</label><textarea id="fEventOutcome" class="input" rows="2">${esc(editData ? editData.outcome || '' : '')}</textarea></div>
   `, async () => {
     const title = document.getElementById('fEventTitle').value.trim();
-    if (!title) { A.showToast('العنوان مطلوب', 'error'); return; }
+    if (!title) { A.showToast(_t('eventTitleRequired'), 'error'); return; }
     const data = {
       title,
       case_id: parseInt(document.getElementById('fEventCase').value) || null,
@@ -91,15 +91,15 @@ A.showEventForm = async function(editData) {
       A.hideModal();
       A.loadHearings();
       if (typeof A.loadCalendar === 'function') A.loadCalendar();
-    } catch (e) { A.logError('saveEvent', e); A.showToast('فشل حفظ الحدث', 'error'); }
+    } catch (e) { A.logError('saveEvent', e); A.showToast(_t('eventSaveFailed'), 'error'); }
   });
 };
 
 A.openEventDetail = async function(eventId) {
   if (!A.state.ipc) return;
   let e;
-  try { e = await A.cachedInvoke('events:get', eventId); } catch (error) { A.logError('openEventDetail', error); A.showToast('حدث خطأ أثناء تحميل الحدث', 'error'); return; }
-  if (!e) { A.showToast('الحدث غير موجود', 'error'); return; }
+  try { e = await A.cachedInvoke('events:get', eventId); } catch (error) { A.logError('openEventDetail', error); A.showToast(_t('eventLoadError'), 'error'); return; }
+  if (!e) { A.showToast(_t('eventNotFound'), 'error'); return; }
   const titleEl = document.getElementById('eventDetailTitle');
   const badgeEl = document.getElementById('eventDetailBadge');
   const bodyEl = document.getElementById('eventDetailBody');
@@ -113,29 +113,29 @@ A.openEventDetail = async function(eventId) {
   const statusColors = { scheduled: 'badge-active', postponed: 'badge-gold', completed: 'badge-closed', cancelled: 'badge-closed' };
   A.safeSet(bodyEl, esc => `
     <div class="ws-info-card">
-      <h4>معلومات الحدث</h4>
-      <div class="ws-info-row"><span class="ws-info-label">النوع</span><span class="ws-info-value">${esc(e.type)}</span></div>
-      <div class="ws-info-row"><span class="ws-info-label">الحالة</span><span class="ws-info-value"><span class="badge ${statusColors[e.status] || 'badge-active'}">${esc(e.status)}</span></span></div>
-      <div class="ws-info-row"><span class="ws-info-label">التاريخ</span><span class="ws-info-value">${esc(A.formatDate(e.date))} ${e.time ? esc(e.time) : ''}</span></div>
-      <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc(e.urgency)}</span></div>
-      ${e.court ? `<div class="ws-info-row"><span class="ws-info-label">المحكمة</span><span class="ws-info-value">${esc(e.court)}</span></div>` : ''}
-      ${e.judge ? `<div class="ws-info-row"><span class="ws-info-label">القاضي</span><span class="ws-info-value">${esc(e.judge)}</span></div>` : ''}
-      ${e.room ? `<div class="ws-info-row"><span class="ws-info-label">الغرفة</span><span class="ws-info-value">${esc(e.room)}</span></div>` : ''}
+      <h4>${_t('eventInfoLabel')}</h4>
+      <div class="ws-info-row"><span class="ws-info-label">${_t('eventTypeLabel')}</span><span class="ws-info-value">${esc(e.type)}</span></div>
+      <div class="ws-info-row"><span class="ws-info-label">${_t('eventStatusLabel')}</span><span class="ws-info-value"><span class="badge ${statusColors[e.status] || 'badge-active'}">${esc(e.status)}</span></span></div>
+      <div class="ws-info-row"><span class="ws-info-label">${_t('eventDateLabel')}</span><span class="ws-info-value">${esc(A.formatDate(e.date))} ${e.time ? esc(e.time) : ''}</span></div>
+      <div class="ws-info-row"><span class="ws-info-label">${_t('priorityInfoLabel')}</span><span class="ws-info-value">${esc(e.urgency)}</span></div>
+      ${e.court ? `<div class="ws-info-row"><span class="ws-info-label">${_t('eventCourtLabel')}</span><span class="ws-info-value">${esc(e.court)}</span></div>` : ''}
+      ${e.judge ? `<div class="ws-info-row"><span class="ws-info-label">${_t('eventJudgeLabel')}</span><span class="ws-info-value">${esc(e.judge)}</span></div>` : ''}
+      ${e.room ? `<div class="ws-info-row"><span class="ws-info-label">${_t('eventRoomLabel')}</span><span class="ws-info-value">${esc(e.room)}</span></div>` : ''}
     </div>
     <div>
       <div class="ws-info-card" style="margin-bottom:var(--space-4);">
-        <h4>الارتباط</h4>
-        <div class="ws-info-row"><span class="ws-info-label">القضية</span><span class="ws-info-value" style="cursor:pointer;color:var(--navy);" onclick="navigateTo('cases');setTimeout(()=>openCaseDetail(${e.case_id}),200)">${esc(e.case_number || '—')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">الموكل</span><span class="ws-info-value">${esc(e.client_name || '—')}</span></div>
+        <h4>${_t('eventLinkLabel')}</h4>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('eventCaseLabel')}</span><span class="ws-info-value" style="cursor:pointer;color:var(--navy);" onclick="navigateTo('cases');setTimeout(()=>openCaseDetail(${esc(e.case_id)}),200)">${esc(e.case_number || '—')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('eventClientLabel')}</span><span class="ws-info-value">${esc(e.client_name || '—')}</span></div>
       </div>
-      ${e.notes ? `<div class="ws-info-card" style="margin-bottom:var(--space-4);"><h4>ملاحظات</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.notes)}</p></div>` : ''}
-      ${e.outcome ? `<div class="ws-info-card"><h4>النتيجة</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.outcome)}</p></div>` : ''}
+      ${e.notes ? `<div class="ws-info-card" style="margin-bottom:var(--space-4);"><h4>${_t('eventNotesHeading')}</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.notes)}</p></div>` : ''}
+      ${e.outcome ? `<div class="ws-info-card"><h4>${_t('eventOutcomeHeading')}</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.outcome)}</p></div>` : ''}
     </div>
   `);
   editBtn.onclick = () => { overlay.style.display = 'none'; A.showEventForm(e); };
   deleteBtn.onclick = async () => {
-    if (await A.showConfirm('حذف هذا الحدث؟')) {
-      try { await A.mutate('events:delete', e.id); } catch (er) { A.logError('deleteEvent', er); A.showToast('فشل حذف الحدث', 'error'); return; }
+    if (await A.showConfirm(_t('deleteEventConfirm'))) {
+      try { await A.mutate('events:delete', e.id); } catch (er) { A.logError('deleteEvent', er); A.showToast(_t('eventDeleteFailed'), 'error'); return; }
       overlay.style.display = 'none';
       A.loadHearings();
       if (typeof A.loadCalendar === 'function') A.loadCalendar();

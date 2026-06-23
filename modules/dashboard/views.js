@@ -29,13 +29,13 @@ var A = window.App = window.App || {};
 
 A.loadWelcomeSection = function(totalCases) {
   const h = new Date().getHours();
-  const greeting = h < 12 ? 'صباح الخير' : h < 18 ? 'مساء الخير' : 'مساء الخير';
+  const greeting = h < 12 ? _t('morningGreeting') : h < 18 ? _t('eveningGreeting') : _t('eveningGreeting');
   const greetEl = document.getElementById('dashGreeting');
   const userEl = document.getElementById('dashUserName');
   const dateEl = document.getElementById('dashDate');
   const quoteEl = document.getElementById('dashQuote');
   if (greetEl) greetEl.textContent = greeting;
-  if (userEl) userEl.textContent = 'محامي';
+  if (userEl) userEl.textContent = _t('defaultLawyer');
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString(A.getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
   if (quoteEl) quoteEl.textContent = A.state.quotes[totalCases % A.state.quotes.length];
 };
@@ -53,7 +53,7 @@ A.loadQuickStats = function(stats, cases, clients, chartData) {
   A.setStat('dashStatHearings', stats.thisWeekAppointments || 0, 'trendHearings');
   A.setStat('dashStatTasks', pendingTasksCount, 'trendTasks', pendingTasksCount > 0 ? 'down' : 'up');
   A.setStat('dashStatClients', totalClients, 'trendClients');
-  A.setStat('dashStatRevenue', totalRevenue.toLocaleString() + ' د.م.', 'trendRevenue');
+  A.setStat('dashStatRevenue', totalRevenue.toLocaleString() + _t('currencyMAD'), 'trendRevenue');
   A.setStat('dashStatDocs', (cases.reduce((sum, c) => sum + (c.doc_count || 0), 0)) || '—', 'trendDocs');
 };
 
@@ -79,14 +79,14 @@ A.loadTodayAgenda = async function() {
   if (!container || !A.state.ipc) return;
   try {
     const procs = await A.cachedInvoke('db:getTodayProcedures');
-    if (!procs || !procs.length) { A.safeSetStatic(container, '<p class="empty-state-sm">لا توجد أحداث اليوم</p>'); return; }
+    if (!procs || !procs.length) { A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('noEventsToday') + '</p>'); return; }
     A.safeSet(container, esc => procs.map(p => `<div class="tl-item">
       <span class="tl-time">${p.created_at ? p.created_at.slice(11, 16) : '--:--'}</span>
       <div class="tl-icon" style="background:rgba(198,161,91,0.12);color:var(--gold);"><i class="ri-scales-3-line"></i></div>
-      <div class="tl-body"><div class="tl-title">${p.type || 'جلسة'} - ${p.case_number || ''}</div><div class="tl-sub">${p.description || ''}</div></div>
+      <div class="tl-body"><div class="tl-title">${p.type || _t('hearingLabel')} - ${p.case_number || ''}</div><div class="tl-sub">${p.description || ''}</div></div>
       <i class="ri-arrow-left-s-line tl-action" onclick="navigateTo('hearings')"></i>
     </div>`).join(''));
-  } catch (e) { A.logError('loadTodayAgenda', e); A.showError(container, 'تعذر تحميل أحداث اليوم.', () => A.loadTodayAgenda()); }
+  } catch (e) { A.logError('loadTodayAgenda', e); A.showError(container, _t('failedLoadUpcomingEvents'), () => A.loadTodayAgenda()); }
 };
 
 A.loadDeadlines = async function() {
@@ -98,15 +98,15 @@ A.loadDeadlines = async function() {
       A.cachedInvoke('db:getUpcomingHearings')
     ]);
     const items = [];
-    (deadlines||[]).slice(0, 4).forEach(d => items.push({ text: `أجل: ${d.case_number}`, sub: `باقي ${d.days_remaining} يوم`, icon: 'ri-timer-flash-line', color: '#d97706', time: `${d.days_remaining}ي` }));
-    (hearings||[]).slice(0, 4).forEach(h => items.push({ text: `جلسة: ${h.case_number}`, sub: `باقي ${h.days_remaining} يوم`, icon: 'ri-scales-3-line', color: '#3b82f6', time: `${h.days_remaining}ي` }));
-    if (!items.length) { A.safeSetStatic(container, '<p class="empty-state-sm">لا توجد آجال</p>'); return; }
+    (deadlines||[]).slice(0, 4).forEach(d => items.push({ text: _t('deadlineColon').replace('{n}', A.escapeHtml(d.case_number)), sub: _t('remainingDays').replace('{n}', A.escapeHtml(d.days_remaining)), icon: 'ri-timer-flash-line', color: '#d97706', time: _t('daysAbbr').replace('{n}', A.escapeHtml(d.days_remaining)) }));
+    (hearings||[]).slice(0, 4).forEach(h => items.push({ text: _t('hearingColon').replace('{n}', A.escapeHtml(h.case_number)), sub: _t('remainingDays').replace('{n}', A.escapeHtml(h.days_remaining)), icon: 'ri-scales-3-line', color: '#3b82f6', time: _t('daysAbbr').replace('{n}', A.escapeHtml(h.days_remaining)) }));
+    if (!items.length) { A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('noDeadlinesLabel') + '</p>'); return; }
     A.safeSet(container, esc => items.map(i => `<div class="tl-item">
       <span class="tl-time">${i.time}</span>
       <div class="tl-icon" style="background:${i.color}15;color:${i.color};"><i class="${i.icon}"></i></div>
-      <div class="tl-body"><div class="tl-title">${i.text}</div><div class="tl-sub">${i.sub}</div></div>
+      <div class="tl-body"><div class="tl-title">${esc(i.text)}</div><div class="tl-sub">${esc(i.sub)}</div></div>
     </div>`).join(''));
-  } catch (e) { A.logError('loadDeadlines', e); A.showError(container, 'تعذر تحميل المواعيد النهائية.', () => A.loadDeadlines()); }
+  } catch (e) { A.logError('loadDeadlines', e); A.showError(container, _t('failedLoadDeadlines'), () => A.loadDeadlines()); }
 };
 
 A.loadActivityTimeline = async function() {
@@ -115,7 +115,7 @@ A.loadActivityTimeline = async function() {
   try {
     const logs = await A.cachedInvoke('db:getLogs', {});
     const recent = (logs || []).slice(0, 6);
-    if (!recent.length) { A.safeSetStatic(container, '<p class="empty-state-sm">لا توجد نشاطات</p>'); return; }
+    if (!recent.length) { A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('noActivityLabel') + '</p>'); return; }
     const iconMap = { ajout: 'ri-add-circle-line', modification: 'ri-edit-line', suppression: 'ri-delete-bin-line', default: 'ri-history-line' };
     const colorMap = { ajout: '#1A8A5C', modification: '#4A8BC2', suppression: '#D94A4A', default: '#8C8A84' };
     A.safeSet(container, esc => recent.map(l => {
@@ -127,7 +127,7 @@ A.loadActivityTimeline = async function() {
         <div class="tl-body"><div class="tl-title">${esc(l.details || '')}</div><div class="tl-sub">${l.created_at ? l.created_at.slice(0, 10) : ''}</div></div>
       </div>`;
     }).join(''));
-  } catch (e) { A.logError('loadActivityTimeline', e); A.showError(container, 'تعذر تحميل النشاطات.', () => A.loadActivityTimeline()); }
+  } catch (e) { A.logError('loadActivityTimeline', e); A.showError(container, _t('failedLoadActivity'), () => A.loadActivityTimeline()); }
 };
 
 A.loadRecentCases = function(cases) {
@@ -140,7 +140,7 @@ A.loadRecentCases = function(cases) {
         <div class="dash-case-meta">${c.court || ''}</div>
         <span class="dash-case-status badge badge-${c.status}">${A.state.statusLabels[c.status] || c.status}</span>
       </div>`).join('')
-    : '<p class="empty-state-sm">لا توجد قضايا</p>');
+    : '<p class="empty-state-sm">' + _t('noCasesLabel') + '</p>');
 };
 
 A.loadPriorityCases = function(cases) {
@@ -152,7 +152,7 @@ A.loadPriorityCases = function(cases) {
         <div class="dash-case-body"><div class="dash-case-number">${c.case_number || ''}</div><div class="dash-case-client">${c.client_name || ''}</div></div>
         <i class="ri-arrow-left-s-line" style="color:var(--gray-300);font-size:16px;"></i>
       </div>`).join('')
-    : '<p class="empty-state-sm">لا توجد قضايا عاجلة</p>');
+    : '<p class="empty-state-sm">' + _t('noUrgentCasesLabel') + '</p>');
 };
 
 A.loadRecentDocs = async function(cases) {
@@ -173,8 +173,8 @@ A.loadRecentDocs = async function(cases) {
           <div class="dash-doc-body"><div class="dash-doc-name">${esc(d.filename)}</div><div class="dash-doc-case">${esc(d.case_number || '')}</div></div>
           <div class="dash-doc-date">${esc(d.upload_date ? d.upload_date.slice(0, 10) : '')}</div>
         </div>`).join('')
-      : '<p class="empty-state-sm">لا توجد وثائق</p>');
-  } catch (e) { A.logError('loadRecentDocs', e); A.showError(container, 'تعذر تحميل الوثائق الأخيرة.', () => A.loadRecentDocs(cases)); }
+      : '<p class="empty-state-sm">' + _t('noDocsLabel') + '</p>');
+  } catch (e) { A.logError('loadRecentDocs', e); A.showError(container, _t('failedLoadRecentDocs'), () => A.loadRecentDocs(cases)); }
 };
 
 A.loadPendingTasks = async function() {
@@ -187,18 +187,18 @@ A.loadPendingTasks = async function() {
     const done = tasks.filter(t => t.status === 'done').slice(0, 3);
     A.safeSet(container, esc => `
       <div style="margin-bottom:var(--space-2);">
-        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gray-400);"></div><span class="dash-mk-label">للقيام</span><span class="dash-mk-count">${todo.length}</span></div>
-        ${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--gold)' : 'var(--gray-300)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">لا توجد</div>'}
+        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gray-400);"></div><span class="dash-mk-label">${_t('taskTodoLabel')}</span><span class="dash-mk-count">${todo.length}</span></div>
+        ${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--gold)' : 'var(--gray-300)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">' + _t('taskNoneLabel') + '</div>'}
       </div>
       <div style="margin-bottom:var(--space-2);">
-        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">قيد الإنجاز</span><span class="dash-mk-count">${inProgress.length}</span></div>
-        ${inProgress.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--gold)' : 'var(--gray-300)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">لا توجد</div>'}
+        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">${_t('taskInProgressLabel')}</span><span class="dash-mk-count">${inProgress.length}</span></div>
+        ${inProgress.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : t.priority === 'medium' ? 'var(--gold)' : 'var(--gray-300)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">' + _t('taskNoneLabel') + '</div>'}
       </div>
       <div>
-        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">مكتملة</span><span class="dash-mk-count">${done.length}</span></div>
-        ${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">لا توجد</div>'}
+        <div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">${_t('taskCompletedLabel')}</span><span class="dash-mk-count">${done.length}</span></div>
+        ${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:4px 0;">' + _t('taskNoneLabel') + '</div>'}
       </div>`);
-  } catch (e) { A.logError('loadPendingTasks', e); A.showError(container, 'تعذر تحميل المهام.', () => A.loadPendingTasks()); }
+  } catch (e) { A.logError('loadPendingTasks', e); A.showError(container, _t('failedLoadTasksLabel'), () => A.loadPendingTasks()); }
 };
 
 A.renderMiniCalendar = function() {
@@ -235,16 +235,16 @@ A.loadUpcomingEvents = async function() {
       A.cachedInvoke('db:getUpcomingDeadlines')
     ]);
     const events = [];
-    (hearings||[]).slice(0, 3).forEach(h => events.push({ text: `جلسة: ${h.case_number || ''}`, time: `باقي ${h.days_remaining || '?'} ي`, color: 'var(--gold)' }));
-    (deadlines||[]).slice(0, 2).forEach(d => events.push({ text: `أجل: ${d.case_number || ''}`, time: `باقي ${d.days_remaining || '?'} ي`, color: 'var(--danger)' }));
+    (hearings||[]).slice(0, 3).forEach(h => events.push({ text: _t('hearingColon').replace('{n}', h.case_number || ''), time: _t('remainingDays').replace('{n}', h.days_remaining || '?'), color: 'var(--gold)' }));
+    (deadlines||[]).slice(0, 2).forEach(d => events.push({ text: _t('deadlineColon').replace('{n}', d.case_number || ''), time: _t('remainingDays').replace('{n}', d.days_remaining || '?'), color: 'var(--danger)' }));
     events.sort((a, b) => parseInt(a.time) - parseInt(b.time));
-    if (!events.length) { A.safeSetStatic(container, '<p class="empty-state-sm">لا توجد أحداث قادمة</p>'); return; }
+    if (!events.length) { A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('noUpcomingEventsLabel') + '</p>'); return; }
     A.safeSet(container, esc => events.slice(0, 4).map(e => `<div class="dash-ue-item">
       <div class="dash-ue-dot" style="background:${e.color};"></div>
       <span class="dash-ue-text">${esc(e.text)}</span>
       <span class="dash-ue-time">${esc(e.time)}</span>
     </div>`).join(''));
-  } catch (e) { A.logError('loadUpcomingEvents', e); A.showError(container, 'تعذر تحميل الأحداث القادمة.', () => A.loadUpcomingEvents()); }
+  } catch (e) { A.logError('loadUpcomingEvents', e); A.showError(container, _t('failedLoadUpcomingEvents'), () => A.loadUpcomingEvents()); }
 };
 
 A.loadFinancialSummary = function(chartData) {
@@ -253,9 +253,9 @@ A.loadFinancialSummary = function(chartData) {
   const revEl = document.getElementById('dashRevenue');
   const expEl = document.getElementById('dashExpenses');
   const outEl = document.getElementById('dashOutstanding');
-  if (revEl) revEl.textContent = paid.toLocaleString() + ' د.م.';
-  if (expEl) expEl.textContent = expenses.toLocaleString() + ' د.م.';
-  if (outEl) outEl.textContent = outstanding.toLocaleString() + ' د.م.';
+  if (revEl) revEl.textContent = paid.toLocaleString() + _t('currencyMAD');
+  if (expEl) expEl.textContent = expenses.toLocaleString() + _t('currencyMAD');
+  if (outEl) outEl.textContent = outstanding.toLocaleString() + _t('currencyMAD');
   A.drawPieChart(chartData);
 };
 
@@ -300,7 +300,7 @@ A.initCharts = function(stats, chartData) {
   // Cases by Status (Doughnut)
   const casesCtx = document.getElementById('casesChart')?.getContext('2d');
   if (casesCtx && stats.casesByStatus) {
-    const statusLabels = { active: 'نشطة', pending: 'معلقة', closed: 'مغلقة' };
+    const statusLabels = { active: _t('activeF'), pending: _t('pendingF'), closed: _t('closedF') };
     const statusColors = { active: success, pending: gold, closed: gray200 };
     A._casesChart = new Chart(casesCtx, {
       type: 'doughnut',
@@ -332,7 +332,7 @@ A.initCharts = function(stats, chartData) {
       data: {
         labels: months,
         datasets: [{
-          label: 'القضايا المسجلة',
+          label: _t('casesRegisteredLabel'),
           data: chartData.monthly.map(m => m.count),
           backgroundColor: gold,
           borderRadius: 4
@@ -354,7 +354,7 @@ A.initCharts = function(stats, chartData) {
   // Tasks by Priority (Doughnut)
   const tasksCtx = document.getElementById('tasksChart')?.getContext('2d');
   if (tasksCtx && stats.tasksByPriority) {
-    const priorityLabels = { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' };
+    const priorityLabels = { critical: _t('criticalLabel'), high: _t('highLabel'), medium: _t('mediumLabel'), low: _t('lowLabel') };
     const priorityColors = { critical: danger, high: '#FF8A65', medium: gold, low: success };
     A._tasksChart = new Chart(tasksCtx, {
       type: 'doughnut',
@@ -396,7 +396,7 @@ A.loadCaseHealthScore = function(cases, tasks) {
   const el = document.getElementById('dashHealthScore');
   if (!el) return;
   const activeCases = cases.filter(c => c.status === 'active' || c.status === 'pending');
-  if (!activeCases.length) { A.safeSetStatic(el, '<p class="empty-state-sm">لا توجد قضايا نشطة</p>'); return; }
+  if (!activeCases.length) { A.safeSetStatic(el, '<p class="empty-state-sm">' + _t('noActiveCasesHealth') + '</p>'); return; }
   let totalScore = 0;
   const count = activeCases.length;
   activeCases.forEach(c => {
@@ -415,11 +415,11 @@ A.loadCaseHealthScore = function(cases, tasks) {
   });
   const avg = Math.round(totalScore / count);
   let grade, color;
-  if (avg >= 80) { grade = 'ممتاز'; color = 'var(--success)'; }
-  else if (avg >= 60) { grade = 'جيد'; color = 'var(--gold)'; }
-  else if (avg >= 40) { grade = 'متوسط'; color = 'var(--warning)'; }
-  else { grade = 'ضعيف'; color = 'var(--danger)'; }
-  A.safeSetStatic(el, `<div class="health-score-card"><div class="health-score-circle" style="border-color:${color};color:${color};">${avg}<span style="font-size:11px;">%</span></div><div style="font-size:13px;font-weight:600;">${grade}</div><div style="font-size:11px;color:var(--gray-400);">عبر ${count} قضية نشطة</div></div>`);
+  if (avg >= 80) { grade = _t('gradeExcellent'); color = 'var(--success)'; }
+  else if (avg >= 60) { grade = _t('gradeGood'); color = 'var(--gold)'; }
+  else if (avg >= 40) { grade = _t('gradeAverage'); color = 'var(--warning)'; }
+  else { grade = _t('gradePoor'); color = 'var(--danger)'; }
+  A.safeSetStatic(el, `<div class="health-score-card"><div class="health-score-circle" style="border-color:${color};color:${color};">${avg}<span style="font-size:11px;">%</span></div><div style="font-size:13px;font-weight:600;">${grade}</div><div style="font-size:11px;color:var(--gray-400);">${_t('acrossActiveCases').replace('{n}', count)}</div></div>`);
 };
 
 A.loadDeadlineCenter = function(cases) {
@@ -434,13 +434,13 @@ A.loadDeadlineCenter = function(cases) {
     const dt = new Date(d);
     if (isNaN(dt.getTime())) return;
     const diff = Math.ceil((dt - now) / 86400000);
-    deadlines.push({ case: c.case_number || c.title || 'قضية', date: d, diff, id: c.id });
+    deadlines.push({ case: c.case_number || c.title || _t('caseLabel'), date: d, diff, id: c.id });
   });
   deadlines.sort((a, b) => a.diff - b.diff);
   const critical = deadlines.filter(d => d.diff >= 0 && d.diff <= 3);
   const warning = deadlines.filter(d => d.diff > 3 && d.diff <= 7);
   if (countEl) countEl.textContent = critical.length;
-  if (!deadlines.length) { A.safeSetStatic(el, '<p class="empty-state-sm">لا توجد مواعيد قادمة</p>'); return; }
+  if (!deadlines.length) { A.safeSetStatic(el, '<p class="empty-state-sm">' + _t('noUpcomingDates') + '</p>'); return; }
   const show = deadlines.slice(0, 4);
   A.safeSet(el, esc => {
     let html = '';
@@ -448,10 +448,10 @@ A.loadDeadlineCenter = function(cases) {
       let cls = 'deadline-ok';
       if (d.diff <= 3) cls = 'deadline-critical';
       else if (d.diff <= 7) cls = 'deadline-warning';
-      const label = d.diff <= 0 ? 'فائت!' : d.diff === 0 ? 'اليوم' : `خلال ${d.diff} أيام`;
+      const label = d.diff <= 0 ? _t('overdueLabel') : d.diff === 0 ? _t('todayLabel') : _t('withinDays').replace('{n}', d.diff);
       html += `<div class="deadline-item ${cls}"><span class="deadline-title">${esc(d.case)}</span><span class="deadline-label">${label}</span></div>`;
     });
-    if (deadlines.length > 4) html += `<div class="deadline-item" style="justify-content:center;color:var(--gray-400);font-size:12px;">+${deadlines.length - 4} موعد آخر</div>`;
+    if (deadlines.length > 4) html += `<div class="deadline-item" style="justify-content:center;color:var(--gray-400);font-size:12px;">${_t('moreAppointments').replace('{n}', deadlines.length - 4)}</div>`;
     return html;
   });
 };

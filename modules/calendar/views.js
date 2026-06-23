@@ -37,7 +37,7 @@ A.renderMonthView = function() {
     html += `<div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
       <div class="cal-day-num">${d.getDate()}</div>
       ${visible.map(e => `<div class="cal-day-event event-${e.type}" onclick="event.stopPropagation();openEventDetail(${e.id})">${A.escapeHtml(e.title).slice(0, 20)}</div>`).join('')}
-      ${more > 0 ? `<div class="cal-day-more" onclick="event.stopPropagation();switchCalView('day');goToDate('${dateStr}')">+${more} أكثر</div>` : ''}
+      ${more > 0 ? `<div class="cal-day-more" onclick="event.stopPropagation();switchCalView('day');goToDate('${dateStr}')">+${more} ${_t('moreEventsLabel')}</div>` : ''}
     </div>`;
   }
   A.safeSetStatic(grid, html);
@@ -117,14 +117,14 @@ A.renderAgendaView = function() {
       <div class="cal-agenda-date">${isToday ? window._t('statusToday') + ' — ' : ''}${dayName}</div>
       ${events.map(e => `<div class="cal-agenda-event" onclick="openEventDetail(${e.id})">
         <div class="cal-agenda-dot" style="background:${typeColors[e.type] || 'var(--gray-300)'};"></div>
-        <div class="cal-agenda-time">${esc(e.time || 'كل اليوم')}</div>
+        <div class="cal-agenda-time">${esc(e.time || _t('eventAllDayLabel'))}</div>
         <div class="cal-agenda-info">
           <div class="cal-agenda-title">${typeIcons[e.type] || '📌'} ${esc(e.title)}</div>
           <div class="cal-agenda-meta">${esc(e.case_number || '')} ${e.court ? '· ' + esc(e.court) : ''}</div>
         </div>
       </div>`).join('')}
     </div>`;
-  }).join('') : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">لا توجد أحداث قادمة</p></div>');
+  }).join('') : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">' + _t('noUpcomingEventsLabel') + '</p></div>');
 };
 
 A.switchCalView = function(view) {

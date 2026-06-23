@@ -72,9 +72,9 @@ A.showConfirm = function(message, confirmText, type) {
     A.safeSetStatic(iconEl, `<i class="${icons[t] || 'ri-alert-line'}"></i>`);
     iconEl.className = 'confirm-icon ' + (colors[t] || 'confirm-icon-danger');
 
-    titleEl.textContent = confirmText === 'أرشفة' ? 'تأكيد الأرشفة' : 'تأكيد الحذف';
-    A.safeSet(msgEl, esc => esc(message || 'هل أنت متأكد؟'));
-    confirmBtn.textContent = confirmText || 'حذف';
+    titleEl.textContent = confirmText === 'أرشفة' ? _t('confirmArchive') : _t('confirmDeleteTitle');
+    A.safeSet(msgEl, esc => esc(message || _t('confirmDeleteMsg')));
+    confirmBtn.textContent = confirmText || _t('delete');
     confirmBtn.className = t === 'warning' ? 'btn btn-gold' : 'btn btn-danger';
 
     overlay.style.display = 'flex';

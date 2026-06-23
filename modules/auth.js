@@ -3,7 +3,7 @@ var A = window.App = window.App || {};
 A.populateUserList = function(users) {
   var userSelect = document.getElementById('userSelect');
   if (!userSelect) return;
-  var html = '<option value="">اختر المستخدم...</option>';
+  var html = '<option value="">' + _t('selectUser') + '</option>';
   for (var i = 0; i < users.length; i++) {
     var u = users[i];
     html += '<option value="' + u.id + '" data-name="' + A.escapeHtml(u.name) + '" data-role="' + A.escapeHtml(u.role) + '">' + A.escapeHtml(u.name) + ' (' + A.escapeHtml(u.role) + ')</option>';
@@ -30,8 +30,8 @@ A.showSetupScreen = function() {
   if (loginBtn) loginBtn.style.display = 'none';
   if (createAdmin) createAdmin.style.display = 'block';
   if (loginIcon) loginIcon.className = 'ri-user-star-line';
-  if (loginTitle) loginTitle.textContent = 'إنشاء حساب المدير';
-  if (loginSub) loginSub.textContent = 'أنشئ حساب المدير للبدء في استخدام البرنامج';
+  if (loginTitle) loginTitle.textContent = _t('createAdminAccount');
+  if (loginSub) loginSub.textContent = _t('setupAdminSubtitle');
   if (loginOverlay) loginOverlay.style.display = 'flex';
   if (appEl) appEl.style.display = 'none';
 };
@@ -66,7 +66,7 @@ A.initAuth = function() {
     var errorEl = document.getElementById('loginError');
 
     if (!password) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'الرجاء إدخال كلمة السر'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('enterPassword'); }
       return;
     }
 
@@ -87,11 +87,11 @@ A.initAuth = function() {
         if (errorEl) errorEl.style.display = 'none';
         if (typeof A.loadDashboard === 'function') A.loadDashboard();
       } else {
-        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = result.error || 'كلمة السر خطأ'; }
+        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = result.error || _t('passwordIncorrect'); }
       }
     }).catch(function(e) {
       console.error('Login error:', e);
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'حدث خطأ في تسجيل الدخول'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('loginErrorOccurred'); }
     });
   }
 
@@ -103,11 +103,11 @@ A.initAuth = function() {
     var confirm = confirmPwEl ? confirmPwEl.value : '';
 
     if (!pw || pw.length < 4) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'كلمة السر يجب أن تكون 4 أحرف على الأقل'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
       return;
     }
     if (pw !== confirm) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'كلمتا السر غير متطابقتين'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
       return;
     }
 
@@ -118,11 +118,11 @@ A.initAuth = function() {
         if (confirmPwEl) confirmPwEl.value = '';
         A.checkAuth();
       } else {
-        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = result.error || 'فشل حفظ كلمة السر'; }
+        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = result.error || _t('savePasswordFailed'); }
       }
     }).catch(function(e) {
       console.error('Setup error:', e);
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'خطأ في حفظ كلمة السر'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorSavingPassword'); }
     });
   }
 
@@ -138,15 +138,15 @@ A.initAuth = function() {
     var confirm = confirmEl ? confirmEl.value : '';
 
     if (!name) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'اسم المدير مطلوب'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('adminNameRequired'); }
       return;
     }
     if (!pw || pw.length < 4) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'كلمة السر يجب أن تكون 4 أحرف على الأقل'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
       return;
     }
     if (pw !== confirm) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'كلمتا السر غير متطابقتين'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
       return;
     }
 
@@ -159,15 +159,15 @@ A.initAuth = function() {
             if (confirmEl) confirmEl.value = '';
             A.checkAuth();
           } else {
-            if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = setPwResult.error || 'فشل حفظ كلمة السر'; }
+            if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = setPwResult.error || _t('savePasswordFailed'); }
           }
         });
       } else {
-        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (createResult && createResult.error) || 'فشل إنشاء حساب المدير'; }
+        if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (createResult && createResult.error) || _t('createAdminFailed'); }
       }
     }).catch(function(e) {
       console.error('Create admin error:', e);
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = 'خطأ في إنشاء حساب المدير'; }
+      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorCreatingAdmin'); }
     });
   }
 
@@ -195,10 +195,10 @@ A.initAuth = function() {
 
   var onbStep = 0;
   var onbData = [
-    { title: 'مرحباً بك في مدير المكتب', desc: 'منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد متكامل.' },
-    { title: 'إدارة القضايا والموكلين', desc: 'أنشئ القضايا، أضف الموكلين، وتابع كل التفاصيل في مساحات عمل متخصصة. كل شيء مترابط.' },
-    { title: 'التقويم والجلسات', desc: 'جدول زمني قانوني شامل مع 4 طرق عرض، تنبيهات ذكية، وجلسات مرتبطة بالقضايا.' },
-    { title: 'المساعد الذكي', desc: 'محرك ذكاء اصطناعي قانوني — حلل، صغ، استشر. سياق كامل لجميع قضاياك ووثائقك.' },
+    { title: _t('onbTitle'), desc: _t('onbDesc') },
+    { title: _t('onbTitleStep1'), desc: _t('onbDescStep1') },
+    { title: _t('onbTitleStep2'), desc: _t('onbDescStep2') },
+    { title: _t('onbTitleStep3'), desc: _t('onbDescStep3') },
   ];
 
   function updateOnbStep() {
@@ -209,7 +209,7 @@ A.initAuth = function() {
     if (title) title.textContent = onbData[onbStep].title;
     if (desc) desc.textContent = onbData[onbStep].desc;
     dots.forEach(function(d, i) { d.classList.toggle('active', i === onbStep); });
-    if (next) next.textContent = onbStep === onbData.length - 1 ? 'ابدأ الآن' : 'التالي';
+    if (next) next.textContent = onbStep === onbData.length - 1 ? _t('getStarted') : _t('onbNext');
   }
 
   function showOnboarding() {

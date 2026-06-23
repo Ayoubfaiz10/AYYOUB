@@ -18,8 +18,8 @@ A.initKanbanDragDrop = function() {
       try {
         if (newStatus === 'archived') await A.mutate('db:archiveCase', id);
         else if (newStatus) await A.mutate('db:updateCaseStatus', { id, status: newStatus });
-        A.showToast('تم تغيير حالة القضية', 'success');
-      } catch (e) { A.logError('kanbanDrop', e); A.showToast('فشل تغيير الحالة', 'error'); }
+        A.showToast(_t('caseStatusChanged'), 'success');
+      } catch (e) { A.logError('kanbanDrop', e); A.showToast(_t('failedStatusChange'), 'error'); }
       A.loadCases();
     });
   });

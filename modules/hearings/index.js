@@ -13,7 +13,7 @@ A.loadHearings = async function() {
   } catch (e) {
     A.logError('loadHearings', e);
     const mainEl = document.getElementById('hearingsBody')?.parentElement;
-    if (mainEl) A.showError(mainEl, 'تعذر تحميل الجلسات والمواعيد.', () => A.loadHearings());
+    if (mainEl) A.showError(mainEl, _t('failedLoadHearings'), () => A.loadHearings());
   }
 };
 
@@ -21,7 +21,7 @@ A._renderHearingRows = function(displayed) {
   const body = document.getElementById('hearingsBody');
   A.safeSet(body, esc => displayed.length ? displayed.map(e => {
     const today = new Date().toISOString().slice(0,10);
-    const statusBadge = e.date < today ? '<span class="badge badge-closed">سابقة</span>' : e.date === today ? '<span class="badge badge-gold">اليوم</span>' : '<span class="badge badge-active">قادمة</span>';
+    const statusBadge = e.date < today ? '<span class="badge badge-closed">' + _t('hearingsPast') + '</span>' : e.date === today ? '<span class="badge badge-gold">' + _t('hearingsToday') + '</span>' : '<span class="badge badge-active">' + _t('hearingsUpcoming') + '</span>';
     const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
     return `<tr>
       <td style="font-size:11px;">${esc(A.formatDate(e.date))}</td>
@@ -33,7 +33,7 @@ A._renderHearingRows = function(displayed) {
       <td>${statusBadge}</td>
       <td><button class="btn-icon" onclick="openEventDetail(${e.id})"><i class="ri-eye-line"></i></button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">لا توجد أحداث</td></tr>');
+  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">' + _t('noEvents') + '</td></tr>');
 };
 
 A.renderHearingsTable = function() {

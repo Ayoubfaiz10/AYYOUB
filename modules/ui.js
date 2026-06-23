@@ -41,7 +41,7 @@ A.initSessionTimeout = function() {
         const pw = document.getElementById('loginPassword');
         const err = document.getElementById('loginError');
         if (pw) pw.value = '';
-        if (err) { err.textContent = 'انتهت الجلسة — الرجاء إعادة تسجيل الدخول'; err.style.display = 'block'; }
+        if (err) { err.textContent = _t('sessionExpired'); err.style.display = 'block'; }
       }
     }, 30 * 60 * 1000);
   }

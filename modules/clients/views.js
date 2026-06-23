@@ -13,10 +13,10 @@ A.renderClientTable = function(list) {
       <button class="btn-icon client-open-btn" data-id="${c.id}"><i class="ri-eye-line"></i></button>
       <button class="btn-icon client-del-btn" data-id="${c.id}"><i class="ri-delete-bin-line"></i></button>
     </td>
-  </tr>`).join('') : '<tr><td colspan="7"><div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>لا توجد نتائج</h3><p>ابحث باسم أو رقم هاتف أو بريد إلكتروني</p></div></td></tr>');
+  </tr>`).join('') : `<tr><td colspan="7"><div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>${_t('noResultsSearch')}</h3><p>${_t('searchClientsHint')}</p></div></td></tr>`);
   document.querySelectorAll('.client-open-btn').forEach(b => b.addEventListener('click', () => A.openClientDetail(parseInt(b.dataset.id))));
   document.querySelectorAll('.client-del-btn').forEach(b => b.addEventListener('click', async () => {
-    if (await A.showConfirm('حذف هذا الموكل؟')) { try { await A.mutate('db:deleteClient', parseInt(b.dataset.id)); } catch (e) { A.logError('deleteClient', e); A.showToast('فشل حذف الموكل', 'error'); } A.loadClients(); }
+    if (await A.showConfirm(_t('deleteClientConfirm'))) { try { await A.mutate('db:deleteClient', parseInt(b.dataset.id)); } catch (e) { A.logError('deleteClient', e); A.showToast(_t('clientDeleteFailed'), 'error'); } A.loadClients(); }
   }));
 };
 
@@ -29,31 +29,31 @@ A.renderClientCards = function(list) {
         <div class="client-card-name">${esc(c.name)}</div>
         <div class="client-card-contact">${esc(c.phone || c.email || '')}</div>
       </div>
-      <span class="badge badge-active">نشط</span>
+      <span class="badge badge-active">${_t('activeBadge')}</span>
     </div>
-    <div class="client-card-stats"><span>${c._caseCount || 0} قضايا</span><span>${c._balance || 0} د.م.</span></div>
+    <div class="client-card-stats"><span>${c._caseCount || 0} ${_t('casesPlural')}</span><span>${c._balance || 0}${_t('currencyMAD')}</span></div>
     <div class="client-card-actions">
-      <button class="btn-icon" onclick="event.stopPropagation();openClientDetail(${c.id})" title="فتح"><i class="ri-eye-line"></i></button>
-      <button class="btn-icon" onclick="event.stopPropagation();window.open('tel:${esc(c.phone)}','_self')" title="اتصال"><i class="ri-phone-line"></i></button>
-      <button class="btn-icon" onclick="event.stopPropagation();window.open('mailto:${esc(c.email)}','_self')" title="بريد"><i class="ri-mail-line"></i></button>
+      <button class="btn-icon" onclick="event.stopPropagation();openClientDetail(${c.id})" title="${_t('openBtnTooltip')}"><i class="ri-eye-line"></i></button>
+      <button class="btn-icon" onclick="event.stopPropagation();window.open('tel:${esc(c.phone)}','_self')" title="${_t('callBtn')}"><i class="ri-phone-line"></i></button>
+      <button class="btn-icon" onclick="event.stopPropagation();window.open('mailto:${esc(c.email)}','_self')" title="${_t('emailBtn')}"><i class="ri-mail-line"></i></button>
     </div>
-  </div>`).join('') : '<div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>لا يوجد موكلون</h3><p>أضف موكلك الأول لتبدأ</p></div>');
+  </div>`).join('') : `<div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>${_t('noClientsLabel')}</h3><p>${_t('addFirstClient')}</p></div>`);
 };
 
 A.renderClientSegments = function(list) {
   const container = document.getElementById('clientsSegments');
   const segments = [
-    { label: 'نشطون', icon: 'ri-user-star-line', color: '#1A8A5C', filter: c => c._caseCount > 0 },
-    { label: 'جدد', icon: 'ri-user-add-line', color: '#4A8BC2', filter: c => c._caseCount === 0 },
-    { label: 'قضايا متعددة', icon: 'ri-briefcase-4-line', color: '#C6A15B', filter: c => c._caseCount >= 3 },
-    { label: 'ذوو قيمة', icon: 'ri-vip-crown-line', color: '#8B5CF6', filter: c => c._balance > 5000 },
+    { label: _t('segmentActive'), icon: 'ri-user-star-line', color: '#1A8A5C', filter: c => c._caseCount > 0 },
+    { label: _t('segmentNew'), icon: 'ri-user-add-line', color: '#4A8BC2', filter: c => c._caseCount === 0 },
+    { label: _t('segmentMultipleCases'), icon: 'ri-briefcase-4-line', color: '#C6A15B', filter: c => c._caseCount >= 3 },
+    { label: _t('segmentHighValue'), icon: 'ri-vip-crown-line', color: '#8B5CF6', filter: c => c._balance > 5000 },
   ];
   A.safeSet(container, esc => segments.map(s => `<div class="cl-segment">
-    <h3><i class="${s.icon}" style="color:${s.color};margin-left:6px;"></i>${s.label}</h3>
+    <h3><i class="${s.icon}" style="color:${s.color};margin-left:6px;"></i>${esc(s.label)}</h3>
     <div class="cl-segment-cards">${list.filter(s.filter).slice(0, 6).map(c => `<div class="cl-segment-card" onclick="openClientDetail(${c.id})">
       <div class="cl-avatar-sm">${esc((c.name||'?').charAt(0))}</div>
-      <div class="cl-segment-info"><div class="cl-segment-name">${esc(c.name)}</div><div class="cl-segment-meta">${c._caseCount || 0} قضايا · ${c._balance || 0} د.م.</div></div>
-    </div>`).join('') || `<div style="font-size:12px;color:var(--gray-300);padding:8px;">لا يوجد</div>`}</div>
+      <div class="cl-segment-info"><div class="cl-segment-name">${esc(c.name)}</div><div class="cl-segment-meta">${c._caseCount || 0} ${_t('casesPlural')} · ${c._balance || 0}${_t('currencyMAD')}</div></div>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--gray-300);padding:8px;">${_t('zeroLabel')}</div>`}</div>
   </div>`).join(''));
 };
 
@@ -71,37 +71,37 @@ A.loadWsClOverview = async function(c) {
         <div><div class="cl-profile-name">${esc(c.name)}</div>
           <div class="cl-profile-contact">${esc(c.phone || '')}${c.email ? ' · ' + esc(c.email) : ''}</div>
           <div class="cl-profile-stats">
-            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${cases.length}</div><div class="cl-profile-stat-label">قضايا</div></div>
-            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${activeCases}</div><div class="cl-profile-stat-label">نشطة</div></div>
-            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${totalPaid.toFixed(0)}</div><div class="cl-profile-stat-label">مدفوع</div></div>
-            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${(totalFees - totalPaid).toFixed(0)}</div><div class="cl-profile-stat-label">متبقي</div></div>
+            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${cases.length}</div><div class="cl-profile-stat-label">${_t('casesPlural')}</div></div>
+            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${activeCases}</div><div class="cl-profile-stat-label">${_t('activeF')}</div></div>
+            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${totalPaid.toFixed(0)}</div><div class="cl-profile-stat-label">${_t('paidLabel')}</div></div>
+            <div class="cl-profile-stat"><div class="cl-profile-stat-num">${(totalFees - totalPaid).toFixed(0)}</div><div class="cl-profile-stat-label">${_t('remainingLabel')}</div></div>
           </div>
         </div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>إجراءات سريعة</h4>
+      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('quickActionsLabel')}</h4>
         <div class="ws-quick-actions">
-          <button class="ws-qa-btn cl-add-case"><i class="ri-briefcase-add-line"></i> قضية</button>
-          <button class="ws-qa-btn cl-add-comm"><i class="ri-chat-3-line"></i> اتصال</button>
-          <button class="ws-qa-btn cl-add-doc"><i class="ri-file-add-line"></i> وثيقة</button>
-          <button class="ws-qa-btn" onclick="document.querySelector('#clientDetailOverlay [data-ws=clnotes]').click()"><i class="ri-edit-2-line"></i> ملاحظة</button>
+          <button class="ws-qa-btn cl-add-case"><i class="ri-briefcase-add-line"></i> ${_t('caseQuickAction')}</button>
+          <button class="ws-qa-btn cl-add-comm"><i class="ri-chat-3-line"></i> ${_t('commQuickAction')}</button>
+          <button class="ws-qa-btn cl-add-doc"><i class="ri-file-add-line"></i> ${_t('docQuickAction')}</button>
+          <button class="ws-qa-btn" onclick="document.querySelector('#clientDetailOverlay [data-ws=clnotes]').click()"><i class="ri-edit-2-line"></i> ${_t('noteQuickAction')}</button>
         </div>
       </div>
     </div>
     <div>
-      <div class="ws-info-card"><h4>معلومات الاتصال</h4>
-        <div class="ws-info-row"><span class="ws-info-label">الهاتف</span><span class="ws-info-value">${esc(c.phone || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">البريد</span><span class="ws-info-value">${esc(c.email || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">العنوان</span><span class="ws-info-value">${esc(c.address || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">آخر اتصال</span><span class="ws-info-value">${comms.length ? esc(A.formatDate(comms[0].date)) : '-'}</span></div>
+      <div class="ws-info-card"><h4>${_t('contactInfoLabel')}</h4>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('phoneLabel')}</span><span class="ws-info-value">${esc(c.phone || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('emailLabel')}</span><span class="ws-info-value">${esc(c.email || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('addressLabel')}</span><span class="ws-info-value">${esc(c.address || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('lastContactLabel')}</span><span class="ws-info-value">${comms.length ? esc(A.formatDate(comms[0].date)) : '-'}</span></div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>آخر النشاطات</h4><div id="clOverviewActivity"></div></div>
+      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('recentActivityLabel')}</h4><div id="clOverviewActivity"></div></div>
     </div>
   </div>`);
   const logs = await A.cachedInvoke('db:getLogs', {});
   const clLogs = (logs||[]).filter(l => l.details && l.details.includes('@' + A.state.currentClientId)).slice(0, 4);
   A.safeSet(document.getElementById('clOverviewActivity'), esc => clLogs.length
     ? clLogs.map(l => `<div class="tl-item" style="padding:var(--space-1) 0;"><span class="tl-time" style="min-width:36px;">${l.created_at ? l.created_at.slice(11,16) : ''}</span><div class="tl-body"><div class="tl-title" style="font-size:12px;">${esc(l.details)}</div></div></div>`).join('')
-    : '<p class="empty-state-sm">لا توجد</p>');
+    : `<p class="empty-state-sm">${_t('noActivityLabel')}</p>`);
   el.querySelector('.cl-add-case')?.addEventListener('click', () => { document.getElementById('addCaseBtn')?.click(); });
   el.querySelector('.cl-add-comm')?.addEventListener('click', () => A.clAddComm());
   el.querySelector('.cl-add-doc')?.addEventListener('click', () => { document.querySelector('#clientDetailOverlay [data-ws=cldocs]')?.click(); });
@@ -110,13 +110,13 @@ A.loadWsClOverview = async function(c) {
 A.loadWsClCases = async function(c) {
   const el = document.getElementById('wsClCases');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
-  A.safeSet(el, esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" onclick="document.getElementById('addCaseBtn').click()"><i class="ri-add-line"></i> قضية جديدة</button></div>
-    ${cases.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>رقم القضية</th><th>الموضوع</th><th>المحكمة</th><th>الحالة</th><th>الأولوية</th><th></th></tr></thead><tbody>${cases.map(ca => `<tr>
+  A.safeSet(el, esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" onclick="document.getElementById('addCaseBtn').click()"><i class="ri-add-line"></i> ${_t('newCaseBtn')}</button></div>
+    ${cases.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('caseNumberHeader')}</th><th>${_t('subjectHeader')}</th><th>${_t('courtHeader')}</th><th>${_t('statusHeader')}</th><th>${_t('priorityHeader')}</th><th></th></tr></thead><tbody>${cases.map(ca => `<tr>
       <td>${esc(ca.case_number)}</td><td>${esc(ca.title)}</td><td>${esc(ca.court || '-')}</td>
       <td><span class="badge badge-${ca.status}">${A.state.statusLabels[ca.status] || esc(ca.status)}</span></td>
       <td>${esc(ca.priority || '-')}</td>
       <td><button class="btn-icon" onclick="openCaseDetail(${ca.id})"><i class="ri-eye-line"></i></button></td>
-    </tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد قضايا لهذا الموكل</p>'}`);
+    </tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noCasesForClient')}</p>`}`);
 };
 
 A.loadWsClDocs = async function(c) {
@@ -127,12 +127,12 @@ A.loadWsClDocs = async function(c) {
     const docs = await A.cachedInvoke('db:getDocuments', ca.id);
     docs.forEach(d => allDocs.push({ ...d, case_number: ca.case_number }));
   }
-  A.safeSet(el, esc => `<div class="ws-docs-header"><span style="font-size:13px;color:var(--gray-400);">${allDocs.length} وثيقة</span></div>
+  A.safeSet(el, esc => `<div class="ws-docs-header"><span style="font-size:13px;color:var(--gray-400);">${_t('docCountLabel').replace('{n}', allDocs.length)}</span></div>
     <div class="ws-docs-grid">${allDocs.length ? allDocs.map(d => `<div class="ws-doc-card">
       <i class="ri-file-4-line ws-doc-icon"></i>
       <div class="ws-doc-name">${esc(d.filename)}</div>
       <div class="ws-doc-meta">${esc(d.case_number || '')} · ${d.upload_date ? d.upload_date.slice(0,10) : ''}</div>
-    </div>`).join('') : '<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">لا توجد وثائق</p>'}</div>`);
+    </div>`).join('') : `<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">${_t('noDocsLabel')}</p>`}</div>`);
 };
 
 A.loadWsClComms = async function(c) {
@@ -140,23 +140,23 @@ A.loadWsClComms = async function(c) {
   const comms = await A.cachedInvoke('db:getClientCommunications', A.state.currentClientId);
   const iconMap = { call: 'ri-phone-line', email: 'ri-mail-line', meeting: 'ri-group-line', message: 'ri-chat-1-line', default: 'ri-chat-3-line' };
   const colorMap = { call: '#4A8BC2', email: '#8B5CF6', meeting: '#1A8A5C', message: '#C6A15B', default: '#8C8A84' };
-  A.safeSet(el, esc => `<div class="toolbar"><button id="clAddCommBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> اتصال جديد</button></div>
+  A.safeSet(el, esc => `<div class="toolbar"><button id="clAddCommBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newCommLabel')}</button></div>
     <div class="cl-comms-list" style="margin-top:var(--space-3);">${comms.length ? comms.map(co => `<div class="cl-comms-item">
       <div class="cl-comms-icon" style="background:${(colorMap[co.type] || colorMap.default)}12;color:${colorMap[co.type] || colorMap.default};"><i class="${iconMap[co.type] || iconMap.default}"></i></div>
       <div class="cl-comms-body"><div class="cl-comms-title">${esc(co.type)} · ${esc(A.formatDate(co.date))}</div><div class="cl-comms-sub">${esc(co.summary || '')}</div></div>
-    </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد اتصالات</p>'}</div>`);
+    </div>`).join('') : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noCommsLabel')}</p>`}</div>`);
   document.getElementById('clAddCommBtn')?.addEventListener('click', () => A.clAddComm());
 };
 
 A.clAddComm = function() {
-  A.showModal('اتصال جديد', `
+  A.showModal(_t('newCommLabel'), `
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">النوع</label><select id="fClCommType" class="input"><option value="call">مكالمة</option><option value="email">بريد</option><option value="meeting">اجتماع</option><option value="message">رسالة</option></select></div>
-      <div class="input-group"><label class="input-label">التاريخ</label><input type="date" id="fClCommDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="input-group"><label class="input-label">${_t('commTypeLabel')}</label><select id="fClCommType" class="input"><option value="call">${_t('commCall')}</option><option value="email">${_t('commEmail')}</option><option value="meeting">${_t('commMeeting')}</option><option value="message">${_t('commMessage')}</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('commDateLabel')}</label><input type="date" id="fClCommDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
     </div>
-    <div class="input-group"><label class="input-label">الملخص</label><textarea id="fClCommSummary" class="input" rows="3"></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('commSummaryLabel')}</label><textarea id="fClCommSummary" class="input" rows="3"></textarea></div>
   `, async () => {
-    try { await A.mutate('db:addCommunication', { client_id: A.state.currentClientId, type: document.getElementById('fClCommType').value, date: document.getElementById('fClCommDate').value, summary: document.getElementById('fClCommSummary').value }); } catch (e) { A.logError('addComm', e); A.showToast('فشل إضافة الاتصال', 'error'); return; }
+    try { await A.mutate('db:addCommunication', { client_id: A.state.currentClientId, type: document.getElementById('fClCommType').value, date: document.getElementById('fClCommDate').value, summary: document.getElementById('fClCommSummary').value }); } catch (e) { A.logError('addComm', e); A.showToast(_t('commAddFailed'), 'error'); return; }
     A.hideModal(); A.loadWsClComms({});
   });
 };
@@ -174,12 +174,12 @@ A.loadWsClPayments = async function(c) {
   A.safeSet(el, esc => `<div class="cl-payments-chart">
       <canvas id="clPieChart" width="80" height="80"></canvas>
       <div class="cl-payments-numbers">
-        <div class="cl-pay-row"><span class="cl-pay-label">الأتعاب</span><span class="cl-pay-value">${totalFees.toFixed(0)} د.م.</span></div>
-        <div class="cl-pay-row"><span class="cl-pay-label">المدفوع</span><span class="cl-pay-value" style="color:var(--success);">${totalPaid.toFixed(0)} د.م.</span></div>
-        <div class="cl-pay-row"><span class="cl-pay-label">المتبقي</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)} د.م.</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('feesLabel')}</span><span class="cl-pay-value">${totalFees.toFixed(0)} د.م.</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('paidLabel')}</span><span class="cl-pay-value" style="color:var(--success);">${totalPaid.toFixed(0)} د.م.</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('remainingLabel')}</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)} د.م.</span></div>
       </div>
     </div>
-    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>القضية</th><th>المبلغ</th><th>طريقة الدفع</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد مدفوعات</p>'}`);
+    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('paymentDateHeader')}</th><th>${_t('paymentCaseHeader')}</th><th>${_t('paymentAmountHeader')}</th><th>${_t('paymentMethodHeader')}</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`);
   A.drawClPieChart(totalFees, totalPaid);
 };
 
@@ -211,21 +211,21 @@ A.loadWsClTimeline = async function(c) {
     <span class="tl-time">${l.created_at ? l.created_at.slice(11,16) : ''}</span>
     <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--gray-50);color:var(--gray-500);"><i class="ri-history-line"></i></div>
     <div class="tl-body"><div class="tl-title" style="font-size:13px;">${esc(l.details)}</div><div class="tl-sub">${l.created_at ? l.created_at.slice(0,10) : ''}</div></div>
-  </div>`).join('')}</div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد نشاطات مسجلة</p>');
+  </div>`).join('')}</div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noActivitiesLabel')}</p>`);
 };
 
 A.loadWsClNotes = async function(c) {
   const el = document.getElementById('wsClNotes');
   A.safeSet(el, esc => `<div class="ws-notes-area">
-    <textarea id="clNotesText" placeholder="ملاحظات داخلية، تقييم المخاطر، استراتيجية..." class="input">${esc(c.notes || '')}</textarea>
+    <textarea id="clNotesText" placeholder="${_t('notesPlaceholderLong')}" class="input">${esc(c.notes || '')}</textarea>
     <div style="display:flex;justify-content:space-between;margin-top:var(--space-2);">
       <span style="font-size:11px;color:var(--gray-400);" id="clNotesStatus"></span>
-      <button id="clSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> حفظ</button>
+      <button id="clSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> ${_t('saveBtnLabel')}</button>
     </div>
   </div>`);
   document.getElementById('clSaveNotesBtn')?.addEventListener('click', async () => {
-    try { await A.mutate('db:updateClientNotes', { id: A.state.currentClientId, notes: document.getElementById('clNotesText').value }); if (A.AutoSave) A.AutoSave.clear('client_notes_' + A.state.currentClientId); } catch (e) { A.logError('saveClNotes', e); A.showToast('فشل حفظ الملاحظات', 'error'); }
-    document.getElementById('clNotesStatus').textContent = 'تم الحفظ';
+    try { await A.mutate('db:updateClientNotes', { id: A.state.currentClientId, notes: document.getElementById('clNotesText').value }); if (A.AutoSave) A.AutoSave.clear('client_notes_' + A.state.currentClientId); } catch (e) { A.logError('saveClNotes', e); A.showToast(_t('notesSaveFailed'), 'error'); }
+    document.getElementById('clNotesStatus').textContent = _t('savedStatus');
     setTimeout(() => document.getElementById('clNotesStatus').textContent = '', 2000);
   });
   const clNotesText = document.getElementById('clNotesText');
@@ -249,11 +249,11 @@ A.loadWsClAnalytics = async function(c) {
   const totalPaid = cases.reduce((s, ca) => s + parseFloat(ca.paid_fees || 0), 0);
   const avgDuration = cases.length ? Math.round(cases.reduce((s, ca) => s + (ca.procedure_count || 0), 0) / cases.length) : 0;
   A.safeSet(el, esc => `<div class="ws-analytics-grid">
-    <div class="ws-analytics-card"><h4>إجمالي القضايا</h4><div class="ws-analytics-number">${cases.length}</div></div>
-    <div class="ws-analytics-card"><h4>نشطة / مغلقة</h4><div class="ws-analytics-number" style="font-size:22px;">${active} / ${closed}</div></div>
-    <div class="ws-analytics-card"><h4>المساهمة المالية</h4><div class="ws-analytics-number">${totalPaid.toFixed(0)}</div>
+    <div class="ws-analytics-card"><h4>${_t('totalCasesAnalytics')}</h4><div class="ws-analytics-number">${cases.length}</div></div>
+    <div class="ws-analytics-card"><h4>${_t('activeClosedLabel')}</h4><div class="ws-analytics-number" style="font-size:22px;">${active} / ${closed}</div></div>
+    <div class="ws-analytics-card"><h4>${_t('financialContribution')}</h4><div class="ws-analytics-number">${totalPaid.toFixed(0)}</div>
       <div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${totalFees ? (totalPaid/totalFees)*100 : 0}%;background:var(--gold);"></div></div></div>
-    <div class="ws-analytics-card"><h4>مؤشر النشاط</h4><div class="ws-analytics-number">${avgDuration}</div>
+    <div class="ws-analytics-card"><h4>${_t('activityIndicator')}</h4><div class="ws-analytics-number">${avgDuration}</div>
       <div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${Math.min(100, avgDuration * 20)}%;background:var(--success);"></div></div></div>
   </div>`);
 };

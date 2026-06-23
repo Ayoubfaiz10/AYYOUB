@@ -99,10 +99,10 @@ A.AutoSave = {
     const el = typeof opts.indicator === 'function' ? opts.indicator() : (typeof opts.indicator === 'string' ? document.getElementById(opts.indicator) : opts.indicator);
     if (!el) return;
     const states = {
-      unsaved: { text: 'تعديلات غير محفوظة', color: 'var(--gold)' },
-      saving: { text: 'جاري الحفظ...', color: 'var(--info)' },
-      saved: { text: 'تم الحفظ', color: 'var(--success)' },
-      error: { text: 'فشل الحفظ', color: 'var(--danger)' }
+      unsaved: { text: _t('autosaveUnsaved'), color: 'var(--gold)' },
+      saving: { text: _t('saving'), color: 'var(--info)' },
+      saved: { text: _t('autoSaveStatus'), color: 'var(--success)' },
+      error: { text: _t('autosaveError'), color: 'var(--danger)' }
     };
     const s = states[status] || states.saved;
     el.textContent = s.text;
@@ -124,9 +124,9 @@ A.AutoSave = {
     const esc = A.escapeHtml;
     banner.innerHTML = `
       <i class="ri-history-line" style="font-size:20px;"></i>
-      <span style="flex:1;">تم العثور على <strong>${esc(drafts.length)}</strong> مسودة غير محفوظة قبل إعادة التشغيل. هل تريد استعادتها؟</span>
-      <button id="asRestoreBtn" class="btn btn-gold btn-xs" style="white-space:nowrap;">استعادة الكل</button>
-      <button id="asDismissBtn" class="btn btn-xs" style="background:rgba(255,255,255,0.15);color:#fff;border:none;white-space:nowrap;">تجاهل</button>
+      <span style="flex:1;">${_t('autosaveFoundDrafts').replace('{count}', `<strong>${esc(drafts.length)}</strong>`)}</span>
+      <button id="asRestoreBtn" class="btn btn-gold btn-xs" style="white-space:nowrap;">${_t('autosaveRestoreAll')}</button>
+      <button id="asDismissBtn" class="btn btn-xs" style="background:rgba(255,255,255,0.15);color:#fff;border:none;white-space:nowrap;">${_t('autosaveDismiss')}</button>
     `;
     document.body.appendChild(banner);
 
@@ -137,7 +137,7 @@ A.AutoSave = {
         this.clear(d.key);
       }
       banner.remove();
-      A.showToast('تم استعادة المسودات بنجاح', 'success');
+      A.showToast(_t('autosaveRestored'), 'success');
     };
     document.getElementById('asDismissBtn').onclick = () => {
       this.clearAll();
@@ -160,13 +160,13 @@ A.AutoSave = {
     if (!el) return;
     if (this._dirty.size > 0) {
       el.style.display = 'inline-flex';
-      el.innerHTML = '<i class="ri-edit-line" style="font-size:12px;"></i> <span>تعديلات غير محفوظة</span>';
+      el.innerHTML = '<i class="ri-edit-line" style="font-size:12px;"></i> <span>' + _t('autosaveUnsaved') + '</span>';
       el.style.color = 'var(--gold)';
     } else {
       const drafts = this.getAllDrafts();
       if (drafts.length > 0) {
         el.style.display = 'inline-flex';
-        el.innerHTML = '<i class="ri-save-3-line" style="font-size:12px;"></i> <span>مسودات محفوظة محلياً</span>';
+        el.innerHTML = '<i class="ri-save-3-line" style="font-size:12px;"></i> <span>' + _t('autosaveLocalDrafts') + '</span>';
         el.style.color = 'var(--info)';
       } else {
         el.style.display = 'none';

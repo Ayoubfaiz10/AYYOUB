@@ -37,7 +37,7 @@ A.loadDashboard = async function(force = false) {
   } catch (e) {
     A.logError('loadDashboard', e);
     const mainContent = document.querySelector('.dash-main-content') || document.getElementById('section-dashboard');
-    if (mainContent) A.showError(mainContent, 'تعذر تحميل لوحة البيانات.', () => A.loadDashboard(true));
+    if (mainContent) A.showError(mainContent, _t('failedLoadDashboard'), () => A.loadDashboard(true));
   }
 };
 
@@ -48,14 +48,14 @@ A.loadNotifications = async function() {
   try {
     const logs = await A.cachedInvoke('db:getLogs', { limit: 6 });
     const recent = (logs || []).slice(0, 4);
-    if (!recent.length) { A.safeSetStatic(container, '<p class="empty-state-sm">لا توجد إشعارات</p>'); if (badge) badge.textContent = '0'; return; }
+    if (!recent.length) { A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('notifNoNotifs') + '</p>'); if (badge) badge.textContent = '0'; return; }
     A.safeSet(container, esc => recent.map(l => `<div class="dash-notif-item">
       <div class="dash-notif-dot"></div>
       <span class="dash-notif-text">${esc(l.details || '')}</span>
       <span class="dash-notif-time">${l.created_at ? l.created_at.slice(11, 16) : ''}</span>
     </div>`).join(''));
     if (badge) badge.textContent = recent.length;
-  } catch (e) { A.logError('loadNotifications', e); A.showError(container, 'تعذر تحميل الإشعارات.', () => A.loadNotifications()); }
+  } catch (e) { A.logError('loadNotifications', e); A.showError(container, _t('failedLoadNotifications'), () => A.loadNotifications()); }
 };
 
 A.initDashboard = function() {

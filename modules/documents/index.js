@@ -23,7 +23,7 @@ A.loadDocuments = async function() {
     A.renderDocFolders();
   } catch (error) {
     A.logError('loadDocuments', error);
-    A.showError('documentsGrid', 'تعذر تحميل الوثائق.', () => A.loadDocuments());
+    A.showError('documentsGrid', _t('failedLoadDocuments'), () => A.loadDocuments());
   }
 };
 
@@ -41,7 +41,7 @@ A.openDocViewer = async function(docId) {
       }
     } catch (e) { /* skip */ }
   }
-  if (!doc) { A.showToast('لم يتم العثور على الوثيقة', 'error'); return; }
+  if (!doc) { A.showToast(_t('docNotFound'), 'error'); return; }
   if (A.addRecentItem) A.addRecentItem('document', doc.id, doc.filename, (doc.case_number||'') + ' · ' + (doc.doc_type||''), 'documents');
   A.state.currentDocViewerId = docId;
 
@@ -52,16 +52,16 @@ A.openDocViewer = async function(docId) {
   document.getElementById('docVDate').textContent = doc.upload_date ? A.formatDate(doc.upload_date) : '—';
   document.getElementById('docVSize').textContent = doc.file_size || '—';
   document.getElementById('docVPreview').textContent = doc.filename;
-  A.safeSet(document.getElementById('docVTags'), esc => (doc.tags||'').split(',').filter(Boolean).map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`).join('') || '<span style="font-size:12px;color:var(--gray-400);">لا توجد</span>');
-  A.safeSetStatic(document.getElementById('docVVersions'), `<div class="doc-version-item current"><span class="doc-version-label">الإصدار الحالي</span><span class="doc-version-date">${doc.upload_date ? A.formatDate(doc.upload_date) : ''}</span></div>`);
+  A.safeSet(document.getElementById('docVTags'), esc => (doc.tags||'').split(',').filter(Boolean).map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`).join('') || `<span style="font-size:12px;color:var(--gray-400);">${_t('noTagsLabel')}</span>`);
+  A.safeSetStatic(document.getElementById('docVVersions'), `<div class="doc-version-item current"><span class="doc-version-label">${_t('currentVersionLabel')}</span><span class="doc-version-date">${doc.upload_date ? A.formatDate(doc.upload_date) : ''}</span></div>`);
   document.getElementById('docVNotes').value = doc.notes || '';
 
-  document.getElementById('docViewerOpen').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('openDoc', e); A.showToast('تعذر فتح الملف', 'error'); } };
-  document.getElementById('docViewerDownload').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('downloadDoc', e); A.showToast('تعذر تحميل الملف', 'error'); } };
+  document.getElementById('docViewerOpen').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } };
+  document.getElementById('docViewerDownload').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('downloadDoc', e); A.showToast(_t('failedLoadFile'), 'error'); } };
   document.getElementById('docViewerAnalyze').onclick = () => { A.analyzeDoc(docId); };
   document.getElementById('docVSaveNotes').onclick = async () => {
     const notes = document.getElementById('docVNotes').value;
-    try { await A.mutate('db:updateDocNotes', { id: docId, notes }); A.showToast('تم حفظ الملاحظات', 'success'); if (A.AutoSave) A.AutoSave.clear('doc_notes_' + docId); } catch (e) { A.logError('saveDocNotes', e); A.showToast('فشل حفظ الملاحظات', 'error'); }
+    try { await A.mutate('db:updateDocNotes', { id: docId, notes }); A.showToast(_t('notesSaved'), 'success'); if (A.AutoSave) A.AutoSave.clear('doc_notes_' + docId); } catch (e) { A.logError('saveDocNotes', e); A.showToast(_t('failedSaveNotes'), 'error'); }
   };
   const docVNotesEl = document.getElementById('docVNotes');
   if (docVNotesEl && A.AutoSave) {
@@ -90,32 +90,32 @@ A.initDocuments = function() {
   document.getElementById('searchDocs').addEventListener('input', () => { A.renderDocGrid(); A.renderDocTable(); });
 
   document.getElementById('uploadDocGlobalBtn').addEventListener('click', () => {
-    A.showModal('رفع وثيقة', `
-      <div class="input-group"><label class="input-label">القضية</label><select id="uploadDocCase" class="input"><option value="">اختر القضية...</option></select></div>
-      <div class="input-group"><label class="input-label">النوع</label><select id="uploadDocType" class="input"><option value="Contract">عقد</option><option value="Jugement">حكم</option><option value="Mémoire">مذكرة</option><option value="Preuve">دليل</option><option value="Rapport">تقرير</option><option value="Facture">فاتورة</option><option value="Autre">أخرى</option></select></div>
-      <div class="input-group"><label class="input-label">الوسوم (مفصولة بفواصل)</label><input type="text" id="uploadDocTags" class="input" placeholder="عاجل، سري، مهم"></div>
-      <button id="uploadSelectFileBtn" class="btn btn-primary" style="width:100%;margin-top:var(--space-3);padding:12px;"><i class="ri-upload-cloud-2-line"></i> اختيار ملف ورفعه</button>
-      <p style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:var(--space-2);">PDF, DOC, DOCX, JPG, PNG, TXT — حد أقصى 50 MB</p>
-    `, async () => { /* handled by upload button */ }, 'إلغاء');
+    A.showModal(_t('uploadDocTitle'), `
+      <div class="input-group"><label class="input-label">${_t('caseSelectLabel')}</label><select id="uploadDocCase" class="input"><option value="">${_t('selectCasePlaceholder')}</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('docTypeLabel')}</label><select id="uploadDocType" class="input"><option value="Contract">${_t('docTypeContract')}</option><option value="Jugement">${_t('docTypeJudgment')}</option><option value="Mémoire">${_t('docTypeResponse')}</option><option value="Preuve">${_t('docTypeEvidence')}</option><option value="Rapport">${_t('docTypeReport')}</option><option value="Facture">${_t('docTypeExpense')}</option><option value="Autre">${_t('docTypeOther')}</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('tagsLabel')}</label><input type="text" id="uploadDocTags" class="input" placeholder="${_t('docTagsPlaceholder')}"></div>
+      <button id="uploadSelectFileBtn" class="btn btn-primary" style="width:100%;margin-top:var(--space-3);padding:12px;"><i class="ri-upload-cloud-2-line"></i> ${_t('selectFileBtn')}</button>
+      <p style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:var(--space-2);">${_t('uploadFileLimit')}</p>
+    `, async () => { /* handled by upload button */ }, _t('cancel'));
     (async () => {
       const cases = await A.cachedInvoke('db:getAllCases');
       const sel = document.getElementById('uploadDocCase');
-      if (sel) A.safeSet(sel, esc => '<option value="">اختر القضية...</option>' + cases.map(c => `<option value="${c.id}">${esc(c.case_number)} - ${esc(c.title)}</option>`).join(''));
+      if (sel) A.safeSet(sel, esc => `<option value="">${_t('selectCasePlaceholder')}</option>` + cases.map(c => `<option value="${c.id}">${esc(c.case_number)} - ${esc(c.title)}</option>`).join(''));
     })();
     setTimeout(() => {
       const btn = document.getElementById('uploadSelectFileBtn');
       if (btn) btn.addEventListener('click', async () => {
         const caseId = parseInt(document.getElementById('uploadDocCase')?.value);
-        if (!caseId) { A.showToast('اختر القضية أولاً', 'error'); return; }
+        if (!caseId) { A.showToast(_t('selectCaseFirst'), 'error'); return; }
         const docType = document.getElementById('uploadDocType')?.value || 'Autre';
         const tags = document.getElementById('uploadDocTags')?.value || '';
-        btn.disabled = true; btn.textContent = 'جاري الرفع...';
-        A.showToast('جاري رفع الملف...', 'info');
+        btn.disabled = true; btn.textContent = _t('uploadingLabel');
+        A.showToast(_t('uploadingToast'), 'info');
         try {
           const result = await A.mutate('db:selectAndUpload', { caseId, docType, tags });
-          if (result && result.length) { A.hideModal(); A.loadDocuments(); A.showToast(`تم رفع ${result.length} ملف بنجاح`, 'success'); }
-        } catch (e) { A.logError('docUpload', e); A.showToast('حدث خطأ أثناء الرفع', 'error'); }
-        btn.disabled = false; btn.textContent = ' اختيار ملف ورفعه';
+          if (result && result.length) { A.hideModal(); A.loadDocuments(); A.showToast(_t('uploadSuccess').replace('{n}', result.length), 'success'); }
+        } catch (e) { A.logError('docUpload', e); A.showToast(_t('uploadError'), 'error'); }
+        btn.disabled = false; btn.textContent = _t('selectFileBtn');
       });
     }, 200);
   });

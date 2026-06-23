@@ -16,12 +16,12 @@ A.loadArchive = async function() {
           <td>${esc(c.created_date || '-')}</td>
           <td><button class="btn-icon case-archive-btn" data-id="${c.id}"><i class="ri-history-line"></i></button></td>
         </tr>`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">لا توجد قضايا مؤرشفة</td></tr>');
+      : '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">' + _t('noArchivedCases') + '</td></tr>');
     document.getElementById('archiveBody').querySelectorAll('.case-archive-btn').forEach(b => b.addEventListener('click', async () => {
       await A.mutate('db:unarchiveCase', parseInt(b.dataset.id));
       A.loadArchive();
     }));
-  } catch (e) { A.logError('loadArchive', e); A.showError('archiveBody', 'تعذر تحميل الأرشيف.', () => A.loadArchive()); }
+  } catch (e) { A.logError('loadArchive', e); A.showError('archiveBody', _t('failedLoadArchive'), () => A.loadArchive()); }
 };
 
 A.initArchive = function() {

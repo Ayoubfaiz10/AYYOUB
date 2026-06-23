@@ -16,7 +16,7 @@ A.renderTableView = function(list) {
       <button class="btn-icon ws-archive-btn" data-id="${c.id}"><i class="ri-${c.archived ? 'history' : 'archive'}-line"></i></button>
       <button class="btn-icon ws-delete-btn" data-id="${c.id}"><i class="ri-delete-bin-line"></i></button>
     </td>
-  </tr>`).join('') : '<tr><td colspan="9"><div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>لا توجد قضايا</h3><p>أنشئ قضيتك الأولى لبدء التنظيم</p></div></td></tr>');
+  </tr>`).join('') : '<tr><td colspan="9"><div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>');
   A.attachCaseActions();
 };
 
@@ -29,9 +29,9 @@ A.renderCardView = function(list) {
     </div>
     <div class="case-card-body"><div style="font-size:var(--font-size-sm);color:var(--gray-700);font-weight:var(--font-weight-medium);margin-bottom:4px;">${esc(c.title)}</div></div>
     <div class="case-card-progress"><div class="case-card-progress-bar" style="width:${c.paid_fees && c.total_fees ? Math.min(100, (c.paid_fees/c.total_fees)*100) : 0}%;background:var(--gold);"></div></div>
-    <div class="case-card-meta"><span>${esc(c.court || '')}</span><span class="badge badge-${c.priority === 'high' ? 'danger' : 'gold'}">${esc(c.priority || 'عادي')}</span></div>
+    <div class="case-card-meta"><span>${esc(c.court || '')}</span><span class="badge badge-${c.priority === 'high' ? 'danger' : 'gold'}">${esc(c.priority || _t('defaultPriority'))}</span></div>
     <div class="case-card-footer"><span style="font-size:11px;color:var(--gray-400);">${esc(c.created_date || '')}</span><i class="ri-arrow-left-s-line" style="color:var(--gray-300);"></i></div>
-  </div>`).join('') : '<div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>لا توجد قضايا</h3><p>أنشئ قضيتك الأولى لبدء التنظيم</p></div>');
+  </div>`).join('') : '<div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div>');
 };
 
 A.renderKanbanView = function(list) {
@@ -57,11 +57,11 @@ A.attachCaseActions = function() {
   document.querySelectorAll('.ws-open-btn').forEach(b => b.addEventListener('click', () => A.openCaseDetail(parseInt(b.dataset.id))));
   document.querySelectorAll('.ws-archive-btn').forEach(b => b.addEventListener('click', async () => {
     const id = parseInt(b.dataset.id); const c = A.state.allCases.find(x => x.id === id);
-    try { if (c && c.archived) await A.mutate('db:unarchiveCase', id); else await A.mutate('db:archiveCase', id); A.showToast(c && c.archived ? 'تم إرجاع القضية' : 'تم أرشفة القضية', 'success'); } catch (e) { A.logError('archiveToggle', e); A.showToast('فشل تغيير حالة الأرشفة', 'error'); }
+    try { if (c && c.archived) await A.mutate('db:unarchiveCase', id); else await A.mutate('db:archiveCase', id); A.showToast(c && c.archived ? _t('caseRestored') : _t('caseArchivedToast'), 'success'); } catch (e) { A.logError('archiveToggle', e); A.showToast(_t('archiveToggleFailed'), 'error'); }
     A.loadCases();
   }));
   document.querySelectorAll('.ws-delete-btn').forEach(b => b.addEventListener('click', async () => {
-    if (await A.showConfirm('حذف هذه القضية؟')) { try { await A.mutate('db:deleteCase', parseInt(b.dataset.id)); A.showToast('تم حذف القضية', 'success'); } catch (e) { A.logError('deleteCase', e); A.showToast('فشل حذف القضية', 'error'); } A.loadCases(); }
+    if (await A.showConfirm(_t('deleteCaseConfirm'))) { try { await A.mutate('db:deleteCase', parseInt(b.dataset.id)); A.showToast(_t('caseDeleted'), 'success'); } catch (e) { A.logError('deleteCase', e); A.showToast(_t('caseDeleteFailed'), 'error'); } A.loadCases(); }
   }));
 };
 
@@ -71,33 +71,33 @@ A.loadWsOverview = function(c) {
   const paid = parseFloat(c.paid_fees) || 0;
   A.safeSet(el, esc => `<div class="ws-overview-grid">
     <div>
-      <div class="ws-info-card"><h4>معلومات القضية</h4>
-        <div class="ws-info-row"><span class="ws-info-label">الموكل</span><span class="ws-info-value">${esc(c.client_name || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">المحكمة</span><span class="ws-info-value">${esc(c.court || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">النوع</span><span class="ws-info-value">${esc(c.case_type || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc(c.priority || 'متوسطة')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">تاريخ الفتح</span><span class="ws-info-value">${esc(c.created_date || '-')}</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">آخر نشاط</span><span class="ws-info-value">${esc(c.updated_at || c.created_date || '-')}</span></div>
+      <div class="ws-info-card"><h4>${_t('caseInfoLabel')}</h4>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('clientInfoLabel')}</span><span class="ws-info-value">${esc(c.client_name || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('courtInfoLabel')}</span><span class="ws-info-value">${esc(c.court || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('typeInfoLabel')}</span><span class="ws-info-value">${esc(c.case_type || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('priorityInfoLabel')}</span><span class="ws-info-value">${esc(c.priority || _t('mediumLabel'))}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('openDateInfoLabel')}</span><span class="ws-info-value">${esc(c.created_date || '-')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('lastActivityInfoLabel')}</span><span class="ws-info-value">${esc(c.updated_at || c.created_date || '-')}</span></div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>إجراءات سريعة</h4>
+      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('quickActionsCaseLabel')}</h4>
         <div class="ws-quick-actions">
-          <button class="ws-qa-btn ws-add-doc"><i class="ri-file-add-line"></i> وثيقة</button>
-          <button class="ws-qa-btn ws-add-hearing"><i class="ri-scales-line"></i> جلسة</button>
-          <button class="ws-qa-btn ws-add-task"><i class="ri-task-add-line"></i> مهمة</button>
-          <button class="ws-qa-btn ws-add-note"><i class="ri-edit-2-line"></i> ملاحظة</button>
-          <button class="ws-qa-btn ws-add-expense"><i class="ri-money-add-line"></i> مصروف</button>
-          <button class="ws-qa-btn" onclick="wsAiTimeline()"><i class="ri-timeline-view"></i> Timeline AI</button>
-          <button class="ws-qa-btn" onclick="wsAiRisk()"><i class="ri-shield-flash-line"></i> مخاطر AI</button>
-          <button class="ws-qa-btn" onclick="document.querySelector('[data-ws=ai]').click()"><i class="ri-robot-3-line"></i> محادثة AI</button>
+          <button class="ws-qa-btn ws-add-doc"><i class="ri-file-add-line"></i> ${_t('docQuickActionLabel')}</button>
+          <button class="ws-qa-btn ws-add-hearing"><i class="ri-scales-line"></i> ${_t('hearingQuickActionLabel')}</button>
+          <button class="ws-qa-btn ws-add-task"><i class="ri-task-add-line"></i> ${_t('taskQuickActionLabel')}</button>
+          <button class="ws-qa-btn ws-add-note"><i class="ri-edit-2-line"></i> ${_t('noteQuickActionLabel')}</button>
+          <button class="ws-qa-btn ws-add-expense"><i class="ri-money-add-line"></i> ${_t('expenseQuickActionLabel')}</button>
+          <button class="ws-qa-btn" onclick="wsAiTimeline()"><i class="ri-timeline-view"></i> ${_t('timelineAILabel')}</button>
+          <button class="ws-qa-btn" onclick="wsAiRisk()"><i class="ri-shield-flash-line"></i> ${_t('riskAILabel')}</button>
+          <button class="ws-qa-btn" onclick="document.querySelector('[data-ws=ai]').click()"><i class="ri-robot-3-line"></i> ${_t('chatAILabel')}</button>
         </div>
       </div>
     </div>
     <div>
-      <div class="ws-info-card"><h4>آخر الوثائق</h4><div id="wsOverviewDocs"><p class="empty-state-sm">لا توجد</p></div></div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>الملخص المالي</h4>
-        <div class="ws-info-row"><span class="ws-info-label">الأتعاب</span><span class="ws-info-value">${total.toFixed(2)} د.م.</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">المدفوع</span><span class="ws-info-value" style="color:var(--success);">${paid.toFixed(2)} د.م.</span></div>
-        <div class="ws-info-row"><span class="ws-info-label">المتبقي</span><span class="ws-info-value" style="color:var(--gold);">${(total - paid).toFixed(2)} د.م.</span></div>
+      <div class="ws-info-card"><h4>${_t('recentDocsLabel')}</h4><div id="wsOverviewDocs"><p class="empty-state-sm">${_t('noRecentDocs')}</p></div></div>
+      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('financialSummaryLabel')}</h4>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('feesAmount')}</span><span class="ws-info-value">${total.toFixed(2)} ${_t('currencyMAD')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('paidAmount')}</span><span class="ws-info-value" style="color:var(--success);">${paid.toFixed(2)} ${_t('currencyMAD')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('remainingAmount')}</span><span class="ws-info-value" style="color:var(--gold);">${(total - paid).toFixed(2)} ${_t('currencyMAD')}</span></div>
       </div>
     </div>
   </div>`);
@@ -116,7 +116,7 @@ A.loadWsOverviewDocs = async function() {
   A.safeSet(el, esc => docs.slice(0, 3).map(d => `<div class="dash-doc-item" style="padding:var(--space-1) 0;">
     <div class="dash-doc-icon" style="width:24px;height:24px;font-size:12px;background:rgba(198,161,91,0.1);color:var(--gold);"><i class="ri-file-4-line"></i></div>
     <div class="dash-doc-body"><div class="dash-doc-name" style="font-size:12px;">${esc(d.filename)}</div></div>
-  </div>`).join('') || '<p class="empty-state-sm">لا توجد</p>');
+  </div>`).join('') || '<p class="empty-state-sm">${_t('noRecentDocs')}</p>');
 };
 
 A.loadWsTimeline = async function() {
@@ -129,8 +129,8 @@ A.loadWsTimeline = async function() {
       <span class="tl-time">${l.created_at ? l.created_at.slice(11, 16) : ''}</span>
       <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--gray-50);color:var(--gray-500);"><i class="ri-history-line"></i></div>
       <div class="tl-body"><div class="tl-title" style="font-size:13px;">${esc(l.details)}</div><div class="tl-sub">${l.created_at ? l.created_at.slice(0, 10) : ''}</div></div>
-    </div>`).join('')}</div>` : '<p class="empty-state-sm" style="padding:40px;text-align:center;">لا توجد نشاطات مسجلة</p>');
-  } catch (e) { A.logError('loadWsTimeline', e); A.showError(el, 'تعذر تحميل الجدول الزمني.', () => A.loadWsTimeline()); }
+    </div>`).join('')}</div>` : '<p class="empty-state-sm" style="padding:40px;text-align:center;">${_t('noActivityRecorded')}</p>');
+  } catch (e) { A.logError('loadWsTimeline', e); A.showError(el, _t('failedLoadTimeline'), () => A.loadWsTimeline()); }
 };
 
 A.loadWsDocuments = async function() {
@@ -139,16 +139,16 @@ A.loadWsDocuments = async function() {
   try {
     const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
     A.safeSet(el, esc => `<div class="ws-docs-header">
-      <select id="wsDocType" class="input input-sm" style="width:150px;">${['مقال افتتاحي','مذكرة جوابية','حجة وإثبات','حكم أو قرار','عقد','تقرير','أخرى'].map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select>
-      <button id="wsUploadDocBtn" class="btn btn-primary btn-sm"><i class="ri-upload-2-line"></i> رفع</button>
-      <span class="ws-doc-count" style="font-size:12px;color:var(--gray-400);">${docs.length} وثيقة</span>
+      <select id="wsDocType" class="input input-sm" style="width:150px;">${[_t('docTypeOpening'),_t('docTypeResponse'),_t('docTypeEvidence'),_t('docTypeJudgment'),_t('docTypeContract'),_t('docTypeReport'),_t('docTypeOther')].map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select>
+      <button id="wsUploadDocBtn" class="btn btn-primary btn-sm"><i class="ri-upload-2-line"></i> ${_t('uploadBtnLabel')}</button>
+      <span class="ws-doc-count" style="font-size:12px;color:var(--gray-400);">${_t('docCount').replace('{n}', docs.length)}</span>
     </div>
     <div class="ws-docs-grid">${docs.length ? docs.map(d => `<div class="ws-doc-card">
       <i class="ri-file-4-line ws-doc-icon"></i>
       <div class="ws-doc-name">${esc(d.filename)}</div>
       <div class="ws-doc-meta">${esc(d.doc_type)} · ${d.upload_date ? d.upload_date.slice(0, 10) : ''}</div>
-      <button class="btn btn-sm btn-outline" onclick="wsAiSummarizeDoc(${d.id},'${esc(d.filename).replace(/'/g,'\\\'')}')" style="margin-top:var(--space-2);font-size:11px;"><i class="ri-robot-3-line"></i> تلخيص AI</button>
-    </div>`).join('') : '<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">لا توجد وثائق</p>'}</div>`);
+      <button class="btn btn-sm btn-outline" onclick="wsAiSummarizeDoc(${d.id},'${esc(d.filename).replace(/'/g,'\\\'')}')" style="margin-top:var(--space-2);font-size:11px;"><i class="ri-robot-3-line"></i> ${_t('aiSummaryLabel')}</button>
+    </div>`).join('') : '<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">${_t('noDocsLabel')}</p>'}</div>`);
     document.getElementById('wsUploadDocBtn')?.addEventListener('click', () => {
       const input = document.getElementById('fileInput');
       input.onchange = async (e) => {
@@ -161,17 +161,17 @@ A.loadWsDocuments = async function() {
           } else if (file.path) {
             filePath = file.path;
           }
-          if (!filePath) { A.showToast('تعذر الحصول على مسار الملف', 'error'); return; }
+          if (!filePath) { A.showToast(_t('filePathError'), 'error'); return; }
           await A.mutate('db:uploadDocument', { sourcePath: filePath, caseId: A.state.currentCaseId, docType: document.getElementById('wsDocType').value });
           A.loadWsDocuments(); A.loadWsOverviewDocs();
         } catch (error) {
           A.logError('uploadDoc', error);
-          A.showToast('حدث خطأ أثناء رفع الملف', 'error');
+          A.showToast(_t('fileUploadError'), 'error');
         }
       };
       input.click();
     });
-  } catch (e) { A.logError('loadWsDocuments', e); A.showError(el, 'تعذر تحميل الوثائق.', () => A.loadWsDocuments()); }
+  } catch (e) { A.logError('loadWsDocuments', e); A.showError(el, _t('failedLoadDocuments'), () => A.loadWsDocuments()); }
 };
 
 A.loadWsHearings = async function() {
@@ -181,24 +181,24 @@ A.loadWsHearings = async function() {
     const procs = await A.cachedInvoke('db:getProcedures', A.state.currentCaseId);
     const hearings = (procs||[]).filter(p => p.type === 'Audience').sort((a, b) => b.date?.localeCompare(a.date));
     const today = new Date().toISOString().slice(0, 10);
-    A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> جلسة جديدة</button></div>
+    A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newHearingBtn')}</button></div>
       <div style="margin-top:var(--space-4);">${hearings.length ? hearings.map(h => `<div class="tl-item">
         <span class="tl-time">${esc(A.formatDate(h.date))}</span>
         <div class="tl-icon" style="width:28px;height:28px;background:${h.date >= today ? 'rgba(198,161,91,0.12)' : 'var(--gray-50)'};color:${h.date >= today ? 'var(--gold)' : 'var(--gray-400)'};"><i class="ri-scales-3-line"></i></div>
         <div class="tl-body"><div class="tl-title">${esc(A.formatDate(h.date))}</div><div class="tl-sub">${esc(h.description || '')}</div></div>
-        <span class="badge ${h.date >= today ? 'badge-active' : 'badge-closed'}">${h.date >= today ? 'قادمة' : 'سابقة'}</span>
-      </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد جلسات</p>'}</div>`);
+        <span class="badge ${h.date >= today ? 'badge-active' : 'badge-closed'}">${h.date >= today ? _t('upcomingBadge') : _t('pastBadge')}</span>
+      </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noHearingsLabel')}</p>'}</div>`);
     document.getElementById('wsAddHearingBtn')?.addEventListener('click', () => A.wsAddHearing());
-  } catch (e) { A.logError('loadWsHearings', e); A.showError(el, 'تعذر تحميل الجلسات.', () => A.loadWsHearings()); }
+  } catch (e) { A.logError('loadWsHearings', e); A.showError(el, _t('failedLoadHearings'), () => A.loadWsHearings()); }
 };
 
 A.wsAddHearing = function() {
-  A.showModal('جلسة جديدة', `
-    <div class="input-group"><label class="input-label">التاريخ</label><input type="date" id="fWsHearingDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
-    <div class="input-group"><label class="input-label">النوع</label><select id="fWsHearingType" class="input"><option value="Audience">جلسة</option><option value="Plaidoirie">مرافعة</option><option value="Mise en délibéré">تأجيل للنطق</option></select></div>
-    <div class="input-group"><label class="input-label">ملاحظات</label><textarea id="fWsHearingNotes" class="input" rows="3"></textarea></div>
+  A.showModal(_t('newHearingBtn'), `
+    <div class="input-group"><label class="input-label">${_t('hearingDateLabel')}</label><input type="date" id="fWsHearingDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
+    <div class="input-group"><label class="input-label">${_t('hearingTypeLabel')}</label><select id="fWsHearingType" class="input"><option value="Audience">${_t('hearingSession')}</option><option value="Plaidoirie">${_t('hearingPleading')}</option><option value="Mise en délibéré">${_t('hearingDeliberation')}</option></select></div>
+    <div class="input-group"><label class="input-label">${_t('hearingNotesLabel')}</label><textarea id="fWsHearingNotes" class="input" rows="3"></textarea></div>
   `, async () => {
-    try { await A.mutate('db:addProcedure', { affaire_id: A.state.currentCaseId, date: document.getElementById('fWsHearingDate').value, type: document.getElementById('fWsHearingType').value, description: document.getElementById('fWsHearingNotes').value }); } catch (e) { A.logError('addProcedure', e); A.showToast('فشل إضافة الجلسة', 'error'); return; }
+    try { await A.mutate('db:addProcedure', { affaire_id: A.state.currentCaseId, date: document.getElementById('fWsHearingDate').value, type: document.getElementById('fWsHearingType').value, description: document.getElementById('fWsHearingNotes').value }); } catch (e) { A.logError('addProcedure', e); A.showToast(_t('hearingAddFailed'), 'error'); return; }
     A.hideModal(); A.loadWsHearings();
   });
 };
@@ -210,27 +210,27 @@ A.loadWsTasks = async function() {
     const all = await A.cachedInvoke('db:getAllTasks');
     const tasks = all.filter(t => t.case_id === A.state.currentCaseId || (t.notes && t.notes.includes('#' + A.state.currentCaseId)));
     const todo = tasks.filter(t => t.status === 'todo'), inprog = tasks.filter(t => t.status === 'in_progress' || t.status === 'pending'), done = tasks.filter(t => t.status === 'done');
-    A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddTaskBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> مهمة جديدة</button></div>
+    A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddTaskBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newTaskBtn')}</button></div>
       <div class="ws-kanban-mini" style="margin-top:var(--space-4);">
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gray-400);"></div><span class="dash-mk-label">للقيام</span><span class="dash-mk-count">${todo.length}</span></div>${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : 'var(--gold)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">لا توجد</div>'}</div>
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">قيد الإنجاز</span><span class="dash-mk-count">${inprog.length}</span></div>${inprog.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--gold);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">لا توجد</div>'}</div>
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">مكتملة</span><span class="dash-mk-count">${done.length}</span></div>${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">لا توجد</div>'}</div>
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gray-400);"></div><span class="dash-mk-label">${_t('taskTodoLabel')}</span><span class="dash-mk-count">${todo.length}</span></div>${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : 'var(--gold)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">${_t('taskInProgressLabel')}</span><span class="dash-mk-count">${inprog.length}</span></div>${inprog.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--gold);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">${_t('taskCompletedLabel')}</span><span class="dash-mk-count">${done.length}</span></div>${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
       </div>`);
     document.getElementById('wsAddTaskBtn')?.addEventListener('click', () => A.wsAddTask());
-  } catch (e) { A.logError('loadWsTasks', e); A.showError(el, 'تعذر تحميل المهام.', () => A.loadWsTasks()); }
+  } catch (e) { A.logError('loadWsTasks', e); A.showError(el, _t('failedLoadTasksLabel'), () => A.loadWsTasks()); }
 };
 
 A.wsAddTask = function() {
-  A.showModal('مهمة جديدة', `
-    <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fWsTaskTitle" class="input"></div>
+  A.showModal(_t('newTaskBtn'), `
+    <div class="input-group"><label class="input-label">${_t('taskTitleLabel')}</label><input type="text" id="fWsTaskTitle" class="input"></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">الأولوية</label><select id="fWsTaskPriority" class="input"><option value="medium">متوسطة</option><option value="high">عالية</option><option value="low">منخفضة</option></select></div>
-      <div class="input-group"><label class="input-label">تاريخ الاستحقاق</label><input type="date" id="fWsTaskDue" class="input"></div>
+      <div class="input-group"><label class="input-label">${_t('taskPriorityLabel')}</label><select id="fWsTaskPriority" class="input"><option value="medium">${_t('mediumLabel')}</option><option value="high">${_t('highLabel')}</option><option value="low">${_t('lowLabel')}</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('taskDueDateLabel')}</label><input type="date" id="fWsTaskDue" class="input"></div>
     </div>
   `, async () => {
     const title = document.getElementById('fWsTaskTitle').value.trim();
-    if (!title) { A.showToast('العنوان إجباري', 'error'); return; }
-    try { await A.mutate('db:addTask', { title, priority: document.getElementById('fWsTaskPriority').value, due_date: document.getElementById('fWsTaskDue').value, status: 'todo', notes: '#' + A.state.currentCaseId }); } catch (e) { A.logError('addTask', e); A.showToast('فشل إضافة المهمة', 'error'); return; }
+    if (!title) { A.showToast(_t('taskTitleRequired'), 'error'); return; }
+    try { await A.mutate('db:addTask', { title, priority: document.getElementById('fWsTaskPriority').value, due_date: document.getElementById('fWsTaskDue').value, status: 'todo', notes: '#' + A.state.currentCaseId }); } catch (e) { A.logError('addTask', e); A.showToast(_t('taskAddFailed'), 'error'); return; }
     A.hideModal(); A.loadWsTasks(); A.loadDashboard();
   });
 };
@@ -242,28 +242,28 @@ A.loadWsNotes = async function() {
     const all = (await A.cachedInvoke('db:getAllCases')) || [];
     const c = all.find(x => x.id === A.state.currentCaseId) || { notes: '', description: '' };
     A.safeSet(el, esc => `<div class="ws-notes-toolbar">
-      <button title="عريض" onclick="document.execCommand('bold')"><b>B</b></button>
-      <button title="مائل" onclick="document.execCommand('italic')"><i>I</i></button>
-      <button title="قائمة" onclick="document.execCommand('insertUnorderedList')"><i class="ri-list-unordered"></i></button>
+      <button title="${_t('boldLabel')}" onclick="document.execCommand('bold')"><b>B</b></button>
+      <button title="${_t('italicLabel')}" onclick="document.execCommand('italic')"><i>I</i></button>
+      <button title="${_t('listLabel')}" onclick="document.execCommand('insertUnorderedList')"><i class="ri-list-unordered"></i></button>
     </div>
     <div class="ws-notes-area">
-      <textarea id="wsNotesText" placeholder="اكتب ملاحظاتك هنا..." class="input">${esc(c.notes || c.description || '')}</textarea>
+      <textarea id="wsNotesText" placeholder="${_t('notesPlaceholderText')}" class="input">${esc(c.notes || c.description || '')}</textarea>
       <div style="display:flex;justify-content:space-between;margin-top:var(--space-2);">
         <span style="font-size:11px;color:var(--gray-400);" id="wsNotesStatus"></span>
-        <button id="wsSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> حفظ</button>
+        <button id="wsSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> ${_t('saveBtnLabel')}</button>
       </div>
     </div>`);
     document.getElementById('wsSaveNotesBtn')?.addEventListener('click', async () => {
       const text = document.getElementById('wsNotesText').value;
-      try { await A.mutate('db:updateCaseNotes', { id: A.state.currentCaseId, notes: text }); if (A.AutoSave) A.AutoSave.clear('case_notes_' + A.state.currentCaseId); } catch (e) { A.logError('saveNotes', e); A.showToast('فشل حفظ الملاحظات', 'error'); }
-      document.getElementById('wsNotesStatus').textContent = 'تم الحفظ';
+      try { await A.mutate('db:updateCaseNotes', { id: A.state.currentCaseId, notes: text }); if (A.AutoSave) A.AutoSave.clear('case_notes_' + A.state.currentCaseId); } catch (e) { A.logError('saveNotes', e); A.showToast(_t('notesSaveFailed'), 'error'); }
+      document.getElementById('wsNotesStatus').textContent = _t('savedStatus');
       setTimeout(() => document.getElementById('wsNotesStatus').textContent = '', 2000);
     });
     const saveNotes = A.debounce(() => { document.getElementById('wsSaveNotesBtn')?.click(); }, 500);
     const wsNotesText = document.getElementById('wsNotesText');
     if (wsNotesText) {
       wsNotesText.addEventListener('input', () => {
-        document.getElementById('wsNotesStatus').textContent = 'لم يتم الحفظ بعد...';
+        document.getElementById('wsNotesStatus').textContent = _t('notSavedYet');
         saveNotes();
         if (A.AutoSave) A.AutoSave.markDirty('case_notes_' + A.state.currentCaseId);
       });
@@ -277,7 +277,7 @@ A.loadWsNotes = async function() {
         });
       }
     }
-  } catch (e) { A.logError('loadWsNotes', e); A.showError(el, 'تعذر تحميل الملاحظات.', () => A.loadWsNotes()); }
+  } catch (e) { A.logError('loadWsNotes', e); A.showError(el, _t('failedLoadTimeline'), () => A.loadWsNotes()); }
 };
 
 A.loadWsExpenses = async function(c) {
@@ -289,33 +289,33 @@ A.loadWsExpenses = async function(c) {
     const paid = paiements.reduce((s, p) => s + parseFloat(p.montant || 0), 0);
     const expenses = parseFloat(c.expenses) || 0;
     A.safeSet(el, esc => `<div class="ws-expenses-stats">
-      <div class="ws-exp-card"><div class="ws-exp-number">${total.toFixed(2)}</div><div class="ws-exp-label">الأتعاب</div></div>
-      <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--success);">${paid.toFixed(2)}</div><div class="ws-exp-label">المدفوع</div></div>
-      <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--gold);">${(total - paid).toFixed(2)}</div><div class="ws-exp-label">المتبقي</div></div>
+      <div class="ws-exp-card"><div class="ws-exp-number">${total.toFixed(2)}</div><div class="ws-exp-label">${_t('feesLabel')}</div></div>
+      <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--success);">${paid.toFixed(2)}</div><div class="ws-exp-label">${_t('paidLabel')}</div></div>
+      <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--gold);">${(total - paid).toFixed(2)}</div><div class="ws-exp-label">${_t('remainingLabel')}</div></div>
     </div>
-    <div class="toolbar"><button id="wsAddExpenseBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> إضافة دفعة</button></div>
-    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>التاريخ</th><th>المبلغ</th><th>طريقة الدفع</th><th>ملاحظات</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">لا توجد دفعات</p>'}`);
+    <div class="toolbar"><button id="wsAddExpenseBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('addPaymentBtn')}</button></div>
+    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('paymentDateLabel')}</th><th>${_t('paymentAmountLabel')}</th><th>${_t('paymentModeLabel')}</th><th>${_t('paymentNotesLabel')}</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>'}`);
     document.getElementById('wsAddExpenseBtn')?.addEventListener('click', () => A.wsAddExpense());
-  } catch (e) { A.logError('loadWsExpenses', e); A.showError(el, 'تعذر تحميل المصاريف.', () => A.loadWsExpenses({ id: A.state.currentCaseId, total_fees: 0, expenses: 0 })); }
+  } catch (e) { A.logError('loadWsExpenses', e); A.showError(el, _t('failedLoadExpenses'), () => A.loadWsExpenses({ id: A.state.currentCaseId, total_fees: 0, expenses: 0 })); }
 };
 
 A.wsAddExpense = function() {
-  A.showModal('إضافة دفعة', `
+  A.showModal(_t('addPaymentBtn'), `
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">التاريخ</label><input type="date" id="fWsPayDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
-      <div class="input-group"><label class="input-label">المبلغ</label><input type="number" id="fWsPayMontant" class="input" step="0.01" min="0"></div>
+      <div class="input-group"><label class="input-label">${_t('paymentDateLabel')}</label><input type="date" id="fWsPayDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="input-group"><label class="input-label">${_t('paymentAmountLabel')}</label><input type="number" id="fWsPayMontant" class="input" step="0.01" min="0"></div>
     </div>
-    <div class="input-group"><label class="input-label">طريقة الدفع</label><select id="fWsPayMode" class="input"><option value="Espèces">نقداً</option><option value="Virement bancaire">تحويل بنكي</option><option value="Chèque">شيك</option></select></div>
-    <div class="input-group"><label class="input-label">ملاحظات</label><textarea id="fWsPayRemarque" class="input" rows="2"></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('paymentModeLabel')}</label><select id="fWsPayMode" class="input"><option value="Espèces">${_t('paymentCash')}</option><option value="Virement bancaire">${_t('paymentBank')}</option><option value="Chèque">${_t('paymentCheque')}</option></select></div>
+    <div class="input-group"><label class="input-label">${_t('paymentNotesLabel')}</label><textarea id="fWsPayRemarque" class="input" rows="2"></textarea></div>
   `, async () => {
     const montant = parseFloat(document.getElementById('fWsPayMontant').value);
-    if (!montant || montant <= 0) { A.showToast('المبلغ إجباري', 'error'); return; }
+    if (!montant || montant <= 0) { A.showToast(_t('paymentAmountRequired'), 'error'); return; }
     try {
       await A.mutate('db:addPaiement', { affaire_id: A.state.currentCaseId, date: document.getElementById('fWsPayDate').value, montant, mode_paiement: document.getElementById('fWsPayMode').value, remarque: document.getElementById('fWsPayRemarque').value });
       const allCases = await A.cachedInvoke('db:getAllCases') || [];
       const currentCase = allCases.find(x => x.id === A.state.currentCaseId) || { id: A.state.currentCaseId, total_fees: 0, expenses: 0 };
       A.hideModal(); A.loadWsExpenses(currentCase);
-    } catch (e) { A.logError('wsAddExpense', e); A.showToast('فشل إضافة الدفعة', 'error'); }
+    } catch (e) { A.logError('wsAddExpense', e); A.showToast(_t('paymentAddFailed'), 'error'); }
   });
 };
 
@@ -327,12 +327,12 @@ A.loadWsContacts = async function() {
     const clients = await A.cachedInvoke('db:getAllClients');
     const client = clients.find(x => x.id === c?.client_id);
     A.safeSet(el, esc => `<div class="ws-contacts-grid">
-      <div class="ws-contact-card"><div class="ws-contact-name">${esc(client?.name || c?.client_name || '-')}</div><div class="ws-contact-role">الموكل</div><div class="ws-contact-detail">${esc(client?.phone || '')}</div><div class="ws-contact-detail">${esc(client?.email || '')}</div></div>
-      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">المحامي المقابل</div><div class="ws-contact-detail"></div></div>
-      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">الشهود</div><div class="ws-contact-detail"></div></div>
-      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">الخبراء</div><div class="ws-contact-detail"></div></div>
+      <div class="ws-contact-card"><div class="ws-contact-name">${esc(client?.name || c?.client_name || '-')}</div><div class="ws-contact-role">${_t('contactClientRole')}</div><div class="ws-contact-detail">${esc(client?.phone || '')}</div><div class="ws-contact-detail">${esc(client?.email || '')}</div></div>
+      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">${_t('contactOpposing')}</div><div class="ws-contact-detail"></div></div>
+      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">${_t('contactWitnesses')}</div><div class="ws-contact-detail"></div></div>
+      <div class="ws-contact-card"><div class="ws-contact-name">—</div><div class="ws-contact-role">${_t('contactExperts')}</div><div class="ws-contact-detail"></div></div>
     </div>`);
-  } catch (e) { A.logError('loadWsContacts', e); A.showError(el, 'تعذر تحميل جهات الاتصال.', () => A.loadWsContacts()); }
+  } catch (e) { A.logError('loadWsContacts', e); A.showError(el, _t('failedLoadContacts'), () => A.loadWsContacts()); }
 };
 
 A.loadWsAnalytics = async function(c) {
@@ -347,12 +347,12 @@ A.loadWsAnalytics = async function(c) {
     const doneTasks = tasks.filter(t => t.status === 'done').length;
     const taskRate = tasks.length ? Math.round((doneTasks / tasks.length) * 100) : 0;
     A.safeSetStatic(el, `<div class="ws-analytics-grid">
-      <div class="ws-analytics-card"><h4>الجلسات</h4><div class="ws-analytics-number">${procs.filter(p => p.type === 'Audience').length}</div></div>
-      <div class="ws-analytics-card"><h4>الوثائق</h4><div class="ws-analytics-number">${docs.length}</div></div>
-      <div class="ws-analytics-card"><h4>المصاريف</h4><div class="ws-analytics-number">${paiements.length}</div><div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${(paiements.reduce((s,p) => s + parseFloat(p.montant||0),0) / (parseFloat(c.total_fees) || 1)) * 100}%;background:var(--gold);"></div></div></div>
-      <div class="ws-analytics-card"><h4>إنجاز المهام</h4><div class="ws-analytics-number">${taskRate}%</div><div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${taskRate}%;background:var(--success);"></div></div></div>
+      <div class="ws-analytics-card"><h4>${_t('analyticsHearings')}</h4><div class="ws-analytics-number">${procs.filter(p => p.type === 'Audience').length}</div></div>
+      <div class="ws-analytics-card"><h4>${_t('analyticsDocs')}</h4><div class="ws-analytics-number">${docs.length}</div></div>
+      <div class="ws-analytics-card"><h4>${_t('analyticsExpenses')}</h4><div class="ws-analytics-number">${paiements.length}</div><div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${(paiements.reduce((s,p) => s + parseFloat(p.montant||0),0) / (parseFloat(c.total_fees) || 1)) * 100}%;background:var(--gold);"></div></div></div>
+      <div class="ws-analytics-card"><h4>${_t('analyticsTaskCompletion')}</h4><div class="ws-analytics-number">${taskRate}%</div><div class="ws-analytics-progress"><div class="ws-analytics-progress-bar" style="width:${taskRate}%;background:var(--success);"></div></div></div>
     </div>`);
-  } catch (e) { A.logError('loadWsAnalytics', e); A.showError(el, 'تعذر تحميل التحليلات.', () => A.loadWsAnalytics({ id: A.state.currentCaseId, total_fees: 0 })); }
+  } catch (e) { A.logError('loadWsAnalytics', e); A.showError(el, _t('failedLoadAnalytics'), () => A.loadWsAnalytics({ id: A.state.currentCaseId, total_fees: 0 })); }
 };
 
 A.addWsAIMessage = function(text, isUser) {
@@ -370,10 +370,10 @@ A.loadWsAI = function() {
   if (!el) return;
   A.safeSetStatic(el, `<div class="ws-ai-chat">
     <div class="ws-ai-messages" id="wsAiMessages">
-      <div style="text-align:center;padding:20px;color:var(--gray-400);font-size:13px;">اطرح سؤالاً حول هذه القضية — التحليل السياقي متاح</div>
+      <div style="text-align:center;padding:20px;color:var(--gray-400);font-size:13px;">${_t('aiContextualQuestion')}</div>
     </div>
     <div class="ws-ai-input">
-      <input type="text" id="wsAiInput" placeholder="اسأل عن القضية..." class="input" style="flex:1;">
+      <input type="text" id="wsAiInput" placeholder="${_t('aiInputPlaceholder')}" class="input" style="flex:1;">
       <button id="wsAiSendBtn" class="btn btn-primary"><i class="ri-send-plane-2-line"></i></button>
     </div>
   </div>`);
@@ -384,7 +384,7 @@ A.loadWsAI = function() {
     input.value = '';
     const loadingEl = document.createElement('div');
     loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--gray-400);font-size:12px;';
-    loadingEl.textContent = '🤖 جاري التحليل...';
+    loadingEl.textContent = _t('aiLoadingMsg');
     document.getElementById('wsAiMessages')?.appendChild(loadingEl);
     try {
       const res = await A.state.ipc.invoke('ai:askContextual', { mode: 'chat', message: msg, contextType: 'case', contextId: A.state.currentCaseId });
@@ -392,7 +392,7 @@ A.loadWsAI = function() {
       A.addWsAIMessage(res.friendlyError || res.text || '', false);
     } catch (e) {
       loadingEl.remove();
-      A.addWsAIMessage('حدث خطأ في الاتصال بالمساعد الذكي. حاول مرة أخرى.', false);
+      A.addWsAIMessage(_t('aiErrorMsg'), false);
       A.logError('wsAiSend', e);
     }
   });

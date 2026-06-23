@@ -9,7 +9,7 @@ A.loadSettingsUsers = async function() {
     <td><strong>${esc(u.name)}</strong></td>
     <td>${esc(u.email||'-')}</td>
     <td><span class="badge ${u.role === 'admin' ? 'badge-active' : 'badge-gold'}">${esc(u.role)}</span></td>
-    <td>${u.active ? '<span class="badge badge-active" style="background:var(--success);">نشط</span>' : '<span class="badge badge-closed">غير نشط</span>'}</td>
+    <td>${u.active ? '<span class="badge badge-active" style="background:var(--success);">' + _t('activeBadge') + '</span>' : '<span class="badge badge-closed">' + _t('inactiveBadge') + '</span>'}</td>
     <td style="font-size:11px;color:var(--gray-400);">${u.last_login ? u.last_login.slice(0,16) : '—'}</td>
     <td><button class="btn-icon" onclick="editSettingsUser(${u.id})"><i class="ri-pencil-line"></i></button>${u.id !== 1 ? `<button class="btn-icon" onclick="deleteSettingsUser(${u.id})"><i class="ri-delete-bin-line"></i></button>` : ''}</td>
   </tr>`).join(''));
@@ -21,41 +21,41 @@ window.editSettingsUser = async function(id) {
   const u = users.find(x => x.id === id);
   if (!u) return;
   const esc = A.escapeHtml;
-  A.showModal('تعديل المستخدم', `
-    <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="fUserName" class="input" value="${esc(u.name)}"></div>
-    <div class="input-group"><label class="input-label">البريد</label><input type="email" id="fUserEmail" class="input" value="${esc(u.email||'')}"></div>
+  A.showModal(_t('editUserTitle'), `
+    <div class="input-group"><label class="input-label">${_t('userNameLabel')}</label><input type="text" id="fUserName" class="input" value="${esc(u.name)}"></div>
+    <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input" value="${esc(u.email||'')}"></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">الدور</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">نشط</label><select id="fUserActive" class="input"><option value="1" ${u.active?'selected':''}>نعم</option><option value="0" ${!u.active?'selected':''}>لا</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('userActiveLabel')}</label><select id="fUserActive" class="input"><option value="1" ${u.active?'selected':''}>${_t('userYesLabel')}</option><option value="0" ${!u.active?'selected':''}>${_t('userNoLabel')}</option></select></div>
     </div>
-    <div class="input-group"><label class="input-label">كلمة سر جديدة (اترك فارغاً للإبقاء)</label><input type="password" id="fUserPwd" class="input"></div>
+    <div class="input-group"><label class="input-label">${_t('userPwdPlaceholder')}</label><input type="password" id="fUserPwd" class="input"></div>
   `, async () => {
     const data = { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, active: parseInt(document.getElementById('fUserActive').value) };
     const pwd = document.getElementById('fUserPwd').value;
-    if (pwd) { const r = await A.mutate('auth:hashPassword', pwd); if (r && r.ok) data.password_hash = r.hash; else { A.showToast(r?.error || 'فشل تشفير كلمة السر', 'error'); return; } }
+    if (pwd) { const r = await A.mutate('auth:hashPassword', pwd); if (r && r.ok) data.password_hash = r.hash; else { A.showToast(r?.error || _t('pwdHashFailed'), 'error'); return; } }
     const r2 = await A.mutate('auth:updateUser', id, data);
-    if (r2 && !r2.ok) { A.showToast(r2.error || 'فشل تحديث المستخدم', 'error'); return; }
-    A.hideModal(); A.showToast('تم تحديث المستخدم بنجاح', 'success'); A.loadSettingsUsers();
+    if (r2 && !r2.ok) { A.showToast(r2.error || _t('userUpdateFailed'), 'error'); return; }
+    A.hideModal(); A.showToast(_t('userUpdated'), 'success'); A.loadSettingsUsers();
   });
 };
 
 window.deleteSettingsUser = async function(id) {
-  if (await A.showConfirm('حذف هذا المستخدم؟')) { await A.mutate('auth:deleteUser', id); A.loadSettingsUsers(); }
+  if (await A.showConfirm(_t('deleteUserConfirm'))) { await A.mutate('auth:deleteUser', id); A.loadSettingsUsers(); }
 };
 
 A.initSettings = function() {
   document.getElementById('settingLang')?.addEventListener('change', function() {
   A.setLanguage(this.value);
-  A.showToast(this.value === 'fr' ? 'Langue changée en français' : 'تم تغيير اللغة إلى العربية', 'success');
+  A.showToast(this.value === 'fr' ? 'Langue changée en français' : _t('langChangedToArabic'), 'success');
 });
 
 document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
-    A.showModal('مستخدم جديد', `
-      <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="fUserName" class="input"></div>
-      <div class="input-group"><label class="input-label">البريد</label><input type="email" id="fUserEmail" class="input"></div>
+    A.showModal(_t('newUserTitle'), `
+      <div class="input-group"><label class="input-label">${_t('userNameLabel')}</label><input type="text" id="fUserName" class="input"></div>
+      <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input"></div>
       <div class="info-grid-2">
-        <div class="input-group"><label class="input-label">الدور</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
-        <div class="input-group"><label class="input-label">كلمة السر</label><input type="password" id="fUserPwd" class="input" value="123456"></div>
+        <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
+        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" value="123456"></div>
       </div>
     `, async () => {
       await A.mutate('auth:addUser', { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, password: document.getElementById('fUserPwd').value });
@@ -82,19 +82,19 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const newPwd = document.getElementById('settingsNewPwd').value;
     const confirmPwd = document.getElementById('settingsConfirmPwd').value;
     const msgEl = document.getElementById('settingsPwdMsg');
-    if (!currentPwd) { msgEl.textContent = 'الرجاء إدخال كلمة السر الحالية'; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (!currentPwd) { msgEl.textContent = _t('enterCurrentPwd'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     const loginResult = await A.state.ipc.invoke('auth:login', currentPwd);
     if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (!loginResult.ok) { msgEl.textContent = loginResult.error || 'كلمة السر الحالية خطأ'; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (!newPwd || newPwd.length < 4) { msgEl.textContent = 'كلمة السر الجديدة يجب أن تكون 4 أحرف على الأقل'; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (newPwd !== confirmPwd) { msgEl.textContent = 'كلمة السر غير متطابقة'; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (!newPwd || newPwd.length < 4) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (newPwd !== confirmPwd) { msgEl.textContent = _t('pwdNotMatch'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     const result = await A.mutate('auth:setPassword', newPwd);
     if (!result || !result.ok) {
-      msgEl.textContent = result?.error || 'فشل حفظ كلمة السر'; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block';
+      msgEl.textContent = result?.error || _t('savePasswordFailed'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block';
       return;
     }
-    msgEl.textContent = 'تم حفظ كلمة السر بنجاح'; msgEl.style.color = 'var(--success)'; msgEl.style.display = 'block';
-    A.showToast('تم تغيير كلمة السر بنجاح', 'success');
+    msgEl.textContent = _t('pwdSaved'); msgEl.style.color = 'var(--success)'; msgEl.style.display = 'block';
+    A.showToast(_t('pwdChanged'), 'success');
     document.getElementById('settingsCurrentPwd').value = '';
     document.getElementById('settingsNewPwd').value = ''; document.getElementById('settingsConfirmPwd').value = '';
   });
@@ -105,7 +105,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       auto_enabled: document.getElementById('settingAutoBackup').checked ? 1 : 0,
       frequency_hours: parseInt(document.getElementById('settingBackupFreq').value) || 24,
       keep_count: parseInt(document.getElementById('settingBackupKeep').value) || 30
-    }); A.showToast('تم حفظ الإعدادات', 'success'); } catch (e) { A.logError('saveBackupSettings', e); A.showToast('فشل حفظ الإعدادات', 'error'); }
+    }); A.showToast(_t('settingsSaved'), 'success'); } catch (e) { A.logError('saveBackupSettings', e); A.showToast(_t('settingsSaveFailed'), 'error'); }
   });
 
   document.getElementById('settingCleanOrphans')?.addEventListener('click', async () => {
@@ -113,31 +113,31 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const btn = document.getElementById('settingCleanOrphans');
     const status = document.getElementById('cleanOrphansStatus');
     if (btn) btn.disabled = true;
-    if (status) status.textContent = 'جاري التنظيف...';
+    if (status) status.textContent = _t('cleaningRunning');
     try {
       const result = await A.state.ipc.invoke('db:cleanOrphanedFiles');
       if (result) {
-        const msg = `تم تنظيف ${result.deletedCount} ملفاً يتيماً (${result.freedMB} MB)`;
+        const msg = _t('cleanedOrphans').replace('{n}', result.deletedCount).replace('{m}', result.freedMB);
         if (status) status.textContent = msg;
         A.showToast(msg, 'success');
       }
-    } catch (e) { A.logError('cleanOrphans', e); A.showToast('فشل تنظيف الملفات', 'error'); if (status) status.textContent = ''; }
+    } catch (e) { A.logError('cleanOrphans', e); A.showToast(_t('cleanFailed'), 'error'); if (status) status.textContent = ''; }
     finally { if (btn) btn.disabled = false; }
   });
 
   document.getElementById('settingCreateBackup')?.addEventListener('click', async () => {
     if (!A.state.ipc) return;
-    try { const name = await A.mutate('db:createBackup'); document.getElementById('backupStatus').textContent = `تم إنشاء: ${name}`; A.loadBackupsList(); } catch (e) { A.logError('createBackup', e); A.showToast('فشل إنشاء النسخة الاحتياطية', 'error'); }
+    try { const name = await A.mutate('db:createBackup'); document.getElementById('backupStatus').textContent = _t('backupCreated').replace('{n}', name); A.loadBackupsList(); } catch (e) { A.logError('createBackup', e); A.showToast(_t('backupCreateFailed'), 'error'); }
   });
 
   document.getElementById('settingExportArchive')?.addEventListener('click', async () => {
     if (!A.state.ipc) return;
     try {
       const result = await A.mutate('db:exportArchive');
-      document.getElementById('backupStatus').textContent = `تم التصدير: ${result.filename}`;
-      A.showToast('تم تصدير الأرشيف بنجاح', 'success');
+      document.getElementById('backupStatus').textContent = _t('archiveExported').replace('{n}', result.filename);
+      A.showToast(_t('archiveExportSuccess'), 'success');
       A.loadBackupsList();
-    } catch (e) { A.logError('exportArchive', e); A.showToast('فشل تصدير الأرشيف', 'error'); }
+    } catch (e) { A.logError('exportArchive', e); A.showToast(_t('archiveExportFailed'), 'error'); }
   });
 
   // ─── Backup list management ───
@@ -150,7 +150,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     try {
       const backups = await A.state.ipc.invoke('db:listBackups');
       if (!backups || !backups.length) {
-        if (statusEl) statusEl.textContent = 'لا توجد نسخ احتياطية';
+        if (statusEl) statusEl.textContent = _t('noBackupsList');
         if (badgeEl) badgeEl.textContent = '';
         A.safeSetStatic(listEl, '');
         return;
@@ -159,11 +159,11 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       if (statusEl) statusEl.textContent = '';
       const formatSize = (bytes) => { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB'; return (bytes/1048576).toFixed(1) + ' MB'; };
       const formatDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString(A.getLocale()) + ' ' + d.toLocaleTimeString(A.getLocale(), {hour:'2-digit',minute:'2-digit'}); };
-      const getType = (name) => name.includes('manual') ? 'يدوي' : name.includes('auto') ? 'تلقائي' : name.includes('archive') ? 'أرشيف' : '—';
+      const getType = (name) => name.includes('manual') ? _t('backupTypeManual') : name.includes('auto') ? _t('backupTypeAuto') : name.includes('archive') ? _t('backupTypeArchive') : '—';
       const getValidationStatus = (name) => { const v = A.state._backupValidations || {}; return v[name]; };
-      A.safeSet(listEl, esc => `<table class="table" style="font-size:12px;"><thead><tr><th>الملف</th><th>التاريخ</th><th>الحجم</th><th>النوع</th><th>الحالة</th><th>الإجراءات</th></tr></thead><tbody>${backups.map(b => {
+      A.safeSet(listEl, esc => `<table class="table" style="font-size:12px;"><thead><tr><th>${_t('backupFileHeader')}</th><th>${_t('backupDateHeader')}</th><th>${_t('backupSizeHeader')}</th><th>${_t('backupTypeHeader')}</th><th>${_t('backupStatusHeader')}</th><th>${_t('backupActionsHeader')}</th></tr></thead><tbody>${backups.map(b => {
         const v = getValidationStatus(b.name);
-        const statusIcon = v ? (v.valid ? '<span style="color:var(--success);">✔ صالح</span>' : '<span style="color:var(--danger);">✖ تالف</span>') : '<span style="color:var(--gray-300);">—</span>';
+        const statusIcon = v ? (v.valid ? '<span style="color:var(--success);">' + _t('backupValid') + '</span>' : '<span style="color:var(--danger);">' + _t('backupCorrupt') + '</span>') : '<span style="color:var(--gray-300);">—</span>';
         return `<tr>
           <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(b.name)}">${esc(b.name)}</td>
           <td style="white-space:nowrap;">${esc(formatDate(b.mtime))}</td>
@@ -171,9 +171,9 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
           <td>${getType(b.name)}</td>
           <td id="bs_${b.name.replace(/[^a-zA-Z0-9]/g,'_')}">${statusIcon}</td>
           <td style="white-space:nowrap;">
-            <button class="btn-icon backup-validate-btn" data-file="${esc(b.name)}" title="التحقق"><i class="ri-check-double-line"></i></button>
-            <button class="btn-icon backup-restore-btn" data-file="${esc(b.name)}" title="استعادة" style="color:var(--gold);"><i class="ri-history-line"></i></button>
-            <button class="btn-icon backup-delete-btn" data-file="${esc(b.name)}" title="حذف" style="color:var(--danger);"><i class="ri-delete-bin-line"></i></button>
+            <button class="btn-icon backup-validate-btn" data-file="${esc(b.name)}" title="${_t('backupVerifyBtn')}"><i class="ri-check-double-line"></i></button>
+            <button class="btn-icon backup-restore-btn" data-file="${esc(b.name)}" title="${_t('backupRestoreBtn')}" style="color:var(--gold);"><i class="ri-history-line"></i></button>
+            <button class="btn-icon backup-delete-btn" data-file="${esc(b.name)}" title="${_t('backupDeleteBtn')}" style="color:var(--danger);"><i class="ri-delete-bin-line"></i></button>
           </td>
         </tr>`;
       }).join('')}</tbody></table>`);
@@ -184,31 +184,31 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
           if (!A.state._backupValidations) A.state._backupValidations = {};
           A.state._backupValidations[file] = result;
           A.loadBackupsList();
-          A.showToast(result.valid ? 'النسخة سليمة' : 'النسخة تالفة', result.valid ? 'success' : 'error');
-        } catch (e) { A.logError('validateBackup', e); A.showToast('فشل التحقق', 'error'); }
+          A.showToast(result.valid ? _t('backupValidToast') : _t('backupCorruptToast'), result.valid ? 'success' : 'error');
+        } catch (e) { A.logError('validateBackup', e); A.showToast(_t('backupVerifyFailed'), 'error'); }
       }));
       listEl.querySelectorAll('.backup-restore-btn').forEach(b => b.addEventListener('click', () => {
         const file = b.dataset.file;
-        document.getElementById('restoreConfirmInfo').textContent = 'الملف: ' + file + '\nسيتم استبدال جميع البيانات الحالية بنسخة الاحتياطي.';
+        document.getElementById('restoreConfirmInfo').textContent = _t('restoreFileInfo').replace('{n}', file);
         document.getElementById('restoreConfirmOverlay').style.display = 'flex';
         document.getElementById('restoreConfirmProceed').onclick = async () => {
           document.getElementById('restoreConfirmOverlay').style.display = 'none';
           try {
-            document.getElementById('backupStatus').textContent = 'جاري الاستعادة...';
+            document.getElementById('backupStatus').textContent = _t('restoringLabel');
             await A.state.ipc.invoke('db:restoreBackup', file);
-            A.showToast('تمت استعادة النسخة الاحتياطية بنجاح. تحديث الصفحة...', 'success');
+            A.showToast(_t('restoreSuccess'), 'success');
             setTimeout(() => location.reload(), 1500);
-          } catch (e) { A.logError('restoreBackup', e); A.showToast('فشل الاستعادة: ' + e.message, 'error'); document.getElementById('backupStatus').textContent = ''; }
+          } catch (e) { A.logError('restoreBackup', e); A.showToast(_t('restoreFailed').replace('{n}', e.message), 'error'); document.getElementById('backupStatus').textContent = ''; }
         };
       }));
       listEl.querySelectorAll('.backup-delete-btn').forEach(b => b.addEventListener('click', async () => {
         const file = b.dataset.file;
-        if (await A.showConfirm('حذف النسخة: ' + file + '؟', 'حذف', 'danger')) {
-          try { await A.state.ipc.invoke('db:deleteBackup', file); A.showToast('تم حذف النسخة', 'success'); A.loadBackupsList(); }
-          catch (e) { A.logError('deleteBackup', e); A.showToast('فشل حذف النسخة', 'error'); }
+        if (await A.showConfirm(_t('deleteBackupConfirm').replace('{n}', file), _t('backupDeleteBtn'), 'danger')) {
+          try { await A.state.ipc.invoke('db:deleteBackup', file); A.showToast(_t('backupDeleted'), 'success'); A.loadBackupsList(); }
+          catch (e) { A.logError('deleteBackup', e); A.showToast(_t('backupDeleteFailed'), 'error'); }
         }
       }));
-    } catch (e) { A.logError('listBackups', e); if (statusEl) statusEl.textContent = 'فشل تحميل القائمة'; }
+    } catch (e) { A.logError('listBackups', e); if (statusEl) statusEl.textContent = _t('failedLoadList'); }
   };
 
   // Close restore confirm overlay
@@ -221,7 +221,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       days_before_2: parseInt(document.getElementById('settingDays2').value) || 3,
       days_before_3: parseInt(document.getElementById('settingDays3').value) || 1,
       enabled: document.getElementById('settingAlertEnabled').checked ? 1 : 0
-    }); A.showToast('تم حفظ إعدادات التنبيهات', 'success'); } catch (e) { A.logError('saveAlertSettings', e); A.showToast('فشل حفظ الإعدادات', 'error'); }
+    }); A.showToast(_t('alertSettingsSaved'), 'success'); } catch (e) { A.logError('saveAlertSettings', e); A.showToast(_t('settingsSaveFailed'), 'error'); }
   });
 
   // ─── Log viewer events ───
@@ -246,7 +246,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     A.loadSettingsLogs();
     if (A.Logger) A.Logger.getStats().then(s => {
       const badge = document.getElementById('logStatsBadge');
-      if (badge) badge.textContent = `${s.totalEntries} مدخلة | ${(s.fileSize / 1024).toFixed(0)}KB`;
+      if (badge) badge.textContent = _t('logStatsLabel').replace('{n}', s.totalEntries).replace('{s}', (s.fileSize / 1024).toFixed(0));
     });
   });
 
@@ -260,17 +260,17 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       a.href = url; a.download = `logs_${new Date().toISOString().slice(0,10)}.json`;
       document.body.appendChild(a); a.click();
       document.body.removeChild(a); URL.revokeObjectURL(url);
-      A.showToast('تم تصدير السجلات بنجاح', 'success');
+      A.showToast(_t('logsExported'), 'success');
     } catch (e) {
-      A.showToast('فشل تصدير السجلات', 'error');
+      A.showToast(_t('logsExportFailed'), 'error');
     }
   });
 
   if (logClear) logClear.addEventListener('click', async () => {
-    if (await A.showConfirm('مسح جميع سجلات الأخطاء؟')) {
+    if (await A.showConfirm(_t('clearLogsConfirm'))) {
       const ok = await A.Logger.clearLogs();
-      if (ok) { A.showToast('تم مسح السجلات', 'success'); A.loadSettingsLogs(); }
-      else A.showToast('فشل مسح السجلات', 'error');
+      if (ok) { A.showToast(_t('logsCleared'), 'success'); A.loadSettingsLogs(); }
+      else A.showToast(_t('logsClearFailed'), 'error');
     }
   });
 
@@ -284,7 +284,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
         A.loadSettingsLogs();
         if (A.Logger) A.Logger.getStats().then(s => {
           const badge = document.getElementById('logStatsBadge');
-          if (badge) badge.textContent = `${s.totalEntries} مدخلة | ${(s.fileSize / 1024).toFixed(0)}KB`;
+          if (badge) badge.textContent = _t('logStatsLabel').replace('{n}', s.totalEntries).replace('{s}', (s.fileSize / 1024).toFixed(0));
         });
       }, 200);
     });
@@ -354,7 +354,7 @@ A.loadSettingsActivity = async function(loadMore = false) {
     if (!loadMoreBtn && container) {
       const btn = document.createElement('button');
       btn.id = 'settingsLogLoadMore'; btn.className = 'btn btn-outline btn-sm';
-      btn.textContent = 'تحميل المزيد'; btn.style.margin = '12px auto'; btn.style.display = 'block';
+      btn.textContent = _t('loadMoreBtn'); btn.style.margin = '12px auto'; btn.style.display = 'block';
       btn.onclick = () => { logPage++; A.loadSettingsActivity(true); };
       container.textContent = ''; container.appendChild(btn);
     } else if (loadMoreBtn) { loadMoreBtn.style.display = 'block'; }
@@ -399,7 +399,7 @@ A.loadSettingsLogs = async function(loadMore) {
     if (!loadMoreBtn && container) {
       const btn = document.createElement('button');
       btn.id = 'settingsLogsLoadMore'; btn.className = 'btn btn-outline btn-sm';
-      btn.textContent = 'تحميل المزيد'; btn.style.margin = '12px auto'; btn.style.display = 'block';
+      btn.textContent = _t('loadMoreBtn'); btn.style.margin = '12px auto'; btn.style.display = 'block';
       btn.onclick = () => { logPage2++; A.loadSettingsLogs(true); };
       container.textContent = ''; container.appendChild(btn);
     } else if (loadMoreBtn) { loadMoreBtn.style.display = 'block'; }

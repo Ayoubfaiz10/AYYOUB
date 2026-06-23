@@ -21,8 +21,8 @@ A.loadExpenses = async function() {
     allPaiements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
     A.safeSet(document.getElementById('expPaymentsBody'), esc => allPaiements.slice(0, 20).length
       ? allPaiements.slice(0, 20).map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '-')}</td><td><strong>${parseFloat(p.montant).toFixed(2)}</strong></td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')
-      : '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">لا توجد مدفوعات</td></tr>');
-  } catch (e) { A.logError('loadExpenses', e); A.showError('expPaymentsBody', 'تعذر تحميل المصاريف.', () => A.loadExpenses()); }
+      : '<tr><td colspan="5" style="text-align:center;color:var(--gray-400);padding:24px;">' + _t('noPayments') + '</td></tr>');
+  } catch (e) { A.logError('loadExpenses', e); A.showError('expPaymentsBody', _t('failedLoadExpenses'), () => A.loadExpenses()); }
 };
 
 A.initExpenses = function() {
