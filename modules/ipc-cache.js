@@ -15,6 +15,7 @@ const cacheDeps = {
   'logger:getLogs': ['logger:log', 'logger:clear'],
   'db:getTodayProcedures': ['db:addProcedure'],
   'db:getDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes'],
+  'db:getAllDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes', 'db:selectAndUpload', 'db:addDocument', 'db:getDocuments'],
   'db:getProcedures': ['db:addProcedure'],
   'db:getPaiements': ['db:addPaiement'],
   'db:getBackupSettings': ['db:updateBackupSettings'],

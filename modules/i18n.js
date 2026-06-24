@@ -587,6 +587,7 @@ A.i18n = {
   docDeleteConfirm: { ar: 'هل تريد حذف هذه الوثيقة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', fr: 'Voulez-vous vraiment supprimer ce document ? Cette action est irréversible.' },
   docDeleted: { ar: 'تم حذف الوثيقة', fr: 'Document supprimé' },
   docDeleteFailed: { ar: 'فشل حذف الوثيقة', fr: 'Échec de la suppression du document' },
+  docDownloaded: { ar: 'تم تحميل الوثيقة', fr: 'Document téléchargé' },
   noTagsLabel: { ar: 'لا توجد', fr: 'Aucun' },
   currentVersionLabel: { ar: 'الإصدار الحالي', fr: 'Version actuelle' },
   failedOpenFile: { ar: 'تعذر فتح الملف', fr: 'Impossible d\'ouvrir le fichier' },

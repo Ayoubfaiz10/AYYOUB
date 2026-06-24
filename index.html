@@ -7,8 +7,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="fonts/remixicon.css" rel="stylesheet">
+  <script src="node_modules/chart.js/dist/chart.umd.min.js"></script>
   <link rel="stylesheet" href="design-tokens.css">
   <link rel="stylesheet" href="style.css">
   <style>
@@ -232,7 +232,7 @@
           <div class="dash-zone dash-zone-left">
 
             <div class="card dash-card">
-              <div class="card-header"><h3 data-i18n="dashTodayAgenda"><i class="ri-calendar-todo-line"></i> جدول اليوم</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('hearings')" data-i18n="dashViewAll">عرض الكل</button></div>
+              <div class="card-header"><h3 data-i18n="dashTodayAgenda"><i class="ri-calendar-todo-line"></i> جدول اليوم</h3><button class="btn btn-secondary btn-xs" data-click="nav:hearings" data-i18n="dashViewAll">عرض الكل</button></div>
               <div id="todayAgenda" class="dash-timeline"><p class="empty-state-sm">لا توجد أحداث اليوم</p></div>
             </div>
 
@@ -252,7 +252,7 @@
           <div class="dash-zone dash-zone-center">
 
             <div class="card dash-card">
-              <div class="card-header"><h3 data-i18n="dashRecentCases"><i class="ri-file-list-3-line"></i> آخر القضايا</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('cases')" data-i18n="viewAll">عرض الكل</button></div>
+              <div class="card-header"><h3 data-i18n="dashRecentCases"><i class="ri-file-list-3-line"></i> آخر القضايا</h3><button class="btn btn-secondary btn-xs" data-click="nav:cases" data-i18n="viewAll">عرض الكل</button></div>
               <div id="recentCases" class="dash-case-list"><p class="empty-state-sm" data-i18n="dashNoCases">لا توجد قضايا</p></div>
             </div>
 
@@ -262,7 +262,7 @@
             </div>
 
             <div class="card dash-card">
-              <div class="card-header"><h3 data-i18n="dashInProgressTasks"><i class="ri-task-line"></i> المهام قيد الإنجاز</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('tasks')" data-i18n="viewAll">عرض الكل</button></div>
+              <div class="card-header"><h3 data-i18n="dashInProgressTasks"><i class="ri-task-line"></i> المهام قيد الإنجاز</h3><button class="btn btn-secondary btn-xs" data-click="nav:tasks" data-i18n="viewAll">عرض الكل</button></div>
               <div id="dashPendingTasks" class="dash-mini-kanban"><p class="empty-state-sm" data-i18n="dashNoTasks">لا توجد مهام</p></div>
             </div>
 
@@ -277,7 +277,7 @@
           <div class="dash-zone dash-zone-right">
 
             <div class="card dash-card">
-              <div class="card-header"><h3 data-i18n="dashCalendar"><i class="ri-calendar-2-line"></i> التقويم</h3><button class="btn btn-secondary btn-xs" onclick="navigateTo('calendar')" data-i18n="viewAll">عرض الكل</button></div>
+              <div class="card-header"><h3 data-i18n="dashCalendar"><i class="ri-calendar-2-line"></i> التقويم</h3><button class="btn btn-secondary btn-xs" data-click="nav:calendar" data-i18n="viewAll">عرض الكل</button></div>
               <div id="dashMiniCalendar" class="dash-mini-calendar"></div>
               <div id="dashUpcomingEvents" class="dash-upcoming-events"><p class="empty-state-sm" data-i18n="dashNoUpcomingEvents">لا توجد أحداث قادمة</p></div>
             </div>
@@ -476,13 +476,13 @@
         <div class="modal modal-workspace" style="max-width:680px;">
           <div class="ws-header">
             <div class="ws-header-left">
-              <button class="ws-back" onclick="document.getElementById('eventDetailOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <button class="ws-back" data-click="close:eventDetailOverlay"><i class="ri-arrow-right-s-line"></i></button>
               <div class="ws-title-area"><h3 id="eventDetailTitle">الحدث</h3><span class="ws-badge" id="eventDetailBadge">جلسة</span></div>
             </div>
             <div class="ws-header-actions">
               <button class="btn btn-secondary btn-xs" id="eventEditBtn"><i class="ri-pencil-line"></i> تعديل</button>
               <button class="btn btn-danger btn-xs" id="eventDeleteBtn"><i class="ri-delete-bin-line"></i></button>
-              <button class="modal-close" style="position:static;" onclick="document.getElementById('eventDetailOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+              <button class="modal-close" style="position:static;" data-click="close:eventDetailOverlay"><i class="ri-close-line"></i></button>
             </div>
           </div>
           <div class="ws-body">
@@ -543,13 +543,13 @@
         <div class="modal modal-workspace" style="max-width:720px;">
           <div class="ws-header">
             <div class="ws-header-left">
-              <button class="ws-back" onclick="document.getElementById('taskDetailOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <button class="ws-back" data-click="close:taskDetailOverlay"><i class="ri-arrow-right-s-line"></i></button>
               <div class="ws-title-area"><h3 id="taskDetailTitle">المهمة</h3><span class="ws-badge" id="taskDetailBadge">عاجل</span></div>
             </div>
             <div class="ws-header-actions">
               <button class="btn btn-secondary btn-xs" id="taskDetailEdit"><i class="ri-pencil-line"></i></button>
               <button class="btn btn-danger btn-xs" id="taskDetailDelete"><i class="ri-delete-bin-line"></i></button>
-              <button class="modal-close" style="position:static;" onclick="document.getElementById('taskDetailOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+              <button class="modal-close" style="position:static;" data-click="close:taskDetailOverlay"><i class="ri-close-line"></i></button>
             </div>
           </div>
           <div class="ws-body" id="taskDetailBody"></div>
@@ -559,7 +559,7 @@
       <!-- ═══ WORKFLOW MODAL ═══ -->
       <div id="workflowModalOverlay" class="modal-overlay" style="display:none;">
         <div class="modal" style="max-width:600px;">
-          <div class="modal-header"><h3 id="workflowModalTitle">سير العمل</h3><button class="modal-close" onclick="document.getElementById('workflowModalOverlay').style.display='none'"><i class="ri-close-line"></i></button></div>
+          <div class="modal-header"><h3 id="workflowModalTitle">سير العمل</h3><button class="modal-close" data-click="close:workflowModalOverlay"><i class="ri-close-line"></i></button></div>
           <div class="modal-body" id="workflowModalBody"></div>
         </div>
       </div>
@@ -600,7 +600,7 @@
         <div class="modal modal-workspace">
           <div class="ws-header">
             <div class="ws-header-left">
-              <button class="ws-back" id="docViewerClose" onclick="document.getElementById('docViewerOverlay').style.display='none'"><i class="ri-arrow-right-s-line"></i></button>
+              <button class="ws-back" id="docViewerClose" data-click="close:docViewerOverlay"><i class="ri-arrow-right-s-line"></i></button>
               <div class="ws-title-area"><h3 id="docViewerTitle">الوثيقة</h3><span class="ws-badge" id="docViewerType">عقد</span></div>
             </div>
             <div class="ws-header-actions">
@@ -608,7 +608,7 @@
               <button class="btn btn-primary btn-xs" id="docViewerDownload"><i class="ri-download-line"></i> تحميل</button>
               <button class="btn btn-outline btn-xs" id="docViewerAnalyze" style="color:var(--gold);border-color:var(--gold);" title="تحليل بالذكاء الاصطناعي"><i class="ri-robot-3-line"></i> تحليل</button>
               <button class="btn btn-outline btn-xs" id="docViewerDelete" style="color:var(--danger);border-color:var(--danger);" title="حذف الوثيقة"><i class="ri-delete-bin-line"></i> حذف</button>
-              <button class="modal-close" style="position:static;" onclick="document.getElementById('docViewerOverlay').style.display='none'"><i class="ri-close-line"></i></button>
+              <button class="modal-close" style="position:static;" data-click="close:docViewerOverlay"><i class="ri-close-line"></i></button>
             </div>
           </div>
           <div class="ws-body" style="display:grid;grid-template-columns:1fr 320px;gap:0;padding:0;">
@@ -702,7 +702,7 @@
         <div id="aiContextBar" class="ai-context-bar" style="display:none;">
           <i class="ri-focus-3-line"></i>
           <span id="aiContextLabel">السياق: عام</span>
-          <button class="btn btn-secondary btn-xs" onclick="clearAiContext()"><span data-i18n="confirmCancel">إلغاء</span></button>
+          <button class="btn btn-secondary btn-xs" data-click="ai:clearContext"><span data-i18n="confirmCancel">إلغاء</span></button>
         </div>
         <div class="card ai-container">
           <div id="aiSetup">
@@ -711,22 +711,22 @@
               <h3 style="color:var(--navy);font-size:18px;margin-bottom:6px;" data-i18n="aiSetupTitle">المساعد الذكي</h3>
               <p style="color:var(--gray-400);font-size:13px;margin-bottom:20px;" data-i18n="aiSetupDesc">اختر مزود الذكاء الاصطناعي المفضل لديك</p>
               <div class="ai-provider-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3);max-width:450px;margin:0 auto var(--space-5);">
-                <button class="ai-provider-btn active" data-provider="groq" onclick="selectAiProvider('groq')">
+                <button class="ai-provider-btn active" data-provider="groq" data-click="ai:selectProvider:groq">
                   <div class="ai-provider-logo" style="font-weight:700;font-size:16px;background:#1a1a2e;color:#fff;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">G</div>
                   <span style="font-size:12px;font-weight:600;">Groq</span>
                   <span style="font-size:9px;color:var(--gray-400);">مجاني، سريع</span>
                 </button>
-                <button class="ai-provider-btn" data-provider="openai" onclick="selectAiProvider('openai')">
+                <button class="ai-provider-btn" data-provider="openai" data-click="ai:selectProvider:openai">
                   <div class="ai-provider-logo" style="font-weight:700;font-size:16px;background:#10a37f;color:#fff;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">O</div>
                   <span style="font-size:12px;font-weight:600;">OpenAI</span>
                   <span style="font-size:9px;color:var(--gray-400);">GPT-4o, GPT-4</span>
                 </button>
-                <button class="ai-provider-btn" data-provider="anthropic" onclick="selectAiProvider('anthropic')">
+                <button class="ai-provider-btn" data-provider="anthropic" data-click="ai:selectProvider:anthropic">
                   <div class="ai-provider-logo" style="font-weight:700;font-size:16px;background:#d97757;color:#fff;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">C</div>
                   <span style="font-size:12px;font-weight:600;">Anthropic</span>
                   <span style="font-size:9px;color:var(--gray-400);">Claude 3, Sonnet</span>
                 </button>
-                <button class="ai-provider-btn" data-provider="gemini" onclick="selectAiProvider('gemini')">
+                <button class="ai-provider-btn" data-provider="gemini" data-click="ai:selectProvider:gemini">
                   <div class="ai-provider-logo" style="font-weight:700;font-size:16px;background:#4285f4;color:#fff;border-radius:8px;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;">G+</div>
                   <span style="font-size:12px;font-weight:600;">Gemini</span>
                   <span style="font-size:9px;color:var(--gray-400);">Google، مجاني</span>
@@ -822,19 +822,19 @@
           <h1>الدعم والمساعدة</h1>
           <p>تواصل مع فريق الدعم الفني</p>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);margin:var(--space-6) 0;">
-            <div class="support-card" onclick="window.open('mailto:support@cabinetmanager.ma')">
+            <div class="support-card" data-click="support:mail">
               <div class="support-card-icon"><i class="ri-mail-line"></i></div>
               <div><h4>البريد الإلكتروني</h4><p>support@cabinetmanager.ma</p></div>
             </div>
-            <div class="support-card" onclick="navigateTo('about')">
+            <div class="support-card" data-click="nav:about">
               <div class="support-card-icon"><i class="ri-information-line"></i></div>
               <div><h4>حول البرنامج</h4><p>معلومات الإصدار والمميزات</p></div>
             </div>
-            <div class="support-card" onclick="navigateTo('changelog')">
+            <div class="support-card" data-click="nav:changelog">
               <div class="support-card-icon"><i class="ri-history-line"></i></div>
               <div><h4>سجل التحديثات</h4><p>تعرف على آخر التغييرات</p></div>
             </div>
-            <div class="support-card" onclick="navigateTo('license')">
+            <div class="support-card" data-click="nav:license">
               <div class="support-card-icon"><i class="ri-file-shield-line"></i></div>
               <div><h4>الترخيص</h4><p>شروط ورخصة الاستخدام</p></div>
             </div>

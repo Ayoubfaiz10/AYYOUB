@@ -8,6 +8,15 @@ const db = require('./db');
 const logger = require('./logger');
 require('dotenv').config();
 
+/* ─── Path security: prevent directory traversal ─── */
+function isPathSafe(targetPath, allowedBase) {
+  try {
+    var resolved = path.resolve(targetPath);
+    var base = path.resolve(allowedBase);
+    return resolved === base || resolved.startsWith(base + path.sep);
+  } catch (e) { return false; }
+}
+
 /* ─── Write Lock: sequential DB writes ─── */
 let _writeQueue = Promise.resolve();
 function seqWrite(fn) {
@@ -26,6 +35,37 @@ async function getUniqueFilePath(dir, filename) {
     count++;
   }
   return finalPath;
+}
+
+/* ─── MIME magic-byte validation ─── */
+const MAGIC_MAP = {
+  '.pdf':  [ [0x25, 0x50, 0x44, 0x46] ],
+  '.doc':  [ [0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1] ],
+  '.docx': [ [0x50, 0x4B, 0x03, 0x04] ],
+  '.jpg':  [ [0xFF, 0xD8, 0xFF] ],
+  '.jpeg': [ [0xFF, 0xD8, 0xFF] ],
+  '.png':  [ [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] ],
+};
+function validateFileMagic(filePath, ext) {
+  try {
+    const sigs = MAGIC_MAP[ext];
+    if (!sigs) return true;
+    const fd = fs.openSync(filePath, 'r');
+    const buf = Buffer.alloc(16);
+    fs.readSync(fd, buf, 0, 16, 0);
+    fs.closeSync(fd);
+    return sigs.some(sig => sig.every((b, i) => buf[i] === b));
+  } catch (e) {
+    return false;
+  }
+}
+
+function formatFileSize(bytes) {
+  if (!bytes || bytes === 0) return '';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let i = 0; let size = bytes;
+  while (size >= 1024 && i < units.length - 1) { size /= 1024; i++; }
+  return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
 }
 
 const CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'window_config.json');
@@ -49,7 +89,8 @@ function saveWindowState(state) {
 
 async function saveDbOnQuit() {
   try {
-    if (typeof db.saveDb === 'function') await db.saveDb();
+    if (typeof db.saveDbSync === 'function') db.saveDbSync();
+    else if (typeof db.saveDb === 'function') await db.saveDb();
   } catch (e) {
     console.error('Save on quit failed:', e);
   }
@@ -59,16 +100,23 @@ logger.setDbLog((action, details) => {
   try { db.addLog(action, details); } catch (e) { /* logger fallback silent */ }
 });
 
-let Tesseract = null;
-try { Tesseract = require('tesseract.js'); } catch (e) { console.warn('tesseract.js not available'); }
+let _tesseractModule = null;
+function ensureTesseract() {
+  if (_tesseractModule !== null) return _tesseractModule;
+  try {
+    _tesseractModule = require('tesseract.js');
+    console.log('Tesseract.js loaded lazily');
+    return _tesseractModule;
+  } catch (e) {
+    _tesseractModule = false;
+    console.warn('tesseract.js not available');
+    return null;
+  }
+}
 
 let mainWindow = null;
 
-/* ─── Notification Cache (bounded, auto-expiring) ─── */
-const NOTIF_MAX_SIZE = 500;
-const NOTIF_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
-const NOTIF_GC_INTERVAL = 6 * 60 * 60 * 1000;  // every 6 hours
-const sentNotifications = new Map(); // key → timestamp
+/* ─── Notification deduplication uses DB (isSent/markSent/cleanOldSentNotifications) ─── */
 
 function createWindow() {
   const savedState = loadWindowState();
@@ -95,7 +143,7 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; img-src 'self' data:; script-src 'self' 'unsafe-inline'; connect-src 'self' https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com"]
+        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self'; connect-src 'self' https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; base-uri 'none'; form-action 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'"]
       }
     });
   });
@@ -166,7 +214,7 @@ function safeIpc(name, fn) {
       return await fn(event, ...args);
     } catch (err) {
       logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
-      return { error: 'حدث خطأ: ' + (err.message || 'خطأ غير معروف') };
+      return { error: 'حدث خطأ داخلي. الرجاء المحاولة مرة أخرى' };
     }
   };
 }
@@ -179,11 +227,10 @@ function mutateIpc(name, fn) {
     }
     try {
       const result = await fn(event, ...args);
-      await seqWrite(() => db.saveDb());
       return result;
     } catch (err) {
       logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
-      return { error: 'حدث خطأ: ' + (err.message || 'خطأ غير معروف') };
+      return { error: 'حدث خطأ داخلي. الرجاء المحاولة مرة أخرى' };
     }
   };
 }
@@ -192,12 +239,33 @@ async function init() {
   await db.initDb();
   logToLogger(0, 'app', 'Application started');
 
+  // Run integrity check and auto-repair at startup (non-blocking)
+  try {
+    const integrity = db.integrityCheck();
+    if (integrity.orphans && integrity.orphans.length > 0) {
+      logToLogger(1, 'app', `Found ${integrity.orphans.length} orphan records — running auto-repair`);
+      const repair = db.repairOrphans();
+      logToLogger(0, 'app', `Auto-repair: ${repair.repaired} orphans fixed`);
+    }
+    if (integrity.warnings && integrity.warnings.length > 0) {
+      integrity.warnings.forEach(w => logToLogger(1, 'app', `Integrity warning: ${JSON.stringify(w)}`));
+    }
+  } catch (e) {
+    logToLogger(2, 'app', `Startup integrity check failed: ${e.message}`);
+  }
+
   const archived = db.autoArchive();
   if (archived > 0) console.log(`Auto-archived ${archived} closed cases`);
 
   function nullGuard(obj, defaults) {
     if (obj === null || obj === undefined) return defaults || {};
     return obj;
+  }
+
+  // ─── SHA-256 password hash migration at startup ───
+  const storedHash = getPasswordHash();
+  if (typeof storedHash === 'string' && isSHA256Hash(storedHash)) {
+    logToLogger(1, 'app', 'Insecure SHA-256 password hash detected — will upgrade on next successful login');
   }
 
   // ─── MASTER_KEY check at startup ───
@@ -236,6 +304,9 @@ async function init() {
   ipcMain.handle('db:deleteCase', mutateIpc('deleteCase', withPerm('delete_case')(async (_e, id) => {
     if (id == null) return;
 
+    // 0. Auto-backup before deletion
+    db.createBackup('before_delete_case');
+
     // 1. Fetch case info before deletion
     const allCases = db.getAllCases();
     const c = allCases.find(x => x.id === id);
@@ -243,15 +314,17 @@ async function init() {
     // 2. Delete case from database (ON DELETE CASCADE handles related records in DB)
     db.deleteCase(id);
 
-    // 3. Delete storage folder from disk
+    // 3. Delete storage folder from disk (safety-checked)
     const caseDir = path.join(db.STORAGE_DIR, String(id));
-    try {
-      if (fs.existsSync(caseDir)) {
-        fs.rmSync(caseDir, { recursive: true, force: true });
-        console.log(`Deleted storage for case #${id}`);
+    if (isPathSafe(caseDir, db.STORAGE_DIR)) {
+      try {
+        if (fs.existsSync(caseDir)) {
+          fs.rmSync(caseDir, { recursive: true, force: true });
+          console.log(`Deleted storage for case #${id}`);
+        }
+      } catch (err) {
+        console.error(`Failed to delete storage for case #${id}:`, err);
       }
-    } catch (err) {
-      console.error(`Failed to delete storage for case #${id}:`, err);
     }
 
     db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id} مع جميع ملفاتها`);
@@ -266,6 +339,7 @@ async function init() {
   })));
   ipcMain.handle('db:deleteClient', mutateIpc('deleteClient', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
+    db.createBackup('before_delete_client');
     const c = db.getAllClients().find(x => x.id === id);
     db.deleteClient(id);
     db.addLog('delete_client', `حذف موكل ${c ? c.name : '#' + id}`);
@@ -308,16 +382,21 @@ async function init() {
   ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', () => db.getTaskAnalytics()));
   ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', () => db.getDashboardStats()));
   ipcMain.handle('db:getDocuments', safeIpc('getDocuments', (_e, caseId) => db.getDocuments(caseId)));
+  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', () => db.getAllDocuments()));
   ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'مسار الملف مطلوب' };
     if (!db.validateRef('cases', caseId)) return { error: 'القضية غير موجودة' };
+    const extCheck = path.extname(sourcePath).toLowerCase();
+    if (!validateFileMagic(sourcePath, extCheck)) return { error: 'نوع الملف غير صالح (فحص التوقيع)' };
+    const stats = await fsp.stat(sourcePath);
+    if (stats.size > 50 * 1024 * 1024) return { error: 'الملف كبير جداً (الحد 50MB)' };
     const caseDir = path.join(db.STORAGE_DIR, String(caseId));
     try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
-    const filename = path.basename(sourcePath);
+    const filename = path.basename(sourcePath).replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
     const finalPath = await getUniqueFilePath(caseDir, filename);
     await fsp.copyFile(sourcePath, finalPath);
-    const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType });
+    const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType, file_size: formatFileSize(stats.size) });
     setTimeout(() => indexDocument(docId), 100);
     db.addLog('upload_document', `رفع وثيقة ${path.basename(finalPath)} للقضية #${caseId} (${docType})`);
     return docId;
@@ -343,15 +422,15 @@ async function init() {
         if (stats.size > MAX_FILE_SIZE) throw new Error(`${path.basename(sourcePath)} كبير جداً (الحد 50MB)`);
         const ext = path.extname(sourcePath).toLowerCase();
         if (!ALLOWED_EXTENSIONS.includes(ext)) throw new Error(`نوع غير مدعوم: ${path.basename(sourcePath)}`);
+        if (!validateFileMagic(sourcePath, ext)) throw new Error(`نوع الملف غير صالح (فحص التوقيع): ${path.basename(sourcePath)}`);
         const caseDir = path.join(db.STORAGE_DIR, String(caseId));
         try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
-        const filename = path.basename(sourcePath);
-        const finalPath = await getUniqueFilePath(caseDir, filename);
+        const sanitized = path.basename(sourcePath).replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
+        const finalPath = await getUniqueFilePath(caseDir, sanitized);
         await fsp.copyFile(sourcePath, finalPath);
-        const docId = db.addDocument({ case_id: caseId, filename, file_path: finalPath, doc_type: docType });
-        if (tags) db.updateDocument(docId, { tags });
+        const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType, file_size: formatFileSize(stats.size), tags });
         setTimeout(() => indexDocument(docId), 100);
-        db.addLog('upload_document', `رفع ${filename} للقضية #${caseId} (${docType})`);
+        db.addLog('upload_document', `رفع ${path.basename(finalPath)} للقضية #${caseId} (${docType})`);
         uploaded.push(docId);
       } catch (e) { console.error('Upload error:', sourcePath, e.message); }
     }
@@ -367,6 +446,18 @@ async function init() {
       if (doc && doc.file_path && fs.existsSync(doc.file_path)) shell.openPath(doc.file_path);
     } catch (e) { logToLogger(2, 'openDocument', e.message); }
   })));
+  ipcMain.handle('db:downloadDocument', safeIpc('downloadDocument', withPerm('view_case')(async (_e, docId) => {
+    if (docId == null) return;
+    try {
+      const doc = db.getDocument(docId);
+      if (!doc || !doc.file_path || !fs.existsSync(doc.file_path)) return { error: 'الملف غير موجود' };
+      const result = await dialog.showSaveDialog(mainWindow, { defaultPath: doc.filename, filters: [{ name: 'All Files', extensions: ['*'] }] });
+      if (!result.canceled && result.filePath) {
+        await fsp.copyFile(doc.file_path, result.filePath);
+        return { ok: true };
+      }
+    } catch (e) { logToLogger(2, 'downloadDocument', e.message); return { error: e.message }; }
+  })));
   ipcMain.handle('db:updateDocNotes', mutateIpc('updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
     const { id, notes } = nullGuard(args);
     if (id == null) return;
@@ -377,7 +468,7 @@ async function init() {
     if (id == null) return { ok: false, error: 'معرف الوثيقة مطلوب' };
     const doc = db.getDocument(id);
     if (!doc) return { ok: false, error: 'الوثيقة غير موجودة' };
-    if (doc.file_path) {
+    if (doc.file_path && isPathSafe(doc.file_path, db.STORAGE_DIR)) {
       try { if (fs.existsSync(doc.file_path)) fs.unlinkSync(doc.file_path); } catch (e) { console.error(`Failed to delete document file #${id}:`, e.message); }
     }
     db.deleteDocument(id);
@@ -409,7 +500,11 @@ async function init() {
     return { ok: true };
   })));
   ipcMain.handle('db:getChartData', safeIpc('getChartData', withPerm('view_finance')(() => db.getChartData())));
-  ipcMain.handle('db:archiveCase', mutateIpc('archiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.archiveCase(id); })));
+  ipcMain.handle('db:archiveCase', mutateIpc('archiveCase', withPerm('edit_case')(async (_e, id) => {
+    if (id == null) return;
+    db.createBackup('before_archive_case');
+    db.archiveCase(id);
+  })));
   ipcMain.handle('db:unarchiveCase', mutateIpc('unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); })));
   ipcMain.handle('db:updateCaseStatus', mutateIpc('updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
@@ -456,6 +551,7 @@ async function init() {
   })));
   ipcMain.handle('db:restoreBackup', mutateIpc('restoreBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
+    db.createBackup('before_restore');
     const result = db.restoreFromBackup(filename);
     db.addLog('restore_backup', `استعادة نسخة احتياطية: ${filename}`);
     return result;
@@ -496,10 +592,10 @@ async function init() {
   createWindow();
 
   ipcMain.handle('notif:getCacheStats', () => ({
-    size: sentNotifications.size,
-    maxSize: NOTIF_MAX_SIZE,
-    ttlMs: NOTIF_TTL_MS,
-    memoryEstimate: sentNotifications.size * 128
+    size: 0,
+    maxSize: 500,
+    ttlMs: 7 * 24 * 60 * 60 * 1000,
+    memoryEstimate: 0
   }));
 
   ipcMain.handle('app:checkMasterKey', () => {
@@ -516,7 +612,6 @@ async function init() {
     checkUpcomingEvents();
     setInterval(checkAndNotify, 3600000);
     setInterval(checkUpcomingEvents, 21600000);
-    setInterval(cleanupSentNotifications, NOTIF_GC_INTERVAL);
     setInterval(() => { try { db.cleanOldSentNotifications(); } catch (e) { /* ignore */ } }, 86400000);
 
     setTimeout(() => {
@@ -526,7 +621,7 @@ async function init() {
           if (s.auto_enabled) {
             const freqMs = (s.frequency_hours || 24) * 3600000;
             if (!s.last_backup_at || (Date.now() - new Date(s.last_backup_at).getTime()) >= freqMs) {
-              const name = db.createBackup('auto');
+              const name = db.createBackup('scheduled');
               db.addLog('auto_backup', `نسخة احتياطية تلقائية: ${name}`);
             }
           }
@@ -534,35 +629,6 @@ async function init() {
       }, 3600000);
     }, 5000);
   });
-}
-
-function cleanupSentNotifications() {
-  const now = Date.now();
-  let count = 0;
-  for (const [key, ts] of sentNotifications) {
-    if (now - ts > NOTIF_TTL_MS) { sentNotifications.delete(key); count++; }
-  }
-  if (sentNotifications.size > NOTIF_MAX_SIZE) {
-    const sorted = [...sentNotifications.entries()].sort((a, b) => a[1] - b[1]);
-    const excess = sorted.slice(0, sentNotifications.size - NOTIF_MAX_SIZE);
-    for (const [key] of excess) { sentNotifications.delete(key); count++; }
-  }
-  if (count > 0 && mainWindow) mainWindow.webContents.send('notif:cacheStats', { size: sentNotifications.size, cleaned: count });
-}
-
-function markNotified(key) {
-  if (sentNotifications.size >= NOTIF_MAX_SIZE) {
-    const oldest = [...sentNotifications.entries()].reduce((a, b) => a[1] < b[1] ? a : b);
-    sentNotifications.delete(oldest[0]);
-  }
-  sentNotifications.set(key, Date.now());
-}
-
-function isNotified(key) {
-  const ts = sentNotifications.get(key);
-  if (ts === undefined) return false;
-  if (Date.now() - ts > NOTIF_TTL_MS) { sentNotifications.delete(key); return false; }
-  return true;
 }
 
 function checkAndNotify() {
@@ -580,8 +646,8 @@ function checkAndNotify() {
     deadlines.forEach(item => {
       if (item.days_remaining <= maxThreshold) {
         const key = 'deadline-' + item.case_id + '-' + item.days_remaining;
-        if (!isNotified(key)) {
-          markNotified(key);
+        if (!db.isSent(key)) {
+          db.markSent(key);
           new Notification({ title: 'تنبيه أجل حسمي', body: item.case_number + ': ' + item.title + ' - باقي ' + item.days_remaining + ' يوم' }).show();
         }
       }
@@ -590,8 +656,8 @@ function checkAndNotify() {
     hearings.forEach(item => {
       if (item.days_remaining <= maxThreshold) {
         const key = 'hearing-' + item.id + '-' + item.days_remaining;
-        if (!isNotified(key)) {
-          markNotified(key);
+        if (!db.isSent(key)) {
+          db.markSent(key);
           new Notification({ title: 'تنبيه جلسة قريبة', body: item.case_number + ': ' + item.type + ' - باقي ' + item.days_remaining + ' يوم' }).show();
         }
       }
@@ -635,6 +701,7 @@ function checkUpcomingEvents() {
 }
 
 async function indexDocument(docId) {
+  const Tesseract = ensureTesseract();
   if (!Tesseract) return;
   try {
     const doc = db.getDocument(docId);
@@ -679,9 +746,15 @@ ipcMain.handle('events:delete', mutateIpc('events:delete', withPerm('edit_case')
 })));
 // ─── Auth ───
 
-const BCRYPT_SALT_ROUNDS = 12;
+const BCRYPT_SALT_ROUNDS = 10;
 const AI_CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'ai_config.json');
 const PASSWORD_PATH = path.join(app.getPath('userData'), 'storage', 'password.json');
+
+// Login rate limiting
+const loginAttempts = new Map();
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOGIN_LOCKOUT_WINDOW = 15 * 60 * 1000; // 15 min window before reset
+const MAX_LOCKOUT_SECS = 900; // 15 minutes max lockout
 
 function getPasswordHash() {
   try {
@@ -690,7 +763,7 @@ function getPasswordHash() {
       if (!parsed || typeof parsed.hash !== 'string') return { error: 'ملف كلمة السر تالف' };
       return parsed.hash || '';
     }
-  } catch (e) { return { error: 'ملف كلمة السر تالف: ' + e.message }; }
+  } catch (e) { logToLogger(2, 'getPasswordHash', e.message || String(e)); return { error: 'ملف كلمة السر تالف' }; }
   return '';
 }
 
@@ -775,12 +848,35 @@ ipcMain.handle('auth:hasPassword', () => {
 });
 
 ipcMain.handle('auth:login', (_e, { userId, password }) => {
+  const loginKey = userId ? String(userId) : 'global';
+  const now = Date.now();
+  const prev = loginAttempts.get(loginKey);
+  if (prev) {
+    if (prev.lockedUntil && now < prev.lockedUntil) {
+      const secs = Math.ceil((prev.lockedUntil - now) / 1000);
+      return { ok: false, error: `محاولات كثيرة جداً. انتظر ${secs} ثوانٍ` };
+    }
+    if (now - prev.firstAttempt > LOGIN_LOCKOUT_WINDOW) {
+      loginAttempts.delete(loginKey);
+    }
+  }
   try {
     if (!password || typeof password !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
     const stored = getPasswordHash();
     if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
     if (!stored) return { ok: true, firstTime: true };
-    if (!verifyPassword(password, stored)) return { ok: false, error: 'كلمة السر خطأ' };
+    if (!verifyPassword(password, stored)) {
+      const rec = loginAttempts.get(loginKey) || { count: 0, firstAttempt: now };
+      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 100);
+      if (!rec.firstAttempt) rec.firstAttempt = now;
+      if (rec.count >= MAX_LOGIN_ATTEMPTS) {
+        const lockSecs = Math.min(MAX_LOCKOUT_SECS, Math.pow(2, rec.count - MAX_LOGIN_ATTEMPTS));
+        rec.lockedUntil = now + lockSecs * 1000;
+      }
+      loginAttempts.set(loginKey, rec);
+      return { ok: false, error: 'كلمة السر خطأ' };
+    }
+    loginAttempts.delete(loginKey);
     if (isSHA256Hash(stored)) {
       setPasswordHash(hashBcrypt(password));
     }
@@ -810,7 +906,7 @@ ipcMain.handle('auth:setPassword', (_e, pwd) => {
     return { ok: true };
   } catch (e) {
     handleError('setPassword', e);
-    return { ok: false, error: 'خطأ في حفظ كلمة السر: ' + e.message };
+    return { ok: false, error: 'خطأ في حفظ كلمة السر' };
   }
 });
 
@@ -823,6 +919,12 @@ ipcMain.handle('auth:hashPassword', (_e, pwd) => {
     handleError('hashPassword', e);
     return { ok: false, error: 'خطأ في تشفير كلمة السر' };
   }
+});
+
+ipcMain.handle('auth:logout', () => {
+  currentUser = null;
+  logToLogger(0, 'auth', 'User logged out (session timeout)');
+  return { ok: true };
 });
 
 ipcMain.handle('auth:getCurrentUser', () => currentUser);
@@ -847,10 +949,11 @@ ipcMain.handle('auth:addUser', async (_e, data) => {
     if (!data || !data.name) return { ok: false, error: 'الاسم مطلوب' };
     if (!data.password) return { ok: false, error: 'كلمة السر مطلوبة' };
     if (data.password.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
+    data = { ...data };
+    delete data.password_hash;
     data.password_hash = hashBcrypt(data.password);
     data._userId = currentUser?.id; data._userName = currentUser?.name;
     const id = db.addUser(data);
-    await seqWrite(() => db.saveDb());
     return id ? { ok: true, id } : { ok: false, error: 'فشل إضافة المستخدم' };
   } catch (e) {
     handleError('addUser', e);
@@ -862,8 +965,13 @@ ipcMain.handle('auth:updateUser', async (_e, id, data) => {
   if (!checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لتحديث المستخدمين' };
   try {
     if (!id || typeof id !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
+    data = { ...data };
+    delete data.password_hash;
+    if (data.password) {
+      data.password_hash = hashBcrypt(data.password);
+    }
+    delete data.password;
     db.updateUser(id, data);
-    await seqWrite(() => db.saveDb());
     return { ok: true };
   } catch (e) {
     handleError('updateUser', e);
@@ -875,7 +983,6 @@ ipcMain.handle('auth:deleteUser', async (_e, id) => {
   if (!checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لحذف المستخدمين' };
   try {
     db.deleteUser(id);
-    await seqWrite(() => db.saveDb());
     return { ok: true };
   } catch (e) {
     handleError('deleteUser', e);
@@ -928,6 +1035,8 @@ const AI_ERROR_MESSAGES = {
   no_key: 'مفتاح API غير مضبوط — الرجاء إدخال المفتاح في الإعدادات.',
   unknown: 'حدث خطأ غير متوقع. حاول مرة أخرى.'
 };
+
+const CONTEXT_MAX_CHARS = 5000;
 
 function classifyAIError(err) {
   const msg = (err?.message || '').toLowerCase();
@@ -994,14 +1103,17 @@ async function callProvider(provider, apiKey, model, messages) {
 
   try {
     if (provider === 'gemini') {
-      const url = `${cfg.baseUrl}/${model}:generateContent?key=${apiKey}`;
+      if (cfg.models && cfg.models.length && !cfg.models.includes(model)) {
+        throw new Error(`Invalid Gemini model: ${model}`);
+      }
+      const url = `${cfg.baseUrl}/${model}:generateContent`;
       const geminiBody = {
         contents: [{ parts: [{ text: systemMsg ? `${systemMsg}\n\n${lastUserContent}` : lastUserContent }] }],
         generationConfig: { temperature: 0.7, maxOutputTokens: 4096 }
       };
       const resp = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
         body: JSON.stringify(geminiBody),
         signal: controller.signal
       });
@@ -1073,6 +1185,10 @@ async function callAI(systemPrompt, message, context) {
   const config = getAiConfig();
   const apiKey = config.apiKey;
   if (!apiKey) return { error: AI_ERROR_MESSAGES.no_key, friendlyError: AI_ERROR_MESSAGES.no_key, provider: config.provider || 'groq' };
+
+  if (context && context.length > CONTEXT_MAX_CHARS) {
+    context = context.slice(0, CONTEXT_MAX_CHARS) + '\n... [تم اقتطاع السياق]';
+  }
 
   const provider = config.provider || 'groq';
   const model = config.model || AI_PROVIDERS[provider]?.defaultModel || 'llama-3.1-8b-instant';

@@ -189,3 +189,24 @@ A.formatDateTime = function(isoStr) {
 };
 
 window.showToast = A.showToast;
+
+// Global delegated click handler for data-click attributes (CSP-compliant)
+document.addEventListener('click', function (e) {
+  var el = e.target.closest('[data-click]');
+  if (!el) return;
+  var action = el.getAttribute('data-click');
+  if (!action) return;
+  var parts = action.split(':');
+  var ns = parts[0], cmd = parts[1], arg = parts.slice(2).join(':');
+  if (ns === 'nav') {
+    window.navigateTo(cmd);
+  } else if (ns === 'close') {
+    var overlay = document.getElementById(cmd);
+    if (overlay) overlay.style.display = 'none';
+  } else if (ns === 'ai') {
+    if (cmd === 'clearContext') window.clearAiContext && window.clearAiContext();
+    else if (cmd === 'selectProvider') window.selectAiProvider && window.selectAiProvider(arg);
+  } else if (ns === 'support') {
+    if (cmd === 'mail') window.open('mailto:support@cabinetmanager.ma');
+  }
+});

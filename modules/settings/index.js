@@ -32,7 +32,7 @@ window.editSettingsUser = async function(id) {
   `, async () => {
     const data = { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, active: parseInt(document.getElementById('fUserActive').value) };
     const pwd = document.getElementById('fUserPwd').value;
-    if (pwd) { const r = await A.mutate('auth:hashPassword', pwd); if (r && r.ok) data.password_hash = r.hash; else { A.showToast(r?.error || _t('pwdHashFailed'), 'error'); return; } }
+    if (pwd) data.password = pwd;
     const r2 = await A.mutate('auth:updateUser', id, data);
     if (r2 && !r2.ok) { A.showToast(r2.error || _t('userUpdateFailed'), 'error'); return; }
     A.hideModal(); A.showToast(_t('userUpdated'), 'success'); A.loadSettingsUsers();
@@ -55,7 +55,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input"></div>
       <div class="info-grid-2">
         <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
-        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" value="123456"></div>
+        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" value="12345678"></div>
       </div>
     `, async () => {
       await A.mutate('auth:addUser', { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, password: document.getElementById('fUserPwd').value });

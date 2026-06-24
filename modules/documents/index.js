@@ -8,16 +8,7 @@ A.loadDocuments = async function() {
   if (!A.state.ipc) return;
   try {
     A.showSkeleton('documentsGrid', 6, 'docCard');
-    const cases = await A.cachedInvoke('db:getAllCases');
-    const docPromises = (cases || []).map(c => c && c.id ? A.cachedInvoke('db:getDocuments', c.id) : Promise.resolve([]));
-    const docResults = await Promise.allSettled(docPromises);
-    A.state.allDocs = [];
-    docResults.forEach((result, i) => {
-      const c = cases[i];
-      if (!c) return;
-      const docs = result.status === 'fulfilled' && result.value ? result.value : [];
-      docs.forEach(doc => { doc.case_number = c.case_number; doc.client_name = c.client_name; A.state.allDocs.push(doc); });
-    });
+    A.state.allDocs = (await A.cachedInvoke('db:getAllDocuments')) || [];
     A.renderDocGrid();
     A.renderDocTable();
     A.renderDocFolders();
@@ -29,18 +20,8 @@ A.loadDocuments = async function() {
 
 A.openDocViewer = async function(docId) {
   if (!A.state.ipc || !docId) return;
-  const cases = (await A.cachedInvoke('db:getAllCases')) || [];
-  let doc = null;
-  for (const c of cases) {
-    if (!c || !c.id) continue;
-    try {
-      const docs = await A.cachedInvoke('db:getDocuments', c.id);
-      if (docs && docs.length) {
-        const found = docs.find(d => d && d.id === docId);
-        if (found) { doc = { ...found, case_number: c.case_number, client_name: c.client_name }; break; }
-      }
-    } catch (e) { /* skip */ }
-  }
+  const docs = (await A.cachedInvoke('db:getAllDocuments')) || [];
+  const doc = docs.find(d => d && d.id === docId);
   if (!doc) { A.showToast(_t('docNotFound'), 'error'); return; }
   if (A.addRecentItem) A.addRecentItem('document', doc.id, doc.filename, (doc.case_number||'') + ' · ' + (doc.doc_type||''), 'documents');
   A.state.currentDocViewerId = docId;
@@ -57,7 +38,7 @@ A.openDocViewer = async function(docId) {
   document.getElementById('docVNotes').value = doc.notes || '';
 
   document.getElementById('docViewerOpen').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } };
-  document.getElementById('docViewerDownload').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('downloadDoc', e); A.showToast(_t('failedLoadFile'), 'error'); } };
+  document.getElementById('docViewerDownload').onclick = async () => { try { const r = await A.state.ipc.invoke('db:downloadDocument', docId); if (r && r.error) A.showToast(r.error, 'error'); else A.showToast(_t('docDownloaded'), 'success'); } catch (e) { A.logError('downloadDoc', e); A.showToast(_t('failedLoadFile'), 'error'); } };
   document.getElementById('docViewerAnalyze').onclick = () => { A.analyzeDoc(docId); };
   document.getElementById('docViewerDelete').onclick = async () => {
     if (!(await A.showConfirm(_t('docDeleteConfirm'), _t('delete'), 'danger'))) return;

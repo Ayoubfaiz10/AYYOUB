@@ -17,7 +17,10 @@ A.initKanbanDragDrop = function() {
       const newStatus = col.parentElement.dataset.status;
       try {
         if (newStatus === 'archived') await A.mutate('db:archiveCase', id);
-        else if (newStatus) await A.mutate('db:updateCaseStatus', { id, status: newStatus });
+        else if (newStatus) {
+          const statusMap = { 'new': 'active', 'appeal': 'pending' };
+          await A.mutate('db:updateCaseStatus', { id, status: statusMap[newStatus] || newStatus });
+        }
         A.showToast(_t('caseStatusChanged'), 'success');
       } catch (e) { A.logError('kanbanDrop', e); A.showToast(_t('failedStatusChange'), 'error'); }
       A.loadCases();

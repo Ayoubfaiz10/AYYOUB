@@ -34,6 +34,9 @@ A.initSessionTimeout = function() {
   function resetSessionTimer() {
     if (sessionTimer) clearTimeout(sessionTimer);
     sessionTimer = setTimeout(() => {
+      if (A.state.ipc) {
+        A.state.ipc.invoke('auth:logout').catch(function(e) { console.error('logout error:', e); });
+      }
       const loginOverlay = document.getElementById('loginOverlay');
       const appEl = document.getElementById('app');
       if (loginOverlay) {

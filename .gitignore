@@ -6,10 +6,8 @@ dist/
 *.exe
 *.dmg
 
-# Storage (sensitive data)
-storage/ai_config.json
-storage/password.json
-storage/affaires/
+# Storage (all sensitive data)
+storage/
 
 # Backups
 backups/
@@ -35,5 +33,5 @@ Thumbs.db
 # OpenCode config
 .opencode/
 
-# Temp files
+# Temp files (password .tmp, editor swap, etc.)
 *.tmp

@@ -18,7 +18,9 @@ if (!fs.existsSync(BACKUP_DIR)) {
 let db = null;
 let SQL = null;
 let _saveTimer = null;
+let _lastAutoBackup = 0;
 const SAVE_DEBOUNCE_MS = 500;
+const BACKUP_INTERVAL_MS = 5 * 60 * 1000;
 
 async function initDb() {
   SQL = await initSqlJs({
@@ -33,10 +35,11 @@ async function initDb() {
     } catch (e) {
       console.error('DB corrupted, attempting auto-restore from backup:', e.message);
       try {
-        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
+        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db'))
+          .filter(f => isManualBackup(f) || isAutoBackup(f) || f.startsWith('auto_backup_'))
           .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
           .sort((a, b) => b.mtime - a.mtime);
-        if (!files.length) throw new Error('No auto_backup files');
+        if (!files.length) throw new Error('No backup files found');
         const buf = fs.readFileSync(path.join(BACKUP_DIR, files[0].name));
         db = new SQL.Database(buf);
         db.exec("SELECT count(*) FROM sqlite_master");
@@ -196,6 +199,18 @@ async function initDb() {
   db.run('CREATE INDEX IF NOT EXISTS idx_documents_case ON documents(case_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_activity_log_date ON activity_log(created_at)');
 
+  // Migration: fix honoraires_totaux corrupted by the addPaiement bug
+  // (honoraires_totaux was being incremented by each payment instead of
+  //  storing the total agreed fee). Reset to total_fees where inflation
+  //  is detected (honoraires_totaux == paid_fees with both > 0).
+  try {
+    const corrupted = query("SELECT id FROM cases WHERE honoraires_totaux > 0 AND paid_fees > 0 AND ABS(honoraires_totaux - paid_fees) < 0.01");
+    if (corrupted.length) {
+      db.run("UPDATE cases SET honoraires_totaux = COALESCE(NULLIF(total_fees, 0), honoraires_totaux) WHERE honoraires_totaux > 0 AND paid_fees > 0 AND ABS(honoraires_totaux - paid_fees) < 0.01");
+      console.log('Migrated honoraires_totaux for', corrupted.length, 'corrupted cases');
+    }
+  } catch (e) { console.error('honoraires_totaux migration error:', e.message); }
+
   db.run('CREATE VIRTUAL TABLE IF NOT EXISTS search_index USING fts4(case_id, title, content, tags)');
 
   db.create_function('search_rank', function(matchinfoBlob) {
@@ -224,36 +239,49 @@ async function initDb() {
   await saveDb();
 }
 
+/* ─── Synchronous save: guarantees durability after every mutation ─── */
+function saveDbSync() {
+  if (!db) return;
+  try {
+    if (fs.existsSync(DB_PATH) && Date.now() - _lastAutoBackup > BACKUP_INTERVAL_MS) {
+      _lastAutoBackup = Date.now();
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+      const backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
+      try { fs.copyFileSync(DB_PATH, backupPath); } catch (e) { /* best effort on first write */ }
+      try {
+        const files = fs.readdirSync(BACKUP_DIR).filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
+          .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
+          .sort((a, b) => b.mtime - a.mtime);
+        if (files.length > 5) {
+          for (const f of files.slice(5)) {
+            try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
+          }
+        }
+      } catch (e) { console.error('Rotating backup error:', e.message); }
+    }
+    const data = db.export();
+    const buffer = Buffer.from(data);
+    const tmpPath = DB_PATH + '.tmp';
+    fs.writeFileSync(tmpPath, buffer);
+    fs.renameSync(tmpPath, DB_PATH);
+  } catch (err) {
+    try { if (fs.existsSync(DB_PATH + '.tmp')) fs.unlinkSync(DB_PATH + '.tmp'); } catch {}
+    console.error('DB sync save error:', err);
+    return err;
+  }
+}
+
+/* ─── Tradeoff: saveDbSync writes to disk synchronously after every mutation.
+     This guarantees durability at the cost of ~5-20ms per write.
+     For a single-user desktop app this is negligible; the benefit —
+     zero data loss on crash — is far more important. ─── */
+
 async function saveDb() {
   try {
     if (!db) return;
-    if (_saveTimer) { clearTimeout(_saveTimer); _saveTimer = null; }
-
-    try {
-      if (fs.existsSync(DB_PATH)) {
-        const now = new Date();
-        const pad = n => String(n).padStart(2, '0');
-        const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
-        const backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
-        await fsp.copyFile(DB_PATH, backupPath);
-
-        const files = await fsp.readdir(BACKUP_DIR);
-        const dbFiles = files.filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
-          .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
-          .sort((a, b) => b.mtime - a.mtime);
-        if (dbFiles.length > 5) {
-          for (const f of dbFiles.slice(5)) {
-            try { await fsp.unlink(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
-          }
-        }
-      }
-    } catch (e) {
-      console.error('Rotating backup error:', e.message);
-    }
-
-    const data = db.export();
-    const buffer = Buffer.from(data);
-    await fsp.writeFile(DB_PATH, buffer);
+    saveDbSync();
   } catch (err) {
     console.error('DB save error:', err);
   }
@@ -296,12 +324,9 @@ function query(sql, params) {
 }
 
 function mutate(sql, params) {
-  try {
-    db.run(sql, params ? params.map(v => v === undefined ? null : v) : []);
-    scheduleSave();
-  } catch (err) {
-    console.error('SQL Mutate Error:', err, 'SQL:', sql);
-  }
+  db.run(sql, params ? params.map(v => v === undefined ? null : v) : []);
+  const err = saveDbSync();
+  if (err) throw new Error('DB write failed: ' + err.message);
 }
 
 function transaction(fn) {
@@ -309,7 +334,7 @@ function transaction(fn) {
     db.run('BEGIN TRANSACTION');
     const result = fn();
     db.run('COMMIT');
-    scheduleSave();
+    saveDbSync();
     return result;
   } catch (err) {
     try { db.run('ROLLBACK'); } catch (e) { /* ignore rollback error */ }
@@ -423,24 +448,26 @@ function findDuplicateClient(data) {
 function updateClient(data) {
   const old = query('SELECT name FROM clients WHERE id = ?', [data.id]);
   if (!old.length) return null;
-  const allowed = ['name', 'phone', 'email', 'address', 'notes', 'national_id', 'tags'];
-  const fields = []; const values = [];
-  for (const key of allowed) {
-    if (data[key] !== undefined) { fields.push(`${key} = ?`); values.push(data[key]); }
-  }
-  if (data.name && data.name !== (old[0]?.name || '')) {
-    mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, data.id]);
-  }
-  if (fields.length) {
-    values.push(data.id);
-    mutate(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
-  }
-  addLog('update_client', `تحديث بيانات الموكل @${data.id}`);
-  try {
-    const clientCases = query('SELECT id FROM cases WHERE client_id = ?', [data.id]);
-    clientCases.forEach(c => syncSearchIndex(c.id));
-  } catch (e) { console.error('syncSearchIndex after updateClient failed:', e.message); }
-  return { id: data.id };
+  return transaction(() => {
+    const allowed = ['name', 'phone', 'email', 'address', 'notes', 'national_id', 'tags'];
+    const fields = []; const values = [];
+    for (const key of allowed) {
+      if (data[key] !== undefined) { fields.push(`${key} = ?`); values.push(data[key]); }
+    }
+    if (data.name && data.name !== (old[0]?.name || '')) {
+      mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, data.id]);
+    }
+    if (fields.length) {
+      values.push(data.id);
+      mutate(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
+    }
+    addLog('update_client', `تحديث بيانات الموكل @${data.id}`);
+    try {
+      const clientCases = query('SELECT id FROM cases WHERE client_id = ?', [data.id]);
+      clientCases.forEach(c => syncSearchIndex(c.id));
+    } catch (e) { console.error('syncSearchIndex after updateClient failed:', e.message); }
+    return { id: data.id };
+  });
 }
 
 function addClient(data) {
@@ -450,12 +477,14 @@ function addClient(data) {
   data.email = data.email ? String(data.email).trim() : '';
   const dup = findDuplicateClient(data);
   if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
-  mutate('INSERT INTO clients (name, phone, email, address, notes, national_id, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.name, data.phone, data.email, data.address, data.notes, data.national_id || '', data.tags || '']);
-  const res = query('SELECT last_insert_rowid() as id');
-  const id = res.length ? res[0].id : null;
-  addLog('add_client', `إضافة موكل ${data.name} @${id}`);
-  if (id) mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, id]);
-  return { id };
+  return transaction(() => {
+    mutate('INSERT INTO clients (name, phone, email, address, notes, national_id, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.name, data.phone, data.email, data.address, data.notes, data.national_id || '', data.tags || '']);
+    const res = query('SELECT last_insert_rowid() as id');
+    const id = res.length ? res[0].id : null;
+    addLog('add_client', `إضافة موكل ${data.name} @${id}`);
+    if (id) mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, id]);
+    return { id };
+  });
 }
 
 function deleteClient(id) {
@@ -658,14 +687,16 @@ function addSubtask(data) {
 function toggleSubtask(id) {
   const rows = query('SELECT done FROM subtasks WHERE id = ?', [id]);
   if (!rows.length) return;
-  mutate('UPDATE subtasks SET done = ? WHERE id = ?', [rows[0].done ? 0 : 1, id]);
-  const s = query('SELECT task_id FROM subtasks WHERE id = ?', [id]);
-  if (s.length) {
-    const stats = query('SELECT COUNT(*) as total, SUM(done) as done FROM subtasks WHERE task_id = ?', [s[0].task_id]);
-    if (stats.length && stats[0].total > 0) {
-      mutate('UPDATE tasks SET progress = ? WHERE id = ?', [Math.round((stats[0].done||0)/stats[0].total*100), s[0].task_id]);
+  transaction(() => {
+    mutate('UPDATE subtasks SET done = ? WHERE id = ?', [rows[0].done ? 0 : 1, id]);
+    const s = query('SELECT task_id FROM subtasks WHERE id = ?', [id]);
+    if (s.length) {
+      const stats = query('SELECT COUNT(*) as total, SUM(done) as done FROM subtasks WHERE task_id = ?', [s[0].task_id]);
+      if (stats.length && stats[0].total > 0) {
+        mutate('UPDATE tasks SET progress = ? WHERE id = ?', [Math.round((stats[0].done||0)/stats[0].total*100), s[0].task_id]);
+      }
     }
-  }
+  });
 }
 function deleteSubtask(id) {
   const rows = query('SELECT task_id FROM subtasks WHERE id = ?', [id]);
@@ -709,11 +740,13 @@ function deleteWorkflow(id) { mutate('DELETE FROM workflow_steps WHERE workflow_
 function applyWorkflow(caseId, workflowId) {
   const w = getWorkflow(workflowId);
   if (!w||!w.steps) return;
-  w.steps.forEach(s => {
-    const dueDate = s.due_days ? new Date(Date.now()+s.due_days*86400000).toISOString().slice(0,10) : null;
-    mutate("INSERT INTO tasks (title, case_id, status, due_date, workflow_id, priority) VALUES (?, ?, 'todo', ?, ?, 'medium')", [s.title, caseId, dueDate, workflowId]);
+  transaction(() => {
+    w.steps.forEach(s => {
+      const dueDate = s.due_days ? new Date(Date.now()+s.due_days*86400000).toISOString().slice(0,10) : null;
+      mutate("INSERT INTO tasks (title, case_id, status, due_date, workflow_id, priority) VALUES (?, ?, 'todo', ?, ?, 'medium')", [s.title, caseId, dueDate, workflowId]);
+    });
+    addLog('apply_workflow', `تطبيق سير عمل #${workflowId} على القضية #${caseId}`);
   });
-  addLog('apply_workflow', `تطبيق سير عمل #${workflowId} على القضية #${caseId}`);
 }
 
 // Templates
@@ -727,8 +760,10 @@ function deleteTemplate(id) { mutate('DELETE FROM task_templates WHERE id = ?', 
 function applyTemplate(caseId, templateId) {
   const rows = query('SELECT * FROM task_templates WHERE id = ?', [templateId]);
   if (!rows.length) return;
-  JSON.parse(rows[0].tasks_json||'[]').forEach(t => mutate("INSERT INTO tasks (title, case_id, status, due_date, priority, template_id) VALUES (?, ?, 'todo', ?, ?, ?)", [t.title, caseId, t.due_date||null, t.priority||'medium', templateId]));
-  addLog('apply_template', `تطبيق قالب #${templateId} على القضية #${caseId}`);
+  transaction(() => {
+    JSON.parse(rows[0].tasks_json||'[]').forEach(t => mutate("INSERT INTO tasks (title, case_id, status, due_date, priority, template_id) VALUES (?, ?, 'todo', ?, ?, ?)", [t.title, caseId, t.due_date||null, t.priority||'medium', templateId]));
+    addLog('apply_template', `تطبيق قالب #${templateId} على القضية #${caseId}`);
+  });
 }
 
 // Task Analytics
@@ -775,11 +810,12 @@ function getChartData() {
   return { statuses, monthly, courts, fees: totalFees, monthNames };
 }
 
-function getDocuments(caseId) { return query('SELECT d.*, COALESCE(c.case_number, \'\') as case_number FROM documents d LEFT JOIN cases c ON d.case_id = c.id WHERE d.case_id = ? ORDER BY d.upload_date DESC', [caseId]); }
+function getDocuments(caseId) { return query('SELECT d.*, COALESCE(c.case_number, \'\') as case_number, COALESCE(cl.name, \'\') as client_name FROM documents d LEFT JOIN cases c ON d.case_id = c.id LEFT JOIN clients cl ON c.client_id = cl.id WHERE d.case_id = ? ORDER BY d.upload_date DESC', [caseId]); }
+function getAllDocuments() { return query('SELECT d.*, COALESCE(c.case_number, \'\') as case_number, COALESCE(cl.name, \'\') as client_name FROM documents d LEFT JOIN cases c ON d.case_id = c.id LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY d.upload_date DESC'); }
 function addDocument(data) {
   if (!data.case_id || !data.filename) return null;
   if (!validateRef('cases', data.case_id)) return null;
-  mutate('INSERT INTO documents (case_id, filename, file_path, doc_type) VALUES (?, ?, ?, ?)', [data.case_id, data.filename, data.file_path, data.doc_type]);
+  mutate('INSERT INTO documents (case_id, filename, file_path, doc_type, file_size, tags) VALUES (?, ?, ?, ?, ?, ?)', [data.case_id, data.filename, data.file_path, data.doc_type, data.file_size || '', data.tags || '']);
   const res = query('SELECT last_insert_rowid() as id');
   if (res.length && data.case_id) syncSearchIndex(data.case_id);
   return res.length ? res[0].id : null;
@@ -934,7 +970,9 @@ function cleanOrphanedFiles() {
         } catch {}
       } else if (entry.isFile()) {
         const resolved = path.resolve(fullPath);
-        if (!docPaths.has(resolved)) {
+        const allowedBase = path.resolve(STORAGE_DIR);
+        const isInAllowedDir = resolved.startsWith(allowedBase + path.sep) || resolved === allowedBase;
+        if (!docPaths.has(resolved) && isInAllowedDir) {
           try {
             const stat = fs.statSync(fullPath);
             freedBytes += stat.size;
@@ -959,11 +997,15 @@ function getEventsByDate(dateStr) {
 }
 
 function getTomorrowHearings() {
-  return query(`SELECT p.id, p.date as hearing_date, p.type, p.description,
+  const fromProcedures = query(`SELECT p.id, p.date as hearing_date, p.type, p.description,
     c.id as case_id, c.case_number, c.title as case_title, c.court
     FROM procedures p JOIN cases c ON p.affaire_id = c.id
-    WHERE p.date = date('now', '+1 day') AND c.status != 'closed'
-    ORDER BY p.date ASC`);
+    WHERE p.date = date('now', '+1 day') AND c.status != 'closed'`);
+  const fromEvents = query(`SELECT e.id, e.date as hearing_date, e.type, e.notes as description,
+    c.id as case_id, c.case_number, c.title as case_title, c.court
+    FROM events e JOIN cases c ON e.case_id = c.id
+    WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date = date('now', '+1 day') AND c.status != 'closed'`);
+  return [...fromProcedures, ...fromEvents];
 }
 
 function globalSearch(queryTerm) {
@@ -993,7 +1035,10 @@ function globalSearch(queryTerm) {
 
   let cases = [];
   if (rankedIds.length) {
-    cases = query(`SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${rankedIds.join(',')}) ORDER BY CASE id ${rankedIds.map((id, i) => `WHEN ${id} THEN ${i}`).join(' ')} END`);
+    const safeIds = rankedIds.filter(id => Number.isInteger(id) && id > 0);
+    if (safeIds.length) {
+      cases = query(`SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${safeIds.join(',')}) ORDER BY CASE id ${safeIds.map((id, i) => `WHEN ${id} THEN ${i}`).join(' ')} END`);
+    }
   }
 
   const clients = query(`SELECT id, name, phone, email FROM clients WHERE name LIKE ? OR phone LIKE ? OR email LIKE ? OR address LIKE ? ORDER BY name ASC LIMIT 6`, [like, like, like, like]);
@@ -1045,32 +1090,37 @@ function addPaiement(data) {
   if (!data.affaire_id || !data.date || data.montant === undefined || !data.mode_paiement) return null;
   if (!validateRef('cases', data.affaire_id)) return null;
   if (isNaN(parseFloat(data.montant)) || parseFloat(data.montant) < 0) return null;
-  mutate('INSERT INTO paiements (affaire_id, date, montant, mode_paiement, remarque) VALUES (?, ?, ?, ?, ?)', [data.affaire_id, data.date, parseFloat(data.montant), data.mode_paiement, data.remarque]);
-  const res = query('SELECT last_insert_rowid() as id');
-  syncPaidFees(data.affaire_id);
-  updateHonorairesTotaux(data.affaire_id, parseFloat(data.montant));
-  return res.length ? res[0].id : null;
+  return transaction(() => {
+    mutate('INSERT INTO paiements (affaire_id, date, montant, mode_paiement, remarque) VALUES (?, ?, ?, ?, ?)', [data.affaire_id, data.date, parseFloat(data.montant), data.mode_paiement, data.remarque]);
+    const res = query('SELECT last_insert_rowid() as id');
+    syncPaidFees(data.affaire_id);
+    return res.length ? res[0].id : null;
+  });
 }
 function updatePaiement(id, data) {
   if (!id || typeof id !== 'number') return;
   const old = query('SELECT affaire_id FROM paiements WHERE id = ?', [id]);
   if (!old.length) return;
   if (!data.date || !data.mode_paiement || data.montant === undefined) return;
-  mutate('UPDATE paiements SET date = ?, montant = ?, mode_paiement = ?, remarque = ? WHERE id = ?', [data.date, parseFloat(data.montant) || 0, data.mode_paiement, data.remarque || '', id]);
-  if (old.length) syncPaidFees(old[0].affaire_id);
+  transaction(() => {
+    mutate('UPDATE paiements SET date = ?, montant = ?, mode_paiement = ?, remarque = ? WHERE id = ?', [data.date, parseFloat(data.montant) || 0, data.mode_paiement, data.remarque || '', id]);
+    syncPaidFees(old[0].affaire_id);
+  });
 }
 function deletePaiement(id) {
   if (!id || typeof id !== 'number') return;
   const old = query('SELECT affaire_id FROM paiements WHERE id = ?', [id]);
-  mutate('DELETE FROM paiements WHERE id = ?', [id]);
-  if (old.length) syncPaidFees(old[0].affaire_id);
+  transaction(() => {
+    mutate('DELETE FROM paiements WHERE id = ?', [id]);
+    if (old.length) syncPaidFees(old[0].affaire_id);
+  });
 }
 function syncPaidFees(affaireId) {
   const rows = query('SELECT COALESCE(SUM(montant), 0) as total FROM paiements WHERE affaire_id = ?', [affaireId]);
   mutate('UPDATE cases SET paid_fees = ? WHERE id = ?', [rows.length ? rows[0].total : 0, affaireId]);
 }
 function updateHonorairesTotaux(caseId, montant) {
-  mutate('UPDATE cases SET honoraires_totaux = COALESCE(honoraires_totaux, 0) + ? WHERE id = ?', [montant, caseId]);
+  mutate('UPDATE cases SET honoraires_totaux = ? WHERE id = ?', [montant, caseId]);
 }
 
 function getWeekDeadlines() { return query(`SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days') ORDER BY days_remaining ASC`); }
@@ -1155,7 +1205,13 @@ function getLogs(filters) {
 function getAlertSettings() { const rows = query('SELECT * FROM alert_settings WHERE id = 1'); return rows.length ? rows[0] : { days_before_1: 7, days_before_2: 3, days_before_3: 1, enabled: 1 }; }
 function updateAlertSettings(data) { mutate('UPDATE alert_settings SET days_before_1 = ?, days_before_2 = ?, days_before_3 = ?, enabled = ? WHERE id = 1', [data.days_before_1, data.days_before_2, data.days_before_3, data.enabled ? 1 : 0]); }
 function getUpcomingDeadlines() { return query(`SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) - julianday('now') > -1 ORDER BY days_remaining ASC`); }
-function getUpcomingHearings() { return query(`SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed' ORDER BY days_remaining ASC`); }
+function getUpcomingHearings() {
+  const fromProcedures = query(`SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed'`);
+  const fromEvents = query(`SELECT e.id, e.date as hearing_date, e.type, e.notes as description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(e.date) - julianday('now')) AS INTEGER) as days_remaining FROM events e JOIN cases c ON e.case_id = c.id WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date >= date('now') AND c.status != 'closed'`);
+  const merged = [...fromProcedures, ...fromEvents];
+  merged.sort((a, b) => (a.days_remaining || 0) - (b.days_remaining || 0));
+  return merged;
+}
 function getTodayProcedures() {
   const todayStr = new Date().toISOString().split('T')[0];
   return query(`SELECT p.*, c.case_number, c.title as case_title FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date = ? ORDER BY p.id ASC`, [todayStr]);
@@ -1163,25 +1219,51 @@ function getTodayProcedures() {
 function getBackupSettings() { const rows = query('SELECT * FROM backup_settings WHERE id = 1'); return rows.length ? rows[0] : { auto_enabled: 1, frequency_hours: 24, keep_count: 30, last_backup_at: null }; }
 function updateBackupSettings(data) { mutate('UPDATE backup_settings SET auto_enabled = ?, frequency_hours = ?, keep_count = ? WHERE id = 1', [data.auto_enabled ? 1 : 0, data.frequency_hours, data.keep_count]); }
 
+function isManualBackup(filename) {
+  return filename.startsWith('manual_') || filename.startsWith('backup_') || filename.startsWith('archive_');
+}
+function isAutoBackup(filename) {
+  return filename.startsWith('auto_') && !filename.startsWith('auto_backup_');
+}
+
 function createBackup(reason) {
   const data = db.export();
   const buffer = Buffer.from(data);
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
   const ts = now.getFullYear() + '-' + pad(now.getMonth()+1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
-  const filename = 'backup_' + ts + '_' + reason + '.db';
+  const isManual = (reason === 'manual' || reason === 'export');
+  const prefix = isManual ? 'manual' : 'auto';
+  const suffix = isManual ? '' : '_' + reason;
+  const filename = prefix + '_' + ts + suffix + '.db';
   const filepath = path.join(BACKUP_DIR, filename);
   fs.writeFileSync(filepath, buffer);
   mutate("UPDATE backup_settings SET last_backup_at = ? WHERE id = 1", [now.toISOString()]);
-  const settings = getBackupSettings();
-  const maxKeep = settings.keep_count || 30;
-  const files = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db')).map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs })).sort((a, b) => b.mtime - a.mtime);
-  if (files.length > maxKeep) { files.slice(maxKeep).forEach(f => { try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) {} }); }
+  // Rotate only auto backups — never touch manual, legacy, or crash-recovery files
+  if (!isManual) {
+    const settings = getBackupSettings();
+    const maxKeep = settings.keep_count || 30;
+    const autoFiles = fs.readdirSync(BACKUP_DIR).filter(f => isAutoBackup(f))
+      .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
+      .sort((a, b) => b.mtime - a.mtime);
+    if (autoFiles.length > maxKeep) {
+      autoFiles.slice(maxKeep).forEach(f => {
+        try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
+      });
+    }
+  }
   return filename;
 }
 
 function listBackups() {
-  return fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db')).map(f => { const stat = fs.statSync(path.join(BACKUP_DIR, f)); return { name: f, size: stat.size, mtime: stat.mtime.toISOString() }; }).sort((a, b) => b.mtime.localeCompare(a.mtime));
+  return fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db')).map(f => {
+    const stat = fs.statSync(path.join(BACKUP_DIR, f));
+    let type = 'unknown';
+    if (isManualBackup(f)) type = 'manual';
+    else if (isAutoBackup(f)) type = 'auto';
+    else if (f.startsWith('auto_backup_')) type = 'crash';
+    return { name: f, size: stat.size, mtime: stat.mtime.toISOString(), type };
+  }).sort((a, b) => b.mtime.localeCompare(a.mtime));
 }
 
 function restoreFromBuffer(buffer) {
@@ -1196,8 +1278,13 @@ function restoreFromBuffer(buffer) {
 }
 
 function exportTableCSV(tableName) {
-  if (tableName !== 'cases' && tableName !== 'clients') throw new Error('الجدول غير مدعوم للتصدير / Table non prise en charge');
-  const rows = query('SELECT * FROM ' + tableName);
+  var sql;
+  switch (tableName) {
+    case 'cases':   sql = 'SELECT * FROM cases';   break;
+    case 'clients': sql = 'SELECT * FROM clients'; break;
+    default: throw new Error('الجدول غير مدعوم للتصدير / Table non prise en charge');
+  }
+  const rows = query(sql);
   if (rows.length === 0) return '';
   const headers = Object.keys(rows[0]);
   const escapeCSV = (val) => {
@@ -1211,8 +1298,11 @@ function exportTableCSV(tableName) {
 }
 
 function validateBackupFile(filename) {
-  if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const filepath = path.join(BACKUP_DIR, filename);
+  if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = path.basename(filename);
+  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const filepath = path.join(BACKUP_DIR, safeName);
+  if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
   const stat = fs.statSync(filepath);
   if (stat.size === 0) throw new Error('الملف فارغ / Fichier vide');
@@ -1234,17 +1324,33 @@ function validateBackupFile(filename) {
 }
 
 function deleteBackupFile(filename) {
-  if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const filepath = path.join(BACKUP_DIR, filename);
+  if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = path.basename(filename);
+  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const filepath = path.join(BACKUP_DIR, safeName);
+  if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
+  // Validate integrity before deletion to warn about corrupt backups
+  let validation = null;
+  try {
+    validation = validateBackupFile(safeName);
+  } catch (e) {
+    validation = { valid: false, error: e.message };
+  }
   fs.unlinkSync(filepath);
-  return { ok: true };
+  return { ok: true, validation: validation ? { valid: validation.valid } : null };
 }
 
 function restoreFromBackup(filename) {
-  if (!filename || filename.includes('..') || filename.includes('/') || filename.includes('\\')) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const filepath = path.join(BACKUP_DIR, filename);
+  if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = path.basename(filename);
+  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const filepath = path.join(BACKUP_DIR, safeName);
+  if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
+  // Validate integrity before restore
+  const validation = validateBackupFile(safeName);
+  if (!validation.valid) throw new Error('النسخة الاحتياطية تالفة / Fichier de sauvegarde corrompu');
   const buffer = fs.readFileSync(filepath);
   restoreFromBuffer(buffer);
   return { ok: true, time: new Date().toISOString() };
@@ -1264,9 +1370,9 @@ function exportFullArchive() {
 }
 
 module.exports = {
-  initDb, saveDb, getAllCases, addCase, deleteCase, getCasesByClient, getAllClients, addClient, deleteClient, updateClient, validateRef,
+  initDb, saveDb, saveDbSync, getAllCases, addCase, deleteCase, getCasesByClient, getAllClients, addClient, deleteClient, updateClient, validateRef,
   getAllTasks, getTask, addTask, updateTask, deleteTask, getSubtasks, addSubtask, toggleSubtask, deleteSubtask, getComments, addComment, getAllWorkflows, getWorkflow, addWorkflow, deleteWorkflow, applyWorkflow,   getAllTemplates, addTemplate, deleteTemplate, applyTemplate, getTaskAnalytics,
-  getDashboardStats, STORAGE_DIR, getDocuments, addDocument, getDocument, updateDocument, deleteDocument,
+  getDashboardStats, STORAGE_DIR, getDocuments, getAllDocuments, addDocument, getDocument, updateDocument, deleteDocument,
   getAllEvents, getEvent, addEvent, updateEvent, deleteEvent, getEventsByCase,
   getProcedures, addProcedure,
   getPaiements, addPaiement,
