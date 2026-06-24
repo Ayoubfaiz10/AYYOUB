@@ -18,7 +18,7 @@ A.loadTasks = async function() {
   } catch (e) {
     A.logError('loadTasks', e);
     const mainEl = document.getElementById('taskList')?.parentElement;
-    if (mainEl) A.showError(mainEl, A.sharedI18n.t('error') + ': ' + A.sharedI18n.t('loading'), () => A.loadTasks());
+    if (mainEl) A.showError(mainEl, _t('error') + ': ' + _t('loading'), () => A.loadTasks());
   }
 };
 
@@ -28,22 +28,22 @@ A.showTaskForm = async function(editData) {
   const esc = A.escapeHtml;
   const caseOpts = cases.map(c => `<option value="${c.id}" ${editData?.case_id === c.id ? 'selected' : ''}>${esc(c.case_number)} - ${esc(c.title)}</option>`).join('');
   const isEdit = !!editData;
-  A.showModal(isEdit ? A.sharedI18n.t('edit') + ' ' + A.sharedI18n.t('tasks') : A.sharedI18n.t('add') + ' ' + A.sharedI18n.t('tasks'), `
-    <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fTaskTitle" class="input" value="${esc(editData?editData.title:'')}" placeholder="` + A.sharedI18n.t('add') + ` ` + A.sharedI18n.t('tasks') + `"></div>
-    <div class="input-group"><label class="input-label">الوصف</label><textarea id="fTaskDesc" class="input" rows="3" placeholder="` + A.sharedI18n.t('edit') + ` ` + A.sharedI18n.t('tasks') + `">${esc(editData?editData.description||'':'')}</textarea></div>
+  A.showModal(isEdit ? _t('editTask') : _t('addTask'), `
+    <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fTaskTitle" class="input" value="${esc(editData?editData.title:'')}" placeholder="${_t('taskTitleLabel')}"></div>
+    <div class="input-group"><label class="input-label">الوصف</label><textarea id="fTaskDesc" class="input" rows="3" placeholder="${_t('taskDescLabel') || _t('edit')}">${esc(editData?editData.description||'':'')}</textarea></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">القضية</label><select id="fTaskCase" class="input"><option value="">-- ` + A.sharedI18n.t('cancel') + ` --</option>${caseOpts}</select></div>
-      <div class="input-group"><label class="input-label">مسؤول</label><input type="text" id="fTaskAssigned" class="input" value="${esc(editData?editData.assigned_to||'':'')}" placeholder="` + A.sharedI18n.t('add') + ` ` + A.sharedI18n.t('tasks') + `"></div>
+      <div class="input-group"><label class="input-label">القضية</label><select id="fTaskCase" class="input"><option value="">-- ${_t('selectPlaceholder') || '-- اختر --'} --</option>${caseOpts}</select></div>
+      <div class="input-group"><label class="input-label">مسؤول</label><input type="text" id="fTaskAssigned" class="input" value="${esc(editData?editData.assigned_to||'':'')}" placeholder="${_t('assignedToLabel') || _t('add')}"></div>
     </div>
     <div class="info-grid-3">
       <div class="input-group"><label class="input-label">الحالة</label><select id="fTaskStatus" class="input">${['backlog','todo','in_progress','waiting','review','done'].map(s => `<option value="${s}" ${editData?.status===s?'selected':''}>${s}</option>`).join('')}</select></div>
       <div class="input-group"><label class="input-label">الأولوية</label><select id="fTaskPriority" class="input">${['critical','high','medium','low'].map(p => `<option value="${p}" ${editData?.priority===p?'selected':''}>${p}</option>`).join('')}</select></div>
       <div class="input-group"><label class="input-label">تاريخ الاستحقاق</label><input type="date" id="fTaskDue" class="input" value="${esc(editData?editData.due_date||'':'')}"></div>
     </div>
-    <div class="input-group"><label class="input-label">الوسوم (مفصولة بفواصل)</label><input type="text" id="fTaskTags" class="input" value="${esc(editData?editData.tags||'':'')}" placeholder="` + A.sharedI18n.t('priority_high') + `، ` + A.sharedI18n.t('priority_critical') + `"></div>
+    <div class="input-group"><label class="input-label">الوسوم (مفصولة بفواصل)</label><input type="text" id="fTaskTags" class="input" value="${esc(editData?editData.tags||'':'')}" placeholder="${_t('priority_high')}، ${_t('priority_critical')}"></div>
   `, async () => {
     const title = document.getElementById('fTaskTitle').value.trim();
-    if (!title) { A.showToast(A.sharedI18n.t('add') + ' ' + A.sharedI18n.t('tasks') + ' ' + A.sharedI18n.t('required'), 'error'); return; }
+    if (!title) { A.showToast(_t('taskTitleRequired'), 'error'); return; }
     const data = {
       title, description: document.getElementById('fTaskDesc').value,
       case_id: parseInt(document.getElementById('fTaskCase').value) || null,

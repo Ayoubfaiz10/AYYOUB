@@ -45,9 +45,7 @@ A.initSessionTimeout = function() {
       }
     }, 30 * 60 * 1000);
   }
-  document.querySelectorAll('#app input, #app textarea, #app select, #app button, #app .nav-item').forEach(el => {
-    el.addEventListener('click', resetSessionTimer);
-    el.addEventListener('keydown', resetSessionTimer);
-    el.addEventListener('input', resetSessionTimer);
-  });
+  document.addEventListener('click', resetSessionTimer);
+  document.addEventListener('keydown', resetSessionTimer);
+  document.addEventListener('input', resetSessionTimer);
 };

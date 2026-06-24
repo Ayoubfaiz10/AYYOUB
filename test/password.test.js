@@ -85,7 +85,7 @@ function handleAuthLogin(pwdPath, pwd) {
 }
 
 function handleAuthSetPassword(pwdPath, pwd) {
-  if (!pwd || typeof pwd !== 'string' || pwd.length < 4) return { ok: false, error: '\u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 4 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644' };
+  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   const stored = getPasswordHash(pwdPath);
   if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
   try {
@@ -101,7 +101,7 @@ function handleAuthSetPassword(pwdPath, pwd) {
 
 function handleAuthHashPassword(pwd) {
   if (!pwd || typeof pwd !== 'string') return { ok: false, error: '\u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u0645\u0637\u0644\u0648\u0628\u0629' };
-  if (pwd.length < 4) return { ok: false, error: '\u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u064A\u062C\u0628 \u0623\u0646 \u062A\u0643\u0648\u0646 4 \u0623\u062D\u0631\u0641 \u0639\u0644\u0649 \u0627\u0644\u0623\u0642\u0644' };
+  if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   try {
     return { ok: true, hash: hashBcrypt(pwd) };
   } catch (e) {
@@ -226,11 +226,11 @@ runSuite('IPC: auth:setPassword', [
   },
   () => {
     const r = handleAuthSetPassword(testPwdPath, 'ab');
-    assert(r.ok === false, '2-char password returns error (min 4)');
+    assert(r.ok === false, '2-char password returns error (min 8)');
   },
   () => {
     const r = handleAuthSetPassword(testPwdPath, 'abc');
-    assert(r.ok === false, '3-char password returns error (min 4)');
+    assert(r.ok === false, '3-char password returns error (min 8)');
   },
   () => {
     const r = handleAuthSetPassword(testPwdPath, 12345);

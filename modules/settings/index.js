@@ -86,7 +86,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
     if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (!newPwd || newPwd.length < 4) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (!newPwd || newPwd.length < 8) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     if (newPwd !== confirmPwd) { msgEl.textContent = _t('pwdNotMatch'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     const result = await A.mutate('auth:setPassword', newPwd);
     if (!result || !result.ok) {

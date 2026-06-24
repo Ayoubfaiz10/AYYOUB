@@ -81,7 +81,7 @@ const handleAuthLogin = safeAuth((pwdPath, pwd) => {
 });
 
 const handleAuthSetPassword = safeAuth((pwdPath, pwd) => {
-  if (!pwd || typeof pwd !== 'string' || pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   const stored = getPasswordHash(pwdPath);
   if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
   const hash = hashBcrypt(pwd);
@@ -93,7 +93,7 @@ const handleAuthSetPassword = safeAuth((pwdPath, pwd) => {
 
 const handleAuthHashPassword = safeAuth((pwd) => {
   if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
-  if (pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+  if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   return { ok: true, hash: hashBcrypt(pwd) };
 });
 
@@ -186,7 +186,7 @@ describe('Auth Flow — First Admin Setup', () => {
   it('setPassword with short password returns error', () => {
     const r = handleAuthSetPassword(pwdPath, 'ab');
     assert.equal(r.ok, false);
-    assert.equal(r.error.includes('4 أحرف'), true);
+    assert.equal(r.error.includes('8 أحرف'), true);
   });
 
   it('can re-set password and login with new password', () => {

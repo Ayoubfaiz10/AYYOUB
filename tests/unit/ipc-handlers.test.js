@@ -53,7 +53,7 @@ function simulateAuthLogin(db, pwdPath, pwd) {
 }
 
 function simulateAuthSetPassword(pwdPath, pwd) {
-  if (!pwd || typeof pwd !== 'string' || pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   try {
     fs.writeFileSync(pwdPath, JSON.stringify({ hash: hashBcrypt(pwd) }, null, 2));
     return { ok: true };
@@ -355,7 +355,7 @@ describe('IPC Handler: data integrity', () => {
   it('auth:setPassword enforces minimum length', () => {
     const r = simulateAuthSetPassword(pwdPath, 'abc');
     assert.equal(r.ok, false);
-    assert.equal(r.error, 'كلمة السر يجب أن تكون 4 أحرف على الأقل');
+    assert.equal(r.error, 'كلمة السر يجب أن تكون 8 أحرف على الأقل');
   });
 
   it('auth:login returns firstTime when no password set', () => {

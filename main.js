@@ -802,7 +802,7 @@ ipcMain.handle('auth:login', (_e, { userId, password }) => {
 
 ipcMain.handle('auth:setPassword', (_e, pwd) => {
   try {
-    if (!pwd || typeof pwd !== 'string' || pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+    if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
     const hash = hashBcrypt(pwd);
     setPasswordHash(hash);
     const verify = getPasswordHash();
@@ -817,7 +817,7 @@ ipcMain.handle('auth:setPassword', (_e, pwd) => {
 ipcMain.handle('auth:hashPassword', (_e, pwd) => {
   try {
     if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
-    if (pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+    if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
     return { ok: true, hash: hashBcrypt(pwd) };
   } catch (e) {
     handleError('hashPassword', e);
@@ -833,7 +833,7 @@ ipcMain.handle('auth:getPermissions', () => {
 
 ipcMain.handle('auth:getUsers', () => {
   try {
-    return db.getAllUsers() || [];
+    return db.getUsers() || [];
   } catch (e) {
     handleError('getUsers', e);
     return [];
@@ -845,9 +845,9 @@ ipcMain.handle('auth:addUser', async (_e, data) => {
     const userCount = db.getUsers().length;
     if (userCount > 0 && !checkPermission('manage_users')) return { ok: false, error: 'ليس لديك صلاحية لإضافة مستخدمين' };
     if (!data || !data.name) return { ok: false, error: 'الاسم مطلوب' };
-    const pwd = data.password || '123456';
-    if (pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
-    data.password_hash = hashBcrypt(pwd);
+    if (!data.password) return { ok: false, error: 'كلمة السر مطلوبة' };
+    if (data.password.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
+    data.password_hash = hashBcrypt(data.password);
     data._userId = currentUser?.id; data._userName = currentUser?.name;
     const id = db.addUser(data);
     await seqWrite(() => db.saveDb());
@@ -958,12 +958,14 @@ const ALGORITHM = 'aes-256-gcm';
 
 function encrypt(text, password) {
   const iv = crypto.randomBytes(16);
-  const key = crypto.scryptSync(password, 'salt', 32);
+  const salt = crypto.randomBytes(32);
+  const key = crypto.scryptSync(password, salt, 32);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const authTag = cipher.getAuthTag();
   return JSON.stringify({ 
+    salt: salt.toString('hex'),
     iv: iv.toString('hex'), 
     encrypted, 
     authTag: authTag.toString('hex') 
@@ -971,8 +973,8 @@ function encrypt(text, password) {
 }
 
 function decrypt(encryptedData, password) {
-  const { iv, encrypted, authTag } = JSON.parse(encryptedData);
-  const key = crypto.scryptSync(password, 'salt', 32);
+  const { salt, iv, encrypted, authTag } = JSON.parse(encryptedData);
+  const key = crypto.scryptSync(password, Buffer.from(salt, 'hex'), 32);
   const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'));
   decipher.setAuthTag(Buffer.from(authTag, 'hex'));
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');

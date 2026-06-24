@@ -25,6 +25,9 @@ A.navigateTo = function(sectionId) {
     else if (sectionId === 'calendar' && typeof A.loadCalendar === 'function') A.loadCalendar();
     else if (sectionId === 'archive' && typeof A.loadArchive === 'function') A.loadArchive();
     else if (sectionId === 'ai' && typeof A.loadAI === 'function') A.loadAI();
+    else if (sectionId === 'notifications' && typeof A.loadNotifications === 'function') A.loadNotifications();
+    else if (sectionId === 'search' && typeof A.initAdvancedSearch === 'function') A.initAdvancedSearch();
+    else if (sectionId === 'reports' && typeof A.initReports === 'function') A.initReports();
     else if (sectionId === 'settings') { if (typeof A.loadSettingsUsers === 'function') A.loadSettingsUsers(); if (typeof A.loadSettingsActivity === 'function') A.loadSettingsActivity(); }
   }
 };

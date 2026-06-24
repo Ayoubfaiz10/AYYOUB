@@ -436,6 +436,10 @@ function updateClient(data) {
     mutate(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
   }
   addLog('update_client', `تحديث بيانات الموكل @${data.id}`);
+  try {
+    const clientCases = query('SELECT id FROM cases WHERE client_id = ?', [data.id]);
+    clientCases.forEach(c => syncSearchIndex(c.id));
+  } catch (e) { console.error('syncSearchIndex after updateClient failed:', e.message); }
   return { id: data.id };
 }
 

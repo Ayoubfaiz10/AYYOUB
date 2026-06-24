@@ -102,7 +102,7 @@ A.initAuth = function() {
     var pw = newPwEl ? newPwEl.value : '';
     var confirm = confirmPwEl ? confirmPwEl.value : '';
 
-    if (!pw || pw.length < 4) {
+    if (!pw || pw.length < 8) {
       if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
       return;
     }
@@ -141,7 +141,7 @@ A.initAuth = function() {
       if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('adminNameRequired'); }
       return;
     }
-    if (!pw || pw.length < 4) {
+    if (!pw || pw.length < 8) {
       if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
       return;
     }

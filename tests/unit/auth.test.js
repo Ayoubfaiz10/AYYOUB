@@ -71,7 +71,7 @@ function handleAuthLogin(pwdPath, pwd) {
 }
 
 function handleAuthSetPassword(pwdPath, pwd) {
-  if (!pwd || typeof pwd !== 'string' || pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   const stored = getPasswordHash(pwdPath);
   if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
   try {
@@ -87,7 +87,7 @@ function handleAuthSetPassword(pwdPath, pwd) {
 
 function handleAuthHashPassword(pwd) {
   if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
-  if (pwd.length < 4) return { ok: false, error: 'كلمة السر يجب أن تكون 4 أحرف على الأقل' };
+  if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
   try {
     return { ok: true, hash: hashBcrypt(pwd) };
   } catch (e) {
