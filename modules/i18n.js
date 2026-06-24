@@ -584,6 +584,9 @@ A.i18n = {
   // ─── Documents ───
   failedLoadDocuments: { ar: 'تعذر تحميل الوثائق.', fr: 'Échec du chargement des documents' },
   docNotFound: { ar: 'لم يتم العثور على الوثيقة', fr: 'Document introuvable' },
+  docDeleteConfirm: { ar: 'هل تريد حذف هذه الوثيقة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', fr: 'Voulez-vous vraiment supprimer ce document ? Cette action est irréversible.' },
+  docDeleted: { ar: 'تم حذف الوثيقة', fr: 'Document supprimé' },
+  docDeleteFailed: { ar: 'فشل حذف الوثيقة', fr: 'Échec de la suppression du document' },
   noTagsLabel: { ar: 'لا توجد', fr: 'Aucun' },
   currentVersionLabel: { ar: 'الإصدار الحالي', fr: 'Version actuelle' },
   failedOpenFile: { ar: 'تعذر فتح الملف', fr: 'Impossible d\'ouvrir le fichier' },

@@ -59,6 +59,15 @@ A.openDocViewer = async function(docId) {
   document.getElementById('docViewerOpen').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } };
   document.getElementById('docViewerDownload').onclick = async () => { try { await A.state.ipc.invoke('db:openDocument', docId); } catch (e) { A.logError('downloadDoc', e); A.showToast(_t('failedLoadFile'), 'error'); } };
   document.getElementById('docViewerAnalyze').onclick = () => { A.analyzeDoc(docId); };
+  document.getElementById('docViewerDelete').onclick = async () => {
+    if (!(await A.showConfirm(_t('docDeleteConfirm'), _t('delete'), 'danger'))) return;
+    try {
+      await A.mutate('db:deleteDocument', docId);
+      document.getElementById('docViewerOverlay').style.display = 'none';
+      A.loadDocuments();
+      A.showToast(_t('docDeleted'), 'success');
+    } catch (e) { A.logError('deleteDocument', e); A.showToast(_t('docDeleteFailed'), 'error'); }
+  };
   document.getElementById('docVSaveNotes').onclick = async () => {
     const notes = document.getElementById('docVNotes').value;
     try { await A.mutate('db:updateDocNotes', { id: docId, notes }); A.showToast(_t('notesSaved'), 'success'); if (A.AutoSave) A.AutoSave.clear('doc_notes_' + docId); } catch (e) { A.logError('saveDocNotes', e); A.showToast(_t('failedSaveNotes'), 'error'); }

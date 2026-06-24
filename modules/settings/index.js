@@ -83,7 +83,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const confirmPwd = document.getElementById('settingsConfirmPwd').value;
     const msgEl = document.getElementById('settingsPwdMsg');
     if (!currentPwd) { msgEl.textContent = _t('enterCurrentPwd'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    const loginResult = await A.state.ipc.invoke('auth:login', currentPwd);
+    const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
     if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
     if (!newPwd || newPwd.length < 4) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }

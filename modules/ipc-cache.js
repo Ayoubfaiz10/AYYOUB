@@ -4,7 +4,7 @@ const CACHE_TTL = 30000;
 const MAX_CACHE_SIZE = 200;
 const readCache = new Map();
 const cacheDeps = {
-  'db:getAllCases': ['db:addCase', 'db:deleteCase', 'db:updateCaseStatus', 'db:updateCaseNotes', 'db:archiveCase', 'db:unarchiveCase'],
+  'db:getAllCases': ['db:addCase', 'db:deleteCase', 'db:updateCaseStatus', 'db:updateCaseNotes', 'db:archiveCase', 'db:unarchiveCase', 'db:addPaiement', 'db:updateHonorairesTotaux'],
   'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClientNotes'],
   'db:getAllTasks': ['db:addTask', 'db:deleteTask', 'db:updateTask', 'db:toggleSubtask', 'db:deleteSubtask', 'db:addSubtask'],
   'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement'],

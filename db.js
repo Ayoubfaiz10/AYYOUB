@@ -423,11 +423,18 @@ function findDuplicateClient(data) {
 function updateClient(data) {
   const old = query('SELECT name FROM clients WHERE id = ?', [data.id]);
   if (!old.length) return null;
+  const allowed = ['name', 'phone', 'email', 'address', 'notes', 'national_id', 'tags'];
+  const fields = []; const values = [];
+  for (const key of allowed) {
+    if (data[key] !== undefined) { fields.push(`${key} = ?`); values.push(data[key]); }
+  }
   if (data.name && data.name !== (old[0]?.name || '')) {
     mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, data.id]);
   }
-  mutate('UPDATE clients SET name = ?, phone = ?, email = ?, address = ?, notes = ?, national_id = ?, tags = ? WHERE id = ?',
-    [data.name, data.phone||'', data.email||'', data.address||'', data.notes||'', data.national_id||'', data.tags||'', data.id]);
+  if (fields.length) {
+    values.push(data.id);
+    mutate(`UPDATE clients SET ${fields.join(', ')} WHERE id = ?`, values);
+  }
   addLog('update_client', `تحديث بيانات الموكل @${data.id}`);
   return { id: data.id };
 }
@@ -441,8 +448,8 @@ function addClient(data) {
   if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
   mutate('INSERT INTO clients (name, phone, email, address, notes, national_id, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.name, data.phone, data.email, data.address, data.notes, data.national_id || '', data.tags || '']);
   const res = query('SELECT last_insert_rowid() as id');
-  addLog('add_client', `إضافة موكل ${data.name} @${res.id}`);
   const id = res.length ? res[0].id : null;
+  addLog('add_client', `إضافة موكل ${data.name} @${id}`);
   if (id) mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, id]);
   return { id };
 }
@@ -740,7 +747,7 @@ function addAppointment(data) {
 function deleteAppointment(id) { mutate('DELETE FROM appointments WHERE id = ?', [id]); }
 
 function getDashboardStats() {
-  const res = query("SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM appointments WHERE strftime('%Y-%m-%d', date) >= strftime('%Y-%m-%d', 'now', 'weekday 0', '-7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status = 'todo') as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients");
+  const res = query("SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM events WHERE type='hearing' AND status != 'cancelled' AND date >= date('now') AND date <= date('now','+7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status = 'todo') as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients");
   const base = res.length ? res[0] : { activeCases: 0, thisWeekAppointments: 0, pendingTasks: 0, totalClients: 0 };
   const casesByStatus = query("SELECT status, COUNT(*) as count FROM cases GROUP BY status");
   const tasksByPriority = query("SELECT priority, COUNT(*) as count FROM tasks GROUP BY priority");
@@ -1254,8 +1261,8 @@ function exportFullArchive() {
 
 module.exports = {
   initDb, saveDb, getAllCases, addCase, deleteCase, getCasesByClient, getAllClients, addClient, deleteClient, updateClient, validateRef,
-  getAllTasks, getTask, addTask, updateTask, deleteTask, getSubtasks, addSubtask, toggleSubtask, deleteSubtask, getComments, addComment, getAllWorkflows, getWorkflow, addWorkflow, deleteWorkflow, applyWorkflow, getAllTemplates, addTemplate, applyTemplate, getTaskAnalytics,
-  getDashboardStats, STORAGE_DIR, getDocuments, addDocument, getDocument, updateDocument,
+  getAllTasks, getTask, addTask, updateTask, deleteTask, getSubtasks, addSubtask, toggleSubtask, deleteSubtask, getComments, addComment, getAllWorkflows, getWorkflow, addWorkflow, deleteWorkflow, applyWorkflow,   getAllTemplates, addTemplate, deleteTemplate, applyTemplate, getTaskAnalytics,
+  getDashboardStats, STORAGE_DIR, getDocuments, addDocument, getDocument, updateDocument, deleteDocument,
   getAllEvents, getEvent, addEvent, updateEvent, deleteEvent, getEventsByCase,
   getProcedures, addProcedure,
   getPaiements, addPaiement,

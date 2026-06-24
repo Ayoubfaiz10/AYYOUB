@@ -14,6 +14,7 @@ A.initReports = function() {
     try {
       const cases = await A.cachedInvoke('db:getAllCases') || [];
       const chartData = await A.cachedInvoke('db:getChartData') || { statuses: [], fees: { total: 0, paid: 0, expenses: 0 }, monthly: [], courts: [] };
+      const clients = await A.cachedInvoke('db:getAllClients') || [];
       let html = '';
       if (type === 'cases') {
         const statuses = chartData.statuses || [];
@@ -30,7 +31,7 @@ A.initReports = function() {
           <div class="stat-card"><div class="stat-body"><span class="stat-number">${(fees.expenses || 0).toFixed(2)}</span><span class="stat-label">${_t('expTotalExpenses')}</span></div></div>
         </div>`;
       } else {
-        html = `<p>${_t('totalCasesN').replace('{n}', cases.length)}</p><p>${_t('totalClientsN').replace('{n}', (chartData.statuses || []).reduce((s, x) => s + (x.count || 0), 0))}</p>`;
+        html = `<p>${_t('totalCasesN').replace('{n}', cases.length)}</p><p>${_t('totalClientsN').replace('{n}', clients.length)}</p>`;
       }
       A.safeSetStatic(contentEl, html);
       outputEl.style.display = 'block';

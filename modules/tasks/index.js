@@ -177,6 +177,10 @@ window.deleteWorkflowItem = async function(id) {
   if (await A.showConfirm('حذف سير العمل؟')) { try { await A.mutate('db:deleteWorkflow', id); document.getElementById('showWorkflowsBtn').click(); } catch (e) { A.logError('deleteWorkflow', e); A.showToast('فشل حذف سير العمل', 'error'); } }
 };
 
+window.deleteTemplateItem = async function(id) {
+  if (await A.showConfirm('حذف هذا القالب؟')) { try { await A.mutate('db:deleteTemplate', id); document.getElementById('showWorkflowsBtn').click(); } catch (e) { A.logError('deleteTemplate', e); A.showToast('فشل حذف القالب', 'error'); } }
+};
+
 window.showNewWorkflowForm = function() {
   A.showModal('سير عمل جديد', `
     <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="wfName" class="input"></div>
@@ -266,6 +270,12 @@ A.initTasks = function() {
         <p>${esc(w.description||'')} · ${w.step_count||0} خطوات</p>
         <button class="btn-icon" onclick="deleteWorkflowItem(${w.id})" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
       </div>`).join('') || '<p style="color:var(--gray-300);">لا توجد سير عمل</p>'}</div>
+      <h4 style="font-size:var(--font-size-sm);margin:var(--space-4) 0 var(--space-2);">القوالب الحالية</h4>
+      <div id="templateList">${templates.map(t => `<div class="workflow-card">
+        <h4>${esc(t.name)}</h4>
+        <p>${esc(t.description||'')}</p>
+        <button class="btn-icon" onclick="deleteTemplateItem(${t.id})" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
+      </div>`).join('') || '<p style="color:var(--gray-300);">لا توجد قوالب</p>'}</div>
     `);
     document.getElementById('workflowModalOverlay').style.display = 'flex';
   });
