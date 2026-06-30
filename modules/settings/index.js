@@ -10,7 +10,7 @@ A.loadSettingsUsers = async function() {
     <td>${esc(u.email||'-')}</td>
     <td><span class="badge ${u.role === 'admin' ? 'badge-active' : 'badge-gold'}">${esc(u.role)}</span></td>
     <td>${u.active ? '<span class="badge badge-active" style="background:var(--success);">' + _t('activeBadge') + '</span>' : '<span class="badge badge-closed">' + _t('inactiveBadge') + '</span>'}</td>
-    <td style="font-size:11px;color:var(--gray-400);">${u.last_login ? u.last_login.slice(0,16) : '—'}</td>
+    <td style="font-size:11px;color:var(--muted-foreground);">${u.last_login ? u.last_login.slice(0,16) : '—'}</td>
     <td><button class="btn-icon" onclick="editSettingsUser(${u.id})"><i class="ri-pencil-line"></i></button>${u.id !== 1 ? `<button class="btn-icon" onclick="deleteSettingsUser(${u.id})"><i class="ri-delete-bin-line"></i></button>` : ''}</td>
   </tr>`).join(''));
 };
@@ -82,15 +82,15 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const newPwd = document.getElementById('settingsNewPwd').value;
     const confirmPwd = document.getElementById('settingsConfirmPwd').value;
     const msgEl = document.getElementById('settingsPwdMsg');
-    if (!currentPwd) { msgEl.textContent = _t('enterCurrentPwd'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (!currentPwd) { msgEl.textContent = _t('enterCurrentPwd'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
     const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
-    if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (!newPwd || newPwd.length < 8) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
-    if (newPwd !== confirmPwd) { msgEl.textContent = _t('pwdNotMatch'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block'; return; }
+    if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
+    if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
+    if (!newPwd || newPwd.length < 8) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
+    if (newPwd !== confirmPwd) { msgEl.textContent = _t('pwdNotMatch'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
     const result = await A.mutate('auth:setPassword', newPwd);
     if (!result || !result.ok) {
-      msgEl.textContent = result?.error || _t('savePasswordFailed'); msgEl.style.color = 'var(--danger)'; msgEl.style.display = 'block';
+      msgEl.textContent = result?.error || _t('savePasswordFailed'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block';
       return;
     }
     msgEl.textContent = _t('pwdSaved'); msgEl.style.color = 'var(--success)'; msgEl.style.display = 'block';
@@ -163,7 +163,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       const getValidationStatus = (name) => { const v = A.state._backupValidations || {}; return v[name]; };
       A.safeSet(listEl, esc => `<table class="table" style="font-size:12px;"><thead><tr><th>${_t('backupFileHeader')}</th><th>${_t('backupDateHeader')}</th><th>${_t('backupSizeHeader')}</th><th>${_t('backupTypeHeader')}</th><th>${_t('backupStatusHeader')}</th><th>${_t('backupActionsHeader')}</th></tr></thead><tbody>${backups.map(b => {
         const v = getValidationStatus(b.name);
-        const statusIcon = v ? (v.valid ? '<span style="color:var(--success);">' + _t('backupValid') + '</span>' : '<span style="color:var(--danger);">' + _t('backupCorrupt') + '</span>') : '<span style="color:var(--gray-300);">—</span>';
+        const statusIcon = v ? (v.valid ? '<span style="color:var(--success);">' + _t('backupValid') + '</span>' : '<span style="color:var(--destructive);">' + _t('backupCorrupt') + '</span>') : '<span style="color:var(--muted-foreground);">—</span>';
         return `<tr>
           <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(b.name)}">${esc(b.name)}</td>
           <td style="white-space:nowrap;">${esc(formatDate(b.mtime))}</td>
@@ -173,7 +173,7 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
           <td style="white-space:nowrap;">
             <button class="btn-icon backup-validate-btn" data-file="${esc(b.name)}" title="${_t('backupVerifyBtn')}"><i class="ri-check-double-line"></i></button>
             <button class="btn-icon backup-restore-btn" data-file="${esc(b.name)}" title="${_t('backupRestoreBtn')}" style="color:var(--gold);"><i class="ri-history-line"></i></button>
-            <button class="btn-icon backup-delete-btn" data-file="${esc(b.name)}" title="${_t('backupDeleteBtn')}" style="color:var(--danger);"><i class="ri-delete-bin-line"></i></button>
+            <button class="btn-icon backup-delete-btn" data-file="${esc(b.name)}" title="${_t('backupDeleteBtn')}" style="color:var(--destructive);"><i class="ri-delete-bin-line"></i></button>
           </td>
         </tr>`;
       }).join('')}</tbody></table>`);
@@ -335,7 +335,7 @@ A.loadSettingsActivity = async function(loadMore = false) {
   if (!body) return;
 
   const logHtml = logs.map(l => `<tr>
-    <td style="font-size:10px;color:var(--gray-400);">${A.escapeHtml(l.created_at||'')}</td>
+    <td style="font-size:10px;color:var(--muted-foreground);">${A.escapeHtml(l.created_at||'')}</td>
     <td style="font-size:11px;">${A.escapeHtml(l.user_name||'-')}</td>
     <td><span class="badge badge-gold" style="font-size:9px;">${A.escapeHtml(l.action||'')}</span></td>
     <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${A.escapeHtml(l.details||'')}</td>
@@ -377,9 +377,9 @@ A.loadSettingsLogs = async function(loadMore) {
   const levelColors = { INFO: 'badge-active', WARN: 'badge-gold', ERROR: 'badge-closed', CRITICAL: 'badge-closed' };
   const logHtml = logs.map(l => {
     const lvlBadge = levelColors[l.level] || 'badge-gold';
-    const extraClass = l.level === 'CRITICAL' ? ' style="background:var(--danger) !important;"' : '';
+    const extraClass = l.level === 'CRITICAL' ? ' style="background:var(--destructive) !important;"' : '';
     return `<tr>
-      <td style="font-size:10px;color:var(--gray-400);white-space:nowrap;">${A.escapeHtml(l.timestamp||'')}</td>
+      <td style="font-size:10px;color:var(--muted-foreground);white-space:nowrap;">${A.escapeHtml(l.timestamp||'')}</td>
       <td><span class="badge ${lvlBadge}"${extraClass} style="font-size:9px;">${A.escapeHtml(l.level||'')}</span></td>
       <td style="font-size:11px;">${A.escapeHtml(l.context||'')}</td>
       <td style="font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${A.escapeHtml(l.message||'')}">${A.escapeHtml(l.message||'')}</td>

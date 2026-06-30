@@ -61,7 +61,7 @@ A.wsAIAction = async function(actionFn, loadingText, userText) {
   container.innerHTML = '';
   A.addWsAIMessage(userText, true);
   const loadingEl = document.createElement('div');
-  loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--gray-400);font-size:12px;';
+  loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--muted-foreground);font-size:12px;';
   loadingEl.textContent = loadingText;
   container.appendChild(loadingEl);
   try {
@@ -92,7 +92,7 @@ A.wsAiSummarizeDoc = async function(docId, docName) {
   container.innerHTML = '';
   A.addWsAIMessage(`لخص "${docName}"`, true);
   const loadingEl = document.createElement('div');
-  loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--gray-400);font-size:12px;';
+  loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--muted-foreground);font-size:12px;';
   loadingEl.textContent = _t('aiLoadingMsg');
   container.appendChild(loadingEl);
   try {
@@ -141,29 +141,29 @@ A.initCases = function() {
     const courts = [_t('court1stInstance'), _t('courtAppeal'), _t('courtCassation'), _t('courtAdmin'), _t('courtCommercial'), _t('courtSupreme')];
     const courtOpts = courts.map(c => `<option value="${c}">${c}</option>`).join('');
     A.showModal(_t('newCaseTitle'), `
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-4);">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-3);">
         <div class="input-group"><label class="input-label">${_t('caseNumberLabel')}</label><input type="text" id="fCaseNumber" class="input" placeholder="${_t('exampleCaseNumber')}"></div>
         <div class="input-group"><label class="input-label">${_t('subjectLabel')}</label><input type="text" id="fTitle" class="input" placeholder="${_t('subjectPlaceholder')}"></div>
         <div class="input-group"><label class="input-label">${_t('clientSelectLabel')}</label><select id="fClientId" class="input"><option value="">${_t('selectPlaceholder')}</option>${opts}</select></div>
-        <div class="input-group"><label class="input-label">${_t('opponentLabel')}</label><input type="text" id="fOpponent" class="input" placeholder="${_t('opponentPlaceholder')}"></div>
         <div class="input-group"><label class="input-label">${_t('courtSelectLabel')}</label><select id="fCourt" class="input"><option value="">${_t('selectPlaceholder')}</option>${courtOpts}</select></div>
         <div class="input-group"><label class="input-label">${_t('caseTypeLabel')}</label><select id="fCaseType" class="input"><option value="مدني">مدني</option><option value="تجاري">تجاري</option><option value="إداري">إداري</option><option value="جنائي">جنائي</option><option value="أحوال شخصية">أحوال شخصية</option><option value="اجتماعي">اجتماعي</option><option value="عقاري">عقاري</option></select></div>
         <div class="input-group"><label class="input-label">${_t('statusHeader')}</label><select id="fStatus" class="input"><option value="active">${_t('activeF')}</option><option value="pending">${_t('pendingF')}</option><option value="closed">${_t('closedF')}</option></select></div>
         <div class="input-group"><label class="input-label">${_t('priorityHeader')}</label><select id="fPriority" class="input"><option value="medium">${_t('mediumLabel')}</option><option value="high">${_t('highLabel')}</option><option value="low">${_t('lowLabel')}</option></select></div>
         <div class="input-group"><label class="input-label">${_t('openDateLabel')}</label><input type="date" id="fCreatedDate" class="input" value="${new Date().toISOString().slice(0,10)}"></div>
         <div class="input-group"><label class="input-label">${_t('deadlineDateLabel')}</label><input type="date" id="fDeadline" class="input"></div>
-        <div class="input-group"><label class="input-label">${_t('judgeLabel')}</label><input type="text" id="fJudge" class="input"></div>
         <div class="input-group"><label class="input-label">${_t('feesLabelCase')}</label><input type="number" id="fFees" class="input" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="input-group" style="margin-top:var(--space-3);"><label class="input-label">${_t('notesLabelCase')}</label><textarea id="fDescription" class="input" rows="2"></textarea></div>
+      <div class="input-group" style="margin-top:var(--spacing-2);"><label class="input-label">${_t('notesLabelCase')}</label><textarea id="fDescription" class="input" rows="2"></textarea></div>
     `, async () => {
       const cn = document.getElementById('fCaseNumber').value.trim();
       const ti = document.getElementById('fTitle').value.trim();
       if (!cn || !ti) { A.showToast(_t('caseFieldsRequired'), 'error'); return; }
       try {
+        const clientId = parseInt(document.getElementById('fClientId').value) || null;
         const res = await A.mutate('db:addCase', {
           case_number: cn, title: ti,
-          client_id: parseInt(document.getElementById('fClientId').value) || null,
+          client_id: clientId,
+          client_name: clientId ? (clients.find(c => c.id === clientId)?.name || '') : '',
           court: document.getElementById('fCourt').value,
           status: document.getElementById('fStatus').value,
           priority: document.getElementById('fPriority').value,

@@ -3,11 +3,11 @@ var A = window.App = window.App || {};
 A.renderClientTable = function(list) {
   const body = document.getElementById('clientsBody');
   A.safeSet(body, esc => list.length ? list.map(c => `<tr>
-    <td><strong style="cursor:pointer;color:var(--navy);" onclick="openClientDetail(${c.id})">${esc(c.name)}</strong></td>
+    <td><strong style="cursor:pointer;color:var(--foreground);" onclick="openClientDetail(${c.id})">${esc(c.name)}</strong></td>
     <td>${esc(c.phone || '-')}</td>
     <td>${esc(c.email || '-')}</td>
     <td>${c._caseCount || 0}</td>
-    <td style="font-size:11px;color:var(--gray-400);">${esc(c._lastActivity || '-')}</td>
+    <td style="font-size:11px;color:var(--muted-foreground);">${esc(c._lastActivity || '-')}</td>
     <td>${c._balance ? (c._balance + ' د.م.') : '-'}</td>
     <td>
       <button class="btn-icon client-open-btn" data-id="${c.id}"><i class="ri-eye-line"></i></button>
@@ -53,7 +53,7 @@ A.renderClientSegments = function(list) {
     <div class="cl-segment-cards">${list.filter(s.filter).slice(0, 6).map(c => `<div class="cl-segment-card" onclick="openClientDetail(${c.id})">
       <div class="cl-avatar-sm">${esc((c.name||'?').charAt(0))}</div>
       <div class="cl-segment-info"><div class="cl-segment-name">${esc(c.name)}</div><div class="cl-segment-meta">${c._caseCount || 0} ${_t('casesPlural')} · ${c._balance || 0}${_t('currencyMAD')}</div></div>
-    </div>`).join('') || `<div style="font-size:12px;color:var(--gray-300);padding:8px;">${_t('zeroLabel')}</div>`}</div>
+    </div>`).join('') || `<div style="font-size:12px;color:var(--muted-foreground);padding:8px;">${_t('zeroLabel')}</div>`}</div>
   </div>`).join(''));
 };
 
@@ -78,7 +78,7 @@ A.loadWsClOverview = async function(c) {
           </div>
         </div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('quickActionsLabel')}</h4>
+      <div class="ws-info-card" style="margin-top:var(--spacing-3);"><h4>${_t('quickActionsLabel')}</h4>
         <div class="ws-quick-actions">
           <button class="ws-qa-btn cl-add-case"><i class="ri-briefcase-add-line"></i> ${_t('caseQuickAction')}</button>
           <button class="ws-qa-btn cl-add-comm"><i class="ri-chat-3-line"></i> ${_t('commQuickAction')}</button>
@@ -94,13 +94,13 @@ A.loadWsClOverview = async function(c) {
         <div class="ws-info-row"><span class="ws-info-label">${_t('addressLabel')}</span><span class="ws-info-value">${esc(c.address || '-')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">${_t('lastContactLabel')}</span><span class="ws-info-value">${comms.length ? esc(A.formatDate(comms[0].date)) : '-'}</span></div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('recentActivityLabel')}</h4><div id="clOverviewActivity"></div></div>
+      <div class="ws-info-card" style="margin-top:var(--spacing-3);"><h4>${_t('recentActivityLabel')}</h4><div id="clOverviewActivity"></div></div>
     </div>
   </div>`);
   const logs = await A.cachedInvoke('db:getLogs', {});
   const clLogs = (logs||[]).filter(l => l.details && l.details.includes('@' + A.state.currentClientId)).slice(0, 4);
   A.safeSet(document.getElementById('clOverviewActivity'), esc => clLogs.length
-    ? clLogs.map(l => `<div class="tl-item" style="padding:var(--space-1) 0;"><span class="tl-time" style="min-width:36px;">${l.created_at ? l.created_at.slice(11,16) : ''}</span><div class="tl-body"><div class="tl-title" style="font-size:12px;">${esc(l.details)}</div></div></div>`).join('')
+    ? clLogs.map(l => `<div class="tl-item" style="padding:var(--spacing-px) 0;"><span class="tl-time" style="min-width:36px;">${l.created_at ? l.created_at.slice(11,16) : ''}</span><div class="tl-body"><div class="tl-title" style="font-size:12px;">${esc(l.details)}</div></div></div>`).join('')
     : `<p class="empty-state-sm">${_t('noActivityLabel')}</p>`);
   el.querySelector('.cl-add-case')?.addEventListener('click', () => { document.getElementById('addCaseBtn')?.click(); });
   el.querySelector('.cl-add-comm')?.addEventListener('click', () => A.clAddComm());
@@ -111,7 +111,7 @@ A.loadWsClCases = async function(c) {
   const el = document.getElementById('wsClCases');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
   A.safeSet(el, esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" onclick="document.getElementById('addCaseBtn').click()"><i class="ri-add-line"></i> ${_t('newCaseBtn')}</button></div>
-    ${cases.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('caseNumberHeader')}</th><th>${_t('subjectHeader')}</th><th>${_t('courtHeader')}</th><th>${_t('statusHeader')}</th><th>${_t('priorityHeader')}</th><th></th></tr></thead><tbody>${cases.map(ca => `<tr>
+    ${cases.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('caseNumberHeader')}</th><th>${_t('subjectHeader')}</th><th>${_t('courtHeader')}</th><th>${_t('statusHeader')}</th><th>${_t('priorityHeader')}</th><th></th></tr></thead><tbody>${cases.map(ca => `<tr>
       <td>${esc(ca.case_number)}</td><td>${esc(ca.title)}</td><td>${esc(ca.court || '-')}</td>
       <td><span class="badge badge-${ca.status}">${A.state.statusLabels[ca.status] || esc(ca.status)}</span></td>
       <td>${esc(ca.priority || '-')}</td>
@@ -127,7 +127,7 @@ A.loadWsClDocs = async function(c) {
     const docs = await A.cachedInvoke('db:getDocuments', ca.id);
     docs.forEach(d => allDocs.push({ ...d, case_number: ca.case_number }));
   }
-  A.safeSet(el, esc => `<div class="ws-docs-header"><span style="font-size:13px;color:var(--gray-400);">${_t('docCountLabel').replace('{n}', allDocs.length)}</span></div>
+  A.safeSet(el, esc => `<div class="ws-docs-header"><span style="font-size:13px;color:var(--muted-foreground);">${_t('docCountLabel').replace('{n}', allDocs.length)}</span></div>
     <div class="ws-docs-grid">${allDocs.length ? allDocs.map(d => `<div class="ws-doc-card">
       <i class="ri-file-4-line ws-doc-icon"></i>
       <div class="ws-doc-name">${esc(d.filename)}</div>
@@ -141,7 +141,7 @@ A.loadWsClComms = async function(c) {
   const iconMap = { call: 'ri-phone-line', email: 'ri-mail-line', meeting: 'ri-group-line', message: 'ri-chat-1-line', default: 'ri-chat-3-line' };
   const colorMap = { call: '#4A8BC2', email: '#8B5CF6', meeting: '#1A8A5C', message: '#C6A15B', default: '#8C8A84' };
   A.safeSet(el, esc => `<div class="toolbar"><button id="clAddCommBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newCommLabel')}</button></div>
-    <div class="cl-comms-list" style="margin-top:var(--space-3);">${comms.length ? comms.map(co => `<div class="cl-comms-item">
+    <div class="cl-comms-list" style="margin-top:var(--spacing-2);">${comms.length ? comms.map(co => `<div class="cl-comms-item">
       <div class="cl-comms-icon" style="background:${(colorMap[co.type] || colorMap.default)}12;color:${colorMap[co.type] || colorMap.default};"><i class="${iconMap[co.type] || iconMap.default}"></i></div>
       <div class="cl-comms-body"><div class="cl-comms-title">${esc(co.type)} · ${esc(A.formatDate(co.date))}</div><div class="cl-comms-sub">${esc(co.summary || '')}</div></div>
     </div>`).join('') : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noCommsLabel')}</p>`}</div>`);
@@ -179,7 +179,7 @@ A.loadWsClPayments = async function(c) {
         <div class="cl-pay-row"><span class="cl-pay-label">${_t('remainingLabel')}</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)} د.م.</span></div>
       </div>
     </div>
-    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('paymentDateHeader')}</th><th>${_t('paymentCaseHeader')}</th><th>${_t('paymentAmountHeader')}</th><th>${_t('paymentMethodHeader')}</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`);
+    ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('paymentDateHeader')}</th><th>${_t('paymentCaseHeader')}</th><th>${_t('paymentAmountHeader')}</th><th>${_t('paymentMethodHeader')}</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`);
   A.drawClPieChart(totalFees, totalPaid);
 };
 
@@ -209,7 +209,7 @@ A.loadWsClTimeline = async function(c) {
   const clLogs = (logs||[]).filter(l => l.details && l.details.includes('@' + A.state.currentClientId)).slice(0, 30);
   A.safeSet(el, esc => clLogs.length ? `<div class="dash-timeline" style="padding:0 !important;">${clLogs.map(l => `<div class="tl-item">
     <span class="tl-time">${l.created_at ? l.created_at.slice(11,16) : ''}</span>
-    <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--gray-50);color:var(--gray-500);"><i class="ri-history-line"></i></div>
+    <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--muted);color:var(--muted-foreground);"><i class="ri-history-line"></i></div>
     <div class="tl-body"><div class="tl-title" style="font-size:13px;">${esc(l.details)}</div><div class="tl-sub">${l.created_at ? l.created_at.slice(0,10) : ''}</div></div>
   </div>`).join('')}</div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noActivitiesLabel')}</p>`);
 };
@@ -218,8 +218,8 @@ A.loadWsClNotes = async function(c) {
   const el = document.getElementById('wsClNotes');
   A.safeSet(el, esc => `<div class="ws-notes-area">
     <textarea id="clNotesText" placeholder="${_t('notesPlaceholderLong')}" class="input">${esc(c.notes || '')}</textarea>
-    <div style="display:flex;justify-content:space-between;margin-top:var(--space-2);">
-      <span style="font-size:11px;color:var(--gray-400);" id="clNotesStatus"></span>
+    <div style="display:flex;justify-content:space-between;margin-top:var(--spacing-1-5);">
+      <span style="font-size:11px;color:var(--muted-foreground);" id="clNotesStatus"></span>
       <button id="clSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> ${_t('saveBtnLabel')}</button>
     </div>
   </div>`);

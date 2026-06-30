@@ -86,17 +86,17 @@ A.openTaskDetail = async function(taskId) {
           <div class="ws-info-row"><span class="ws-info-label">التقدم</span><span class="ws-info-value">${t.progress||0}%</span></div>
           <div class="ws-info-row"><span class="ws-info-label">الوقت المسجل</span><span class="ws-info-value">${Math.floor((t.time_tracked||0)/60)}س ${(t.time_tracked||0)%60}د</span></div>
         </div>
-        ${t.description ? `<div class="task-detail-section"><h4>الوصف</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(t.description)}</p></div>` : ''}
+        ${t.description ? `<div class="task-detail-section"><h4>الوصف</h4><p style="font-size:var(--type-caption);color:var(--foreground);line-height:1.6;">${esc(t.description)}</p></div>` : ''}
       </div>
       <div>
         <div class="task-detail-section">
           <h4>المهام الفرعية (${subtasks.filter(s=>s.done).length}/${subtasks.length})</h4>
           <div id="subtaskList">${subtasks.map(s => `<div class="subtask-item">
             <div class="subtask-check ${s.done?'done':''}" onclick="toggleSubtask(${s.id})">${s.done ? '<i class="ri-check-line" style="font-size:10px;"></i>' : ''}</div>
-            <span style="flex:1;font-size:var(--font-size-xs);${s.done?'text-decoration:line-through;color:var(--gray-300);':''}">${esc(s.title)}</span>
+            <span style="flex:1;font-size:var(--type-caption);${s.done?'text-decoration:line-through;color:var(--muted-foreground);':''}">${esc(s.title)}</span>
             <button class="btn-icon" onclick="deleteSubtaskItem(${s.id})" style="font-size:10px;"><i class="ri-close-line"></i></button>
           </div>`).join('')}</div>
-          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-2);">
+          <div style="display:flex;gap:var(--spacing-1-5);margin-top:var(--spacing-1-5);">
             <input type="text" id="newSubtaskInput" class="input input-sm" placeholder="مهمة فرعية..." style="flex:1;">
             <button class="btn btn-primary btn-xs" onclick="addSubtaskTo(${taskId})">+</button>
           </div>
@@ -106,8 +106,8 @@ A.openTaskDetail = async function(taskId) {
           <div id="commentList">${comments.map(c => `<div class="comment-item">
             <div class="comment-author">${esc(c.author)} <span class="comment-time">${c.created_at ? c.created_at.slice(11,16) : ''}</span></div>
             <div class="comment-text">${esc(c.text)}</div>
-          </div>`).join('') || '<p style="font-size:var(--font-size-xs);color:var(--gray-300);">لا توجد تعليقات</p>'}</div>
-          <div style="display:flex;gap:var(--space-2);margin-top:var(--space-2);">
+          </div>`).join('') || '<p style="font-size:var(--type-caption);color:var(--muted-foreground);">لا توجد تعليقات</p>'}</div>
+          <div style="display:flex;gap:var(--spacing-1-5);margin-top:var(--spacing-1-5);">
             <input type="text" id="newCommentInput" class="input input-sm" placeholder="أضف تعليقاً..." style="flex:1;">
             <button class="btn btn-primary btn-xs" onclick="addCommentTo(${taskId})">إرسال</button>
           </div>
@@ -233,11 +233,11 @@ A.initTasks = function() {
 
     document.getElementById('workflowModalTitle').textContent = 'سير العمل والقالب';
     A.safeSet(document.getElementById('workflowModalBody'), esc => `
-      <div style="margin-bottom:var(--space-4);">
-        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">تطبيق سير عمل على قضية</h4>
+      <div style="margin-bottom:var(--spacing-3);">
+        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">تطبيق سير عمل على قضية</h4>
         <div class="info-grid-2">
           <select id="wfCaseSelect" class="input">${caseOpts}</select>
-          <div style="display:flex;gap:var(--space-2);">
+          <div style="display:flex;gap:var(--spacing-1-5);">
             <select id="wfSelect" class="input" style="flex:1;">
               <option value="">اختر سير عمل...</option>
               ${workflows.map(w => `<option value="${w.id}">${esc(w.name)} (${w.step_count||0} خطوات)</option>`).join('')}
@@ -246,11 +246,11 @@ A.initTasks = function() {
           </div>
         </div>
       </div>
-      <div style="margin-bottom:var(--space-4);">
-        <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">تطبيق قالب على قضية</h4>
+      <div style="margin-bottom:var(--spacing-3);">
+        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">تطبيق قالب على قضية</h4>
         <div class="info-grid-2">
           <select id="tmplCaseSelect" class="input">${caseOpts}</select>
-          <div style="display:flex;gap:var(--space-2);">
+          <div style="display:flex;gap:var(--spacing-1-5);">
             <select id="tmplSelect" class="input" style="flex:1;">
               <option value="">اختر قالب...</option>
               ${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
@@ -259,23 +259,23 @@ A.initTasks = function() {
           </div>
         </div>
       </div>
-      <hr style="border:none;border-top:1px solid var(--gray-100);margin:var(--space-4) 0;">
-      <div style="display:flex;gap:var(--space-3);margin-bottom:var(--space-3);">
+      <hr style="border:none;border-top:1px solid var(--border);margin:var(--spacing-3) 0;">
+      <div style="display:flex;gap:var(--spacing-2);margin-bottom:var(--spacing-2);">
         <button class="btn btn-secondary btn-sm" onclick="showNewWorkflowForm()">+ سير عمل جديد</button>
         <button class="btn btn-secondary btn-sm" onclick="showNewTemplateForm()">+ قالب جديد</button>
       </div>
-      <h4 style="font-size:var(--font-size-sm);margin-bottom:var(--space-2);">سير العمل الحالية</h4>
+      <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">سير العمل الحالية</h4>
       <div id="workflowList">${workflows.map(w => `<div class="workflow-card">
         <h4>${esc(w.name)}</h4>
         <p>${esc(w.description||'')} · ${w.step_count||0} خطوات</p>
         <button class="btn-icon" onclick="deleteWorkflowItem(${w.id})" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
-      </div>`).join('') || '<p style="color:var(--gray-300);">لا توجد سير عمل</p>'}</div>
-      <h4 style="font-size:var(--font-size-sm);margin:var(--space-4) 0 var(--space-2);">القوالب الحالية</h4>
+      </div>`).join('') || '<p style="color:var(--muted-foreground);">لا توجد سير عمل</p>'}</div>
+      <h4 style="font-size:var(--type-body);margin:var(--spacing-3) 0 var(--spacing-1-5);">القوالب الحالية</h4>
       <div id="templateList">${templates.map(t => `<div class="workflow-card">
         <h4>${esc(t.name)}</h4>
         <p>${esc(t.description||'')}</p>
         <button class="btn-icon" onclick="deleteTemplateItem(${t.id})" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
-      </div>`).join('') || '<p style="color:var(--gray-300);">لا توجد قوالب</p>'}</div>
+      </div>`).join('') || '<p style="color:var(--muted-foreground);">لا توجد قوالب</p>'}</div>
     `);
     document.getElementById('workflowModalOverlay').style.display = 'flex';
   });

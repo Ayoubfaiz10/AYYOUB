@@ -102,7 +102,7 @@ A.AutoSave = {
       unsaved: { text: _t('autosaveUnsaved'), color: 'var(--gold)' },
       saving: { text: _t('saving'), color: 'var(--info)' },
       saved: { text: _t('autoSaveStatus'), color: 'var(--success)' },
-      error: { text: _t('autosaveError'), color: 'var(--danger)' }
+      error: { text: _t('autosaveError'), color: 'var(--destructive)' }
     };
     const s = states[status] || states.saved;
     el.textContent = s.text;
@@ -116,8 +116,8 @@ A.AutoSave = {
     banner.id = 'asBanner';
     Object.assign(banner.style, {
       position:'fixed', bottom:'80px', right:'50%', transform:'translateX(50%)',
-      background:'var(--navy)', color:'#fff', padding:'14px 24px',
-      borderRadius:'var(--radius-lg)', boxShadow:'0 8px 32px rgba(0,0,0,0.3)',
+      background:'var(--primary)', color:'#fff', padding:'14px 24px',
+      borderRadius:'var(--rounded-lg)', boxShadow:'0 8px 32px rgba(0,0,0,0.3)',
       zIndex:10000, display:'flex', alignItems:'center', gap:'14px',
       fontSize:'13px', direction:'rtl', maxWidth:'620px'
     });
@@ -153,6 +153,12 @@ A.AutoSave = {
     A.AutoSave._updateGlobalIndicator();
     setInterval(() => A.AutoSave._updateGlobalIndicator(), 5000);
     setTimeout(() => A.AutoSave.showRestoreNotification(), 2000);
+    document.getElementById('topbar')?.addEventListener('click', (e) => {
+      if (e.target.closest('#asGlobalStatus')) {
+        A.AutoSave.saveAll();
+        A.showToast('تم حفظ جميع التعديلات', 'success');
+      }
+    });
   },
 
   _updateGlobalIndicator() {

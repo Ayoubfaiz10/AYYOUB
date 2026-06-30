@@ -86,7 +86,7 @@ A.renderDayView = function() {
   const today = new Date().toISOString().slice(0,10);
   const hours = Array.from({length: 14}, (_, i) => `${String(i+7).padStart(2,'0')}:00`);
   A.safeSet(grid, esc => {
-    let h = `<div class="cal-week-header" style="grid-column:span 2;text-align:right;padding:var(--space-3);font-size:var(--font-size-base);">
+    let h = `<div class="cal-week-header" style="grid-column:span 2;text-align:right;padding:var(--spacing-2);font-size:var(--type-body);">
       ${new Intl.DateTimeFormat(A.getLocale(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(A.state.calDate)}
       ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;" data-i18n="statusToday">اليوم</span>' : ''}
     </div>`;
@@ -107,7 +107,7 @@ A.renderAgendaView = function() {
   const sorted = [...A.state.allEvents].filter(e => e.date >= today && e.status !== 'cancelled').sort((a,b) => a.date.localeCompare(b.date) || (a.time||'').localeCompare(b.time||''));
   const grouped = {};
   sorted.forEach(e => { if (!grouped[e.date]) grouped[e.date] = []; grouped[e.date].push(e); });
-  const typeColors = { hearing: 'var(--navy)', deadline: 'var(--danger)', task: 'var(--gold)', meeting: 'var(--gray-400)', document: '#7c3aed', payment: 'var(--success)' };
+  const typeColors = { hearing: 'var(--foreground)', deadline: 'var(--destructive)', task: 'var(--gold)', meeting: 'var(--muted-foreground)', document: '#7c3aed', payment: 'var(--success)' };
   const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
   A.safeSet(container, esc => Object.keys(grouped).length ? Object.entries(grouped).map(([date, events]) => {
     const d = new Date(date + 'T12:00:00');
@@ -116,7 +116,7 @@ A.renderAgendaView = function() {
     return `<div class="cal-agenda-day">
       <div class="cal-agenda-date">${isToday ? window._t('statusToday') + ' — ' : ''}${dayName}</div>
       ${events.map(e => `<div class="cal-agenda-event" onclick="openEventDetail(${e.id})">
-        <div class="cal-agenda-dot" style="background:${typeColors[e.type] || 'var(--gray-300)'};"></div>
+        <div class="cal-agenda-dot" style="background:${typeColors[e.type] || 'var(--muted-foreground)'};"></div>
         <div class="cal-agenda-time">${esc(e.time || _t('eventAllDayLabel'))}</div>
         <div class="cal-agenda-info">
           <div class="cal-agenda-title">${typeIcons[e.type] || '📌'} ${esc(e.title)}</div>
@@ -124,7 +124,7 @@ A.renderAgendaView = function() {
         </div>
       </div>`).join('')}
     </div>`;
-  }).join('') : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">' + _t('noUpcomingEventsLabel') + '</p></div>');
+  }).join('') : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:48px;color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">' + _t('noUpcomingEventsLabel') + '</p></div>');
 };
 
 A.switchCalView = function(view) {
@@ -137,4 +137,29 @@ A.switchCalView = function(view) {
 A.goToDate = function(dateStr) {
   A.state.calDate = new Date(dateStr + 'T12:00:00');
   A.renderCalendar();
+};
+
+A.renderMiniCalendar = function() {
+  const container = document.getElementById('dashMiniCalendar');
+  if (!container) return;
+  const events = A.state.allEvents || [];
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth();
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const today = now.getDate();
+  const monthName = new Intl.DateTimeFormat(A.getLocale(), { month: 'long' }).format(now);
+  var shortDays = A.getShortDayNames();
+  let html = `<div style="text-align:center;font-weight:var(--font-weight-semibold);color:var(--foreground);margin-bottom:var(--spacing-1-5);">${monthName} ${year}</div>`;
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;text-align:center;">';
+  shortDays.forEach(d => { html += `<div style="color:var(--muted-foreground);padding:4px 0;">${d}</div>`; });
+  for (let i = 0; i < firstDay; i++) html += '<div></div>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const hasEvent = events.some(e => e.date === dateStr && e.status !== 'cancelled');
+    const isToday = d === today;
+    html += `<div style="padding:4px 0;border-radius:4px;${isToday ? 'background:var(--gold);color:#fff;font-weight:bold;' : hasEvent ? 'background:var(--muted);' : ''}">${d}</div>`;
+  }
+  html += '</div>';
+  A.safeSetStatic(container, html);
 };

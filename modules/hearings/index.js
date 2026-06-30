@@ -27,13 +27,13 @@ A._renderHearingRows = function(displayed) {
       <td style="font-size:11px;">${esc(A.formatDate(e.date))}</td>
       <td style="font-size:11px;">${esc(e.time || '-')}</td>
       <td>${typeIcons[e.type] || '📌'} ${esc(e.type)}</td>
-      <td><strong style="cursor:pointer;color:var(--navy);" onclick="openEventDetail(${e.id})">${esc(e.title)}</strong></td>
+      <td><strong style="cursor:pointer;color:var(--foreground);" onclick="openEventDetail(${e.id})">${esc(e.title)}</strong></td>
       <td style="font-size:11px;">${esc(e.case_number || '-')}</td>
       <td style="font-size:11px;">${esc(e.client_name || '-')}</td>
       <td>${statusBadge}</td>
       <td><button class="btn-icon" onclick="openEventDetail(${e.id})"><i class="ri-eye-line"></i></button></td>
     </tr>`;
-  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">' + _t('noEvents') + '</td></tr>');
+  }).join('') : '<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted-foreground);">' + _t('noEvents') + '</td></tr>');
 };
 
 A.renderHearingsTable = function() {
@@ -50,12 +50,5 @@ A.renderHearingsTable = function() {
 };
 
 A.initHearings = function() {
-  document.getElementById('searchHearings').addEventListener('input', A.debounce(() => A.renderHearingsTable(), 250));
-  document.getElementById('hearingsFilterType').addEventListener('change', () => A.renderHearingsTable());
-  document.querySelectorAll('#section-hearings .filter-btn').forEach(b => b.addEventListener('click', () => {
-    document.querySelectorAll('#section-hearings .filter-btn').forEach(x => x.classList.remove('active'));
-    b.classList.add('active');
-    A.state.hearingsFilter = b.dataset.filter;
-    A.renderHearingsTable();
-  }));
+  // Listeners are registered in initCalendar – no duplicate needed here
 };

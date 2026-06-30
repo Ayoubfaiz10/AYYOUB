@@ -11,7 +11,7 @@ A.filterDocs = function() {
 
 A._renderDocCards = function(displayed, container) {
   A.safeSet(container, esc => displayed.length ? displayed.map(d => `<div class="doc-card-v6" onclick="openDocViewer(${d.id})">
-      <i class="ri-file-4-line doc-card-icon" style="color:${d.doc_type === 'Contract' ? 'var(--success)' : d.doc_type === 'Jugement' ? 'var(--navy)' : d.doc_type === 'Preuve' ? 'var(--info)' : 'var(--gold)'};"></i>
+      <i class="ri-file-4-line doc-card-icon" style="color:${d.doc_type === 'Contract' ? 'var(--success)' : d.doc_type === 'Jugement' ? 'var(--foreground)' : d.doc_type === 'Preuve' ? 'var(--info)' : 'var(--gold)'};"></i>
       <div class="doc-card-title">${esc(d.filename)}</div>
       <div class="doc-card-meta">${esc(d.case_number || '')} · ${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</div>
       <div class="doc-card-tags">${(d.tags||'').split(',').filter(Boolean).slice(0,3).map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`).join('')}</div>
@@ -23,7 +23,7 @@ A._renderDocCards = function(displayed, container) {
           <button onclick="event.stopPropagation();analyzeDoc(${d.id})" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button>
         </div>
       </div>
-    </div>`).join('') : '<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--gray-200);display:block;margin-bottom:12px;"></i><p style="color:var(--gray-300);">${_t('noDocsLabel')}</p></div>');
+    </div>`).join('') : `<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">${_t('noDocsLabel')}</p></div>`);
 };
 
 A.renderDocGrid = function() {
@@ -36,15 +36,15 @@ A.renderDocTable = function() {
   const body = document.getElementById('docTableBody');
   const list = A.filterDocs();
   A.safeSet(body, esc => list.length ? list.map(d => `<tr>
-      <td><strong style="cursor:pointer;color:var(--navy);" onclick="openDocViewer(${d.id})">${esc(d.filename)}</strong></td>
+      <td><strong style="cursor:pointer;color:var(--foreground);" onclick="openDocViewer(${d.id})">${esc(d.filename)}</strong></td>
       <td><span class="badge badge-gold">${esc(d.doc_type)}</span></td>
       <td>${esc(d.case_number || '')}</td>
       <td>${esc(d.client_name || '')}</td>
-      <td style="font-size:11px;color:var(--gray-400);">${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</td>
+      <td style="font-size:11px;color:var(--muted-foreground);">${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</td>
       <td><span class="badge badge-active">${_t('docFinalBadge')}</span></td>
       <td>${(d.tags||'').split(',').filter(Boolean).slice(0,2).map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`).join('') || '-'}</td>
       <td><button class="btn-icon" onclick="openDocViewer(${d.id})" title="${_t('detailsBtnTooltip')}"><i class="ri-eye-line"></i></button><button class="btn-icon" onclick="analyzeDoc(${d.id})" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
-    </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--gray-300);">${_t('noDocsLabel')}</td></tr>`);
+    </tr>`).join('') : `<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--muted-foreground);">${_t('noDocsLabel')}</td></tr>`);
 };
 
 A.renderDocFolders = function() {
@@ -55,5 +55,5 @@ A.renderDocFolders = function() {
       <i class="ri-folder-5-line doc-folder-icon"></i>
       <div class="doc-folder-name">${esc(name)}</div>
       <div class="doc-folder-count">${_t('docCountLabel').replace('{n}', docs.length)}</div>
-    </div>`).join('') || `<div style="text-align:center;padding:40px;color:var(--gray-300);grid-column:1/-1;">${_t('noFoldersLabel')}</div>`);
+    </div>`).join('') || `<div style="text-align:center;padding:40px;color:var(--muted-foreground);grid-column:1/-1;">${_t('noFoldersLabel')}</div>`);
 };

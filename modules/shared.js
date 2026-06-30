@@ -92,7 +92,7 @@ A.showLoading = function(elementId) {
   const el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
   if (!el) return;
   el.dataset.originalHtml = el.dataset.originalHtml || el.innerHTML;
-  el.innerHTML = '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--gray-400);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i> جاري التحميل...</div>';
+  el.innerHTML = '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--muted-foreground);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i> جاري التحميل...</div>';
 };
 
 A.hideLoading = function(elementId) {

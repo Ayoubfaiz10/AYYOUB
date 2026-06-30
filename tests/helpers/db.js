@@ -29,6 +29,8 @@ async function createDb() {
   db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, email TEXT UNIQUE, password_hash TEXT, role TEXT DEFAULT \'admin\', avatar TEXT DEFAULT \'\', active INTEGER DEFAULT 1, last_login TEXT, created_at TEXT DEFAULT (datetime(\'now\',\'localtime\')))');
   db.run('CREATE TABLE IF NOT EXISTS permissions (id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL, permission TEXT NOT NULL, allowed INTEGER DEFAULT 1, UNIQUE(role, permission))');
   db.run('CREATE TABLE IF NOT EXISTS case_permissions (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER NOT NULL, user_id INTEGER, role TEXT DEFAULT \'\', access_level TEXT DEFAULT \'team\', FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE)');
+  db.run('CREATE TABLE IF NOT EXISTS office_settings (key TEXT PRIMARY KEY, value TEXT)');
+  db.run('CREATE TABLE IF NOT EXISTS security_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_index INTEGER NOT NULL, question TEXT NOT NULL, answer_hash TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, UNIQUE(user_id, question_index))');
   db.run('CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, user_name TEXT DEFAULT \'\', action TEXT NOT NULL, details TEXT, created_at TEXT DEFAULT (datetime(\'now\', \'localtime\')))');
   db.run('CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER, client_id INTEGER, title TEXT NOT NULL, type TEXT NOT NULL DEFAULT \'meeting\', status TEXT NOT NULL DEFAULT \'scheduled\', date TEXT NOT NULL, time TEXT, end_time TEXT, court TEXT, judge TEXT, room TEXT, notes TEXT, outcome TEXT, urgency TEXT DEFAULT \'medium\', recurring_type TEXT DEFAULT \'none\', recurring_end_date TEXT, all_day INTEGER DEFAULT 0, alert_sent_7d INTEGER DEFAULT 0, alert_sent_3d INTEGER DEFAULT 0, alert_sent_1d INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime(\'now\',\'localtime\')), updated_at TEXT DEFAULT (datetime(\'now\',\'localtime\')), FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE SET NULL, FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)');
 
@@ -105,4 +107,20 @@ function getChanges(db) {
   return db.exec("SELECT changes() as c")[0]?.values[0]?.[0] || 0;
 }
 
-module.exports = { createDb, query, mutate, runTransaction, validateRef, getChanges };
+function setSecurityQuestions(db, userId, questions) {
+  mutate(db, 'DELETE FROM security_questions WHERE user_id=?', [userId]);
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    mutate(db, 'INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)',
+      [userId, i + 1, q.question, q.answerHash]);
+  }
+}
+function getSecurityQuestions(db, userId) {
+  return query(db, 'SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
+}
+function getSecurityAnswer(db, userId, questionIndex) {
+  var r = query(db, 'SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
+  return r.length ? r[0].answer_hash : null;
+}
+
+module.exports = { createDb, query, mutate, runTransaction, validateRef, getChanges, setSecurityQuestions, getSecurityQuestions, getSecurityAnswer };

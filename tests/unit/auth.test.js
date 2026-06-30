@@ -1,13 +1,10 @@
-const { describe, it, before, after } = require('node:test');
+const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
 
 const BCRYPT_SALT_ROUNDS = 12;
-let testDir, pwdPath;
+const MASTER_KEY = 'test-master-key-for-testing';
 
 function hashSHA256(pwd) {
   return crypto.createHash('sha256').update(pwd).digest('hex');
@@ -31,71 +28,43 @@ function verifyPassword(pwd, storedHash) {
   return false;
 }
 
-function getPasswordHash(filePath) {
-  try {
-    if (fs.existsSync(filePath)) {
-      const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      if (!parsed || typeof parsed.hash !== 'string') return { error: 'ملف كلمة السر تالف' };
-      return parsed.hash || '';
-    }
-  } catch (e) { return { error: 'ملف كلمة السر تالف: ' + e.message }; }
-  return '';
+function signToken(userId, expiryMs) {
+  const payload = userId + ':' + expiryMs;
+  const hmac = crypto.createHmac('sha256', MASTER_KEY).update(payload).digest('hex');
+  return payload + ':' + hmac;
 }
 
-function isPasswordHashError(val) {
-  return typeof val === 'object' && val !== null && val.error;
+function verifyToken(token) {
+  if (!token || typeof token !== 'string') return null;
+  const parts = token.split(':');
+  if (parts.length < 3) return null;
+  const payload = parts.slice(0, -1).join(':');
+  const sig = parts[parts.length - 1];
+  const expected = crypto.createHmac('sha256', MASTER_KEY).update(payload).digest('hex');
+  if (sig !== expected) return null;
+  const userId = parseInt(parts[0], 10);
+  const expiry = parseInt(parts[1], 10);
+  if (isNaN(userId) || isNaN(expiry) || Date.now() > expiry) return null;
+  return userId;
 }
 
-function setPasswordHash(filePath, hash) {
-  const dir = path.dirname(filePath);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(filePath, JSON.stringify({ hash }, null, 2));
+// ───── Token Test Helpers ─────
+
+const ROLE_ACCESS = {
+  admin:        ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support','settings'],
+  senior_lawyer: ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support'],
+  junior_lawyer: ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','ai','support'],
+  assistant:    ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','support'],
+  intern:       ['dashboard','search','notifications','clients','cases','hearings','documents','tasks','support'],
+  external:     ['dashboard','search','notifications','clients','cases','hearings','documents','support']
+};
+
+function canAccess(role, sectionId) {
+  var allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
+  return allowed.indexOf(sectionId) !== -1;
 }
 
-// ---- IPC Handler Simulations (mirroring main.js logic) ----
-
-function handleAuthHasPassword(pwdPath) {
-  const stored = getPasswordHash(pwdPath);
-  if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
-  return !!stored;
-}
-
-function handleAuthLogin(pwdPath, pwd) {
-  if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
-  const stored = getPasswordHash(pwdPath);
-  if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
-  if (!stored) return { ok: true, firstTime: true };
-  if (!verifyPassword(pwd, stored)) return { ok: false, error: 'كلمة السر خطأ' };
-  if (isSHA256Hash(stored)) setPasswordHash(pwdPath, hashBcrypt(pwd));
-  return { ok: true };
-}
-
-function handleAuthSetPassword(pwdPath, pwd) {
-  if (!pwd || typeof pwd !== 'string' || pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
-  const stored = getPasswordHash(pwdPath);
-  if (isPasswordHashError(stored)) return { ok: false, error: stored.error, corrupt: true };
-  try {
-    const hash = hashBcrypt(pwd);
-    setPasswordHash(pwdPath, hash);
-    const verify = getPasswordHash(pwdPath);
-    if (isPasswordHashError(verify) || !verify) return { ok: false, error: 'فشل حفظ كلمة السر' };
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: 'خطأ في تشفير كلمة السر: ' + e.message };
-  }
-}
-
-function handleAuthHashPassword(pwd) {
-  if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
-  if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
-  try {
-    return { ok: true, hash: hashBcrypt(pwd) };
-  } catch (e) {
-    return { ok: false, error: 'خطأ في تشفير كلمة السر: ' + e.message };
-  }
-}
-
-// ───── Test Suites ─────
+// ───── SHA256 ─────
 
 describe('SHA256 Hash Detection', () => {
   it('valid 64-char hex returns true', () => assert.equal(isSHA256Hash('a'.repeat(64)), true));
@@ -140,105 +109,56 @@ describe('Password Verification', () => {
   it('null stored hash returns false', () => assert.equal(verifyPassword('any', null), false));
 });
 
-describe('IPC: auth:hasPassword', () => {
-  before(() => { testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'auth-test-')); pwdPath = path.join(testDir, 'password.json'); });
-  after(() => { try { fs.rmSync(testDir, { recursive: true, force: true }); } catch (e) { /* ok */ } });
+// ───── Token System ─────
 
-  it('no password file returns false', () => assert.equal(handleAuthHasPassword(pwdPath), false));
-  it('existing password returns true', () => {
-    setPasswordHash(pwdPath, hashBcrypt('secret'));
-    assert.equal(handleAuthHasPassword(pwdPath), true);
+describe('Session Token (signToken / verifyToken)', () => {
+  it('signs and verifies a valid token', () => {
+    const expiry = Date.now() + 3600000;
+    const token = signToken(1, expiry);
+    const userId = verifyToken(token);
+    assert.equal(userId, 1);
   });
-  it('corrupted JSON returns corrupt flag', () => {
-    fs.writeFileSync(pwdPath, 'not-json');
-    const r = handleAuthHasPassword(pwdPath);
-    assert.equal(r.corrupt, true);
+
+  it('rejects token with tampered payload', () => {
+    const expiry = Date.now() + 3600000;
+    const token = signToken(1, expiry);
+    const parts = token.split(':');
+    parts[0] = '2';
+    const tampered = parts.join(':');
+    assert.equal(verifyToken(tampered), null);
   });
-  it('non-string hash returns corrupt flag', () => {
-    fs.writeFileSync(pwdPath, '{"hash":12345}');
-    const r = handleAuthHasPassword(pwdPath);
-    assert.equal(r.corrupt, true);
+
+  it('rejects expired token', () => {
+    const token = signToken(1, Date.now() - 1000);
+    assert.equal(verifyToken(token), null);
+  });
+
+  it('rejects null token', () => assert.equal(verifyToken(null), null));
+  it('rejects undefined token', () => assert.equal(verifyToken(undefined), null));
+  it('rejects empty token', () => assert.equal(verifyToken(''), null));
+  it('rejects malformed token', () => assert.equal(verifyToken('abc'), null));
+  it('rejects token with non-numeric expiry', () => {
+    const token = '1:abc:' + crypto.createHmac('sha256', MASTER_KEY).update('1:abc').digest('hex');
+    assert.equal(verifyToken(token), null);
   });
 });
 
-describe('IPC: auth:setPassword', () => {
-  before(() => { testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'auth-set-')); pwdPath = path.join(testDir, 'password.json'); });
-  after(() => { try { fs.rmSync(testDir, { recursive: true, force: true }); } catch (e) { /* ok */ } });
+// ───── Role-Based Access ─────
 
-  it('valid password returns ok', () => {
-    setPasswordHash(pwdPath, hashBcrypt('existing'));
-    assert.equal(handleAuthSetPassword(pwdPath, 'goodpwd123').ok, true);
+describe('Role-Based Navigation Access', () => {
+  it('admin can access settings', () => assert.equal(canAccess('admin', 'settings'), true));
+  it('senior_lawyer cannot access settings', () => assert.equal(canAccess('senior_lawyer', 'settings'), false));
+  it('junior_lawyer cannot access reports', () => assert.equal(canAccess('junior_lawyer', 'reports'), false));
+  it('assistant cannot access ai', () => assert.equal(canAccess('assistant', 'ai'), false));
+  it('intern cannot access calendar', () => assert.equal(canAccess('intern', 'calendar'), false));
+  it('external cannot access tasks', () => assert.equal(canAccess('external', 'tasks'), false));
+  it('all roles can access dashboard', () => {
+    const roles = ['admin','senior_lawyer','junior_lawyer','assistant','intern','external'];
+    roles.forEach(r => assert.equal(canAccess(r, 'dashboard'), true));
   });
-  it('empty password returns error', () => assert.equal(handleAuthSetPassword(pwdPath, '').ok, false));
-  it('2-char password returns error', () => assert.equal(handleAuthSetPassword(pwdPath, 'ab').ok, false));
-  it('number password returns error', () => assert.equal(handleAuthSetPassword(pwdPath, 12345).ok, false));
-  it('null password returns error', () => assert.equal(handleAuthSetPassword(pwdPath, null).ok, false));
-  it('corrupted file returns error', () => {
-    fs.writeFileSync(pwdPath, 'corrupted');
-    const r = handleAuthSetPassword(pwdPath, 'abcd1234');
-    assert.equal(r.ok, false);
-    assert.equal(r.corrupt, true);
+  it('admin can access all sections', () => {
+    const sections = ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support','settings'];
+    sections.forEach(s => assert.equal(canAccess('admin', s), true));
   });
-  it('stored hash is bcrypt after valid setPassword', () => {
-    setPasswordHash(pwdPath, hashBcrypt('reset'));
-    assert.equal(isBcryptHash(getPasswordHash(pwdPath)), true);
-  });
-  it('stored hash verifies correctly', () => {
-    assert.equal(bcrypt.compareSync('reset', getPasswordHash(pwdPath)), true);
-  });
-});
-
-describe('IPC: auth:login', () => {
-  before(() => { testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'auth-login-')); pwdPath = path.join(testDir, 'password.json'); });
-  after(() => { try { fs.rmSync(testDir, { recursive: true, force: true }); } catch (e) { /* ok */ } });
-
-  it('correct password logs in', () => {
-    setPasswordHash(pwdPath, hashBcrypt('secret123'));
-    assert.deepEqual(handleAuthLogin(pwdPath, 'secret123'), { ok: true });
-  });
-  it('wrong password returns error', () => {
-    setPasswordHash(pwdPath, hashBcrypt('secret123'));
-    assert.equal(handleAuthLogin(pwdPath, 'wrongpwd').ok, false);
-  });
-  it('empty password returns error', () => assert.equal(handleAuthLogin(pwdPath, '').ok, false));
-  it('null password returns error', () => assert.equal(handleAuthLogin(pwdPath, null).ok, false));
-  it('undefined password returns error', () => assert.equal(handleAuthLogin(pwdPath, undefined).ok, false));
-  it('no password file returns firstTime', () => {
-    try { fs.unlinkSync(pwdPath); } catch (e) { /* ok */ }
-    assert.deepEqual(handleAuthLogin(pwdPath, 'anything'), { ok: true, firstTime: true });
-  });
-  it('corrupted JSON returns corrupt flag', () => {
-    fs.writeFileSync(pwdPath, '{broken');
-    assert.equal(handleAuthLogin(pwdPath, 'anything').corrupt, true);
-  });
-  it('null hash returns corrupt flag', () => {
-    fs.writeFileSync(pwdPath, '{"hash":null}');
-    assert.equal(handleAuthLogin(pwdPath, 'anything').corrupt, true);
-  });
-});
-
-describe('IPC: auth:hashPassword', () => {
-  it('valid password returns bcrypt hash', () => {
-    const r = handleAuthHashPassword('mysecurepwd');
-    assert.equal(r.ok, true);
-    assert.equal(isBcryptHash(r.hash), true);
-  });
-  it('empty password returns error', () => assert.equal(handleAuthHashPassword('').ok, false));
-  it('short password returns error', () => assert.equal(handleAuthHashPassword('ab').ok, false));
-  it('null returns error', () => assert.equal(handleAuthHashPassword(null).ok, false));
-});
-
-describe('IPC: auth:login — SHA256 to bcrypt migration', () => {
-  before(() => { testDir = fs.mkdtempSync(path.join(os.tmpdir(), 'auth-migrate-')); pwdPath = path.join(testDir, 'password.json'); });
-  after(() => { try { fs.rmSync(testDir, { recursive: true, force: true }); } catch (e) { /* ok */ } });
-
-  it('migrates SHA256 hash to bcrypt on successful login', () => {
-    const sha256Hash = hashSHA256('oldstyle');
-    setPasswordHash(pwdPath, sha256Hash);
-    assert.equal(isSHA256Hash(getPasswordHash(pwdPath)), true);
-    assert.deepEqual(handleAuthLogin(pwdPath, 'oldstyle'), { ok: true });
-    const storedAfter = getPasswordHash(pwdPath);
-    assert.equal(isBcryptHash(storedAfter), true);
-    assert.equal(bcrypt.compareSync('oldstyle', storedAfter), true);
-  });
+  it('unknown role falls back to admin access', () => assert.equal(canAccess('unknown_role', 'settings'), true));
 });

@@ -56,13 +56,15 @@ A.showEventForm = async function(editData) {
   `, async () => {
     const title = document.getElementById('fEventTitle').value.trim();
     if (!title) { A.showToast(_t('eventTitleRequired'), 'error'); return; }
+    const date = document.getElementById('fEventDate').value;
+    if (!date) { A.showToast(_t('eventDateRequired'), 'error'); return; }
     const data = {
       title,
       case_id: parseInt(document.getElementById('fEventCase').value) || null,
       client_id: parseInt(document.getElementById('fEventClient').value) || null,
       type: document.getElementById('fEventType').value,
       status: document.getElementById('fEventStatus').value,
-      date: document.getElementById('fEventDate').value,
+      date: date,
       time: document.getElementById('fEventTime').value || null,
       end_time: document.getElementById('fEventEndTime').value || null,
       court: document.getElementById('fEventCourt').value || null,
@@ -78,6 +80,7 @@ A.showEventForm = async function(editData) {
         await A.mutate('events:update', editData.id, data);
       } else {
         const id = await A.mutate('events:add', data);
+        if (!id || (typeof id === 'object' && id.error)) { A.showToast(_t('eventSaveFailed'), 'error'); return; }
         if (data.recurring_type !== 'none') {
           const numRecur = 4;
           const interval = { daily: 1, weekly: 7, monthly: 30, yearly: 365 }[data.recurring_type] || 7;
@@ -123,13 +126,13 @@ A.openEventDetail = async function(eventId) {
       ${e.room ? `<div class="ws-info-row"><span class="ws-info-label">${_t('eventRoomLabel')}</span><span class="ws-info-value">${esc(e.room)}</span></div>` : ''}
     </div>
     <div>
-      <div class="ws-info-card" style="margin-bottom:var(--space-4);">
+      <div class="ws-info-card" style="margin-bottom:var(--spacing-3);">
         <h4>${_t('eventLinkLabel')}</h4>
-        <div class="ws-info-row"><span class="ws-info-label">${_t('eventCaseLabel')}</span><span class="ws-info-value" style="cursor:pointer;color:var(--navy);" onclick="navigateTo('cases');setTimeout(()=>openCaseDetail(${esc(e.case_id)}),200)">${esc(e.case_number || '—')}</span></div>
+        <div class="ws-info-row"><span class="ws-info-label">${_t('eventCaseLabel')}</span><span class="ws-info-value" style="cursor:pointer;color:var(--foreground);" onclick="navigateTo('cases');setTimeout(()=>openCaseDetail(${esc(e.case_id)}),200)">${esc(e.case_number || '—')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">${_t('eventClientLabel')}</span><span class="ws-info-value">${esc(e.client_name || '—')}</span></div>
       </div>
-      ${e.notes ? `<div class="ws-info-card" style="margin-bottom:var(--space-4);"><h4>${_t('eventNotesHeading')}</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.notes)}</p></div>` : ''}
-      ${e.outcome ? `<div class="ws-info-card"><h4>${_t('eventOutcomeHeading')}</h4><p style="font-size:var(--font-size-xs);color:var(--gray-600);line-height:1.6;">${esc(e.outcome)}</p></div>` : ''}
+      ${e.notes ? `<div class="ws-info-card" style="margin-bottom:var(--spacing-3);"><h4>${_t('eventNotesHeading')}</h4><p style="font-size:var(--type-caption);color:var(--foreground);line-height:1.6;">${esc(e.notes)}</p></div>` : ''}
+      ${e.outcome ? `<div class="ws-info-card"><h4>${_t('eventOutcomeHeading')}</h4><p style="font-size:var(--type-caption);color:var(--foreground);line-height:1.6;">${esc(e.outcome)}</p></div>` : ''}
     </div>
   `);
   editBtn.onclick = () => { overlay.style.display = 'none'; A.showEventForm(e); };
@@ -177,8 +180,7 @@ A.initCalendar = function() {
   document.getElementById('addHearingBtn').addEventListener('click', () => A.showEventForm());
   document.getElementById('addEventBtn').addEventListener('click', () => A.showEventForm());
 
-  document.getElementById('eventEditBtn').addEventListener('click', () => {});
-  document.getElementById('eventDeleteBtn').addEventListener('click', () => {});
+  // Edit/Delete use onclick from openEventDetail – no addEventListener needed here
 };
 
 window.switchCalView = A.switchCalView;

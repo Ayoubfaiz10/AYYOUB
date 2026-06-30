@@ -231,10 +231,10 @@ A.initCommandPalette = function() {
 
     // Empty state
     if (!hasQuery && !recent.length && !createItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdEmptyTitle') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdEmptyDesc') + '</p></div>';
+      return '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdEmptyTitle') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdEmptyDesc') + '</p></div>';
     }
     if (hasQuery && !searchResults.length && !navItems.length && !createItems.length && !quickItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--gray-300);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdNoResults').replace('{q}', '<strong style="color:var(--gray-400);">' + A.escapeHtml(query) + '</strong>') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdTryDifferent') + '</p></div>';
+      return '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdNoResults').replace('{q}', '<strong style="color:var(--muted-foreground);">' + A.escapeHtml(query) + '</strong>') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdTryDifferent') + '</p></div>';
     }
 
     const esc = A.escapeHtml;
@@ -250,7 +250,7 @@ A.initCommandPalette = function() {
       recent.forEach(r => {
         const type = r.type || 'case';
         h += `<div class="cmd-item" data-action="${actionMap[type] || 'case'}" data-id="${r.id}" data-label="${esc(r.label)}" data-sub="${esc(r.sub)}" data-section="${esc(r.nav)}">
-          <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--navy);"><i class="${groupIcons[type] || 'ri-history-line'}"></i></div>
+          <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--foreground);"><i class="${groupIcons[type] || 'ri-history-line'}"></i></div>
           <div class="cmd-item-text"><div class="cmd-item-title">${esc(r.label)}</div><div class="cmd-item-sub">${esc(r.sub)}</div></div>
           <span class="cmd-item-kbd" style="opacity:0.4;">⌃${r.key ? r.key.split('_')[0] : ''}</span>
         </div>`;
@@ -262,7 +262,7 @@ A.initCommandPalette = function() {
       h += '<div class="cmd-category">' + _t('cmdNavCategory') + '</div>';
       navItems.forEach(a => {
         h += `<div class="cmd-item" data-action="nav" data-section="${a.nav}">
-          <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--navy);"><i class="${a.icon}"></i></div>
+          <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--foreground);"><i class="${a.icon}"></i></div>
           <div class="cmd-item-text"><div class="cmd-item-title">${esc(a.text)}</div><div class="cmd-item-sub">${esc(a.sub)}</div></div>
           ${a.kbd ? `<span class="cmd-item-kbd">${a.kbd}</span>` : ''}
         </div>`;
@@ -277,7 +277,7 @@ A.initCommandPalette = function() {
         h += '<div class="cmd-category">' + (groupLabels[type] || type) + '</div>';
         groups[type].slice(0, 4).forEach(item => {
           h += `<div class="cmd-item" data-action="${actionMap[type] || 'case'}" data-id="${item.id}" data-label="${esc(item.label)}" data-sub="${esc(item.sub)}" data-section="${esc(item.nav)}">
-            <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--navy);"><i class="${groupIcons[type] || 'ri-search-line'}"></i></div>
+            <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--foreground);"><i class="${groupIcons[type] || 'ri-search-line'}"></i></div>
             <div class="cmd-item-text"><div class="cmd-item-title">${esc(item.label)}</div><div class="cmd-item-sub">${esc(item.sub)}</div></div>
           </div>`;
         });
@@ -398,7 +398,7 @@ A.initAdvancedSearch = function() {
       const groups = {};
       items.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
       Object.keys(groups).forEach(type => {
-        html += `<h4 style="margin:12px 0 8px;font-size:13px;color:var(--gray-500);">${groupLabels[type] || type} (${groups[type].length})</h4>`;
+        html += `<h4 style="margin:12px 0 8px;font-size:13px;color:var(--muted-foreground);">${groupLabels[type] || type} (${groups[type].length})</h4>`;
         groups[type].forEach(item => {
           html += `<div class="dash-item" style="cursor:pointer;" onclick="A.navigateTo('${esc(item.nav)}')"><div class="dash-item-body"><div class="dash-item-title">${hl(item.label)}</div><div class="dash-item-sub">${hl(item.sub)}</div></div></div>`;
         });

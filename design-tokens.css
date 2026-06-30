@@ -1,4 +1,104 @@
 :root {
+  color-scheme: light;
+
+  /* ══════════════════════════════════════════════
+     PHASE 1 — Design System Tokens
+     ══════════════════════════════════════════════ */
+
+  /* ── Navy Palette ── */
+  --navy-50: #E8EDF2;
+  --navy-100: #C5D0DE;
+  --navy-200: #9EAFBF;
+  --navy-300: #778BA0;
+  --navy-400: #556C82;
+  --navy-500: #3A5068;
+  --navy-600: #2A3A4C;
+  --navy-700: #1E2A38;
+  --navy-800: #151E28;
+  --navy-900: #0D131A;
+
+  /* ── Gold Palette ── */
+  --gold-50: #FDF8ED;
+  --gold-100: #F7EDD0;
+  --gold-200: #EFDFAE;
+  --gold-300: #E5CE87;
+  --gold-400: #D9BA62;
+  --gold-500: #C6A15B;
+  --gold-600: #A8883E;
+  --gold-700: #8B6F30;
+
+  /* ── Extended Neutrals ── */
+  --gray-900: #171F2A;
+  --gray-950: #0D141C;
+
+  /* ── Surface Ladder (Linear-inspired) ── */
+  --surface-canvas: #F8F8F7;
+  --surface-raised: #FFFFFF;
+  --surface-elevated: #FFFFFF;
+  --surface-modal: #FFFFFF;
+  --surface-popover: #FFFFFF;
+  --surface-sidebar: var(--navy-700);
+
+  /* ── Semantic Aliases (shadcn/ui-inspired) ── */
+  --background: var(--surface-canvas);
+  --foreground: var(--gray-800);
+  --card: var(--surface-raised);
+  --card-foreground: var(--gray-800);
+  --primary: var(--gold-500);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-700);
+  --muted: var(--gray-50);
+  --muted-foreground: var(--gray-400);
+  --destructive: #D94A4A;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--gray-200);
+  --input: var(--gray-200);
+  --ring: rgba(198, 161, 91, 0.25);
+
+  /* ── Typography Scale (8-level, --type- prefix) ── */
+  --type-caption: 11px;
+  --type-small: 12px;
+  --type-body: 13px;
+  --type-body-large: 14px;
+  --type-subtitle: 15px;
+  --type-title: 18px;
+  --type-heading: 22px;
+  --type-display: 28px;
+
+  /* ── Spacing (4px base) ── */
+  --spacing-px: 1px;
+  --spacing-0-5: 2px;
+  --spacing-1: 4px;
+  --spacing-1-5: 6px;
+  --spacing-2: 8px;
+  --spacing-2-5: 10px;
+  --spacing-3: 12px;
+  --spacing-3-5: 14px;
+  --spacing-4: 16px;
+  --spacing-5: 20px;
+  --spacing-6: 24px;
+  --spacing-7: 28px;
+  --spacing-8: 32px;
+  --spacing-9: 36px;
+  --spacing-10: 40px;
+  --spacing-11: 44px;
+  --spacing-12: 48px;
+  --spacing-14: 56px;
+  --spacing-16: 64px;
+  --spacing-20: 80px;
+  --spacing-24: 96px;
+
+  /* ── Shadow Scale (extended) ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.02), 0 1px 1px rgba(0, 0, 0, 0.02);
+
+  /* ── Focus Ring ── */
+  --focus-ring-color: rgba(198, 161, 91, 0.25);
+  --focus-ring: 0 0 0 2px var(--focus-ring-color);
+  --focus-ring-offset: 2px;
+
+  /* ────────────────────────────────────────────── */
+
   /* ─── Colors ─── */
   --bg: #F8F8F7;
   --bg-alt: #F0F0EE;
@@ -235,6 +335,41 @@
 
 /* ─── Dark Mode ─── */
 .dark-mode {
+  color-scheme: dark;
+
+  /* ── Extended Neutrals (dark) ── */
+  --gray-900: #FCFCFD;
+  --gray-950: #FFFFFF;
+
+  /* ── Surface Ladder (dark) ── */
+  --surface-canvas: #111827;
+  --surface-raised: #1A2332;
+  --surface-elevated: #1F2937;
+  --surface-modal: #1F2937;
+  --surface-popover: #1F2937;
+  --surface-sidebar: #0F172A;
+
+  /* ── Semantic Aliases (dark) ── */
+  --background: var(--surface-canvas);
+  --foreground: var(--gray-600);
+  --card: var(--surface-raised);
+  --card-foreground: var(--gray-600);
+  --primary: var(--gold-500);
+  --primary-foreground: #FFFFFF;
+  --secondary: var(--gray-100);
+  --secondary-foreground: var(--gray-600);
+  --muted: var(--gray-50);
+  --muted-foreground: var(--gray-400);
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--gray-200);
+  --input: var(--gray-200);
+  --ring: rgba(198, 161, 91, 0.35);
+  --focus-ring-color: rgba(198, 161, 91, 0.35);
+
+  /* ── Shadows (dark) ── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.1);
+
   --bg: #111827;
   --bg-alt: #1A2332;
   --white: #1F2937;
@@ -270,25 +405,25 @@
 }
 
 /* ─── Phase 11/12 dark mode additions ─── */
-.dark-mode .cmd-palette { background: var(--white); }
-.dark-mode .cmd-search { border-bottom-color: var(--gray-100); }
-.dark-mode .cmd-search input { color: var(--gray-700); }
-.dark-mode .cmd-search input::placeholder { color: var(--gray-300); }
-.dark-mode .cmd-item:hover, .dark-mode .cmd-item.active { background: var(--gray-50); }
-.dark-mode .cmd-item-title { color: var(--gray-700); }
-.dark-mode .cmd-item-sub { color: var(--gray-400); }
-.dark-mode .cmd-item-kbd { background: var(--gray-100); color: var(--gray-400); }
-.dark-mode .cmd-footer { border-top-color: var(--gray-100); color: var(--gray-300); }
-.dark-mode .cmd-category { color: var(--gray-300); }
-.dark-mode .cmd-results::-webkit-scrollbar-track { background: var(--white); }
-.dark-mode .cmd-results::-webkit-scrollbar-thumb { background: var(--gray-100); }
+.dark-mode .cmd-palette { background: var(--card); }
+.dark-mode .cmd-search { border-bottom-color: var(--border); }
+.dark-mode .cmd-search input { color: var(--foreground); }
+.dark-mode .cmd-search input::placeholder { color: var(--muted-foreground); }
+.dark-mode .cmd-item:hover, .dark-mode .cmd-item.active { background: var(--muted); }
+.dark-mode .cmd-item-title { color: var(--foreground); }
+.dark-mode .cmd-item-sub { color: var(--muted-foreground); }
+.dark-mode .cmd-item-kbd { background: var(--muted); color: var(--muted-foreground); }
+.dark-mode .cmd-footer { border-top-color: var(--border); color: var(--muted-foreground); }
+.dark-mode .cmd-category { color: var(--muted-foreground); }
+.dark-mode .cmd-results::-webkit-scrollbar-track { background: var(--card); }
+.dark-mode .cmd-results::-webkit-scrollbar-thumb { background: var(--border); }
 .dark-mode .cmd-palette-overlay { background: var(--overlay-medium); }
 .dark-mode #startupOverlay { background: var(--bg); }
-.dark-mode .startup-name { color: var(--gray-700); }
-.dark-mode .onboarding-box { background: var(--white); }
-.dark-mode .onboarding-box h2 { color: var(--gray-700); }
-.dark-mode .onboarding-box p { color: var(--gray-400); }
-.dark-mode .toast { background: var(--gray-100); }
-.dark-mode .empty-state-v2 i { color: var(--gray-100); }
-.dark-mode .empty-state-v2 h3 { color: var(--gray-400); }
-.dark-mode .skeleton { background: linear-gradient(90deg, var(--gray-100) 25%, var(--gray-200) 50%, var(--gray-100) 75%); }
+.dark-mode .startup-name { color: var(--foreground); }
+.dark-mode .onboarding-box { background: var(--card); }
+.dark-mode .onboarding-box h2 { color: var(--foreground); }
+.dark-mode .onboarding-box p { color: var(--muted-foreground); }
+.dark-mode .toast { background: var(--muted); }
+.dark-mode .empty-state-v2 i { color: var(--border); }
+.dark-mode .empty-state-v2 h3 { color: var(--muted-foreground); }
+.dark-mode .skeleton { background: linear-gradient(90deg, var(--muted) 25%, var(--border) 50%, var(--muted) 75%); }

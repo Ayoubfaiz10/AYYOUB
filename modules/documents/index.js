@@ -33,7 +33,7 @@ A.openDocViewer = async function(docId) {
   document.getElementById('docVDate').textContent = doc.upload_date ? A.formatDate(doc.upload_date) : '—';
   document.getElementById('docVSize').textContent = doc.file_size || '—';
   document.getElementById('docVPreview').textContent = doc.filename;
-  A.safeSet(document.getElementById('docVTags'), esc => (doc.tags||'').split(',').filter(Boolean).map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`).join('') || `<span style="font-size:12px;color:var(--gray-400);">${_t('noTagsLabel')}</span>`);
+  A.safeSet(document.getElementById('docVTags'), esc => (doc.tags||'').split(',').filter(Boolean).map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`).join('') || `<span style="font-size:12px;color:var(--muted-foreground);">${_t('noTagsLabel')}</span>`);
   A.safeSetStatic(document.getElementById('docVVersions'), `<div class="doc-version-item current"><span class="doc-version-label">${_t('currentVersionLabel')}</span><span class="doc-version-date">${doc.upload_date ? A.formatDate(doc.upload_date) : ''}</span></div>`);
   document.getElementById('docVNotes').value = doc.notes || '';
 
@@ -84,8 +84,8 @@ A.initDocuments = function() {
       <div class="input-group"><label class="input-label">${_t('caseSelectLabel')}</label><select id="uploadDocCase" class="input"><option value="">${_t('selectCasePlaceholder')}</option></select></div>
       <div class="input-group"><label class="input-label">${_t('docTypeLabel')}</label><select id="uploadDocType" class="input"><option value="Contract">${_t('docTypeContract')}</option><option value="Jugement">${_t('docTypeJudgment')}</option><option value="Mémoire">${_t('docTypeResponse')}</option><option value="Preuve">${_t('docTypeEvidence')}</option><option value="Rapport">${_t('docTypeReport')}</option><option value="Facture">${_t('docTypeExpense')}</option><option value="Autre">${_t('docTypeOther')}</option></select></div>
       <div class="input-group"><label class="input-label">${_t('tagsLabel')}</label><input type="text" id="uploadDocTags" class="input" placeholder="${_t('docTagsPlaceholder')}"></div>
-      <button id="uploadSelectFileBtn" class="btn btn-primary" style="width:100%;margin-top:var(--space-3);padding:12px;"><i class="ri-upload-cloud-2-line"></i> ${_t('selectFileBtn')}</button>
-      <p style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:var(--space-2);">${_t('uploadFileLimit')}</p>
+      <button id="uploadSelectFileBtn" class="btn btn-primary" style="width:100%;margin-top:var(--spacing-2);padding:12px;"><i class="ri-upload-cloud-2-line"></i> ${_t('selectFileBtn')}</button>
+      <p style="font-size:11px;color:var(--muted-foreground);text-align:center;margin-top:var(--spacing-1-5);">${_t('uploadFileLimit')}</p>
     `, async () => { /* handled by upload button */ }, _t('cancel'));
     (async () => {
       const cases = await A.cachedInvoke('db:getAllCases');

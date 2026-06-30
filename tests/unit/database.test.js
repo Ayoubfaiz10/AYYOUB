@@ -38,7 +38,7 @@ describe('Database Schema', () => {
     assert.ok(names.includes('case_permissions'));
     assert.ok(names.includes('activity_log'));
     assert.ok(names.includes('search_index'));
-    assert.equal(names.length, 23); // 17 business + 5 aux + 1 FTS4
+    assert.equal(names.length, 25); // 17 business + 5 aux + 1 FTS4 + 1 office_settings + 1 security_questions
   });
 
   it('seeds default admin user', () => {

@@ -30,6 +30,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Init all modules
   const safeInit = (fn) => { try { if (typeof fn === 'function') fn(); } catch (e) { console.error('Init error:', e); } };
   safeInit(A.initI18n);
+  safeInit(A.initLicenseUI);
   safeInit(A.initModal);
   safeInit(A.initNavigation);
   safeInit(A.initDarkMode);
@@ -53,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initSettings);
   safeInit(A.initSettingsData);
   safeInit(A.initNotifications);
+  safeInit(A.initProfile);
   safeInit(A.initSessionTimeout);
   safeInit(A.AutoSave ? A.AutoSave.init : null);
 
@@ -74,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!existing) {
         const badge = document.createElement('div');
         badge.className = 'topbar-user-badge';
-        badge.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;color:var(--gray-400);margin-right:var(--space-3);';
+        badge.style.cssText = 'display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted-foreground);margin-right:var(--spacing-2);';
         A.safeSetStatic(badge, `<i class="ri-user-3-line"></i> ${A.escapeHtml(user.name)} <span style="font-size:9px;color:var(--gold);">(${A.escapeHtml(user.role)})</span>`);
         document.querySelector('.topbar-search')?.after(badge);
       }
@@ -98,8 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // Start app
-  A.checkAuth();
+  // License check before auth
+  A.checkLicense().then(function() {
+    A.checkAuth();
+  });
   // Load search index after auth (preloads all data for instant local search)
   if (A.loadSearchIndex) setTimeout(() => A.loadSearchIndex(), 3000);
 });

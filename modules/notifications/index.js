@@ -18,6 +18,7 @@ A.loadNotifications = async function() {
 };
 
 A.initNotifications = function() {
+  document.getElementById('notifBtn')?.addEventListener('click', () => A.navigateTo('notifications'));
   document.getElementById('markAllReadBtn')?.addEventListener('click', () => {
     const container = document.getElementById('notificationsList');
     if (container) A.safeSetStatic(container, '<p class="empty-state">' + _t('notifNoNotifs') + '</p>');

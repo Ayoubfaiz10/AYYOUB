@@ -8,12 +8,14 @@ const cacheDeps = {
   'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClientNotes'],
   'db:getAllTasks': ['db:addTask', 'db:deleteTask', 'db:updateTask', 'db:toggleSubtask', 'db:deleteSubtask', 'db:addSubtask'],
   'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement'],
+  'db:getDashboardExtendedStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement', 'db:updateTask', 'events:add', 'events:update', 'events:delete', 'db:addProcedure', 'db:uploadDocument', 'db:deleteDocument'],
   'db:getChartData': ['db:addPaiement', 'db:addCase', 'db:deleteCase'],
   'db:getUpcomingDeadlines': ['db:addCase', 'db:addTask', 'db:updateTask'],
   'db:getUpcomingHearings': ['events:add', 'events:update', 'events:delete'],
   'db:getLogs': ['db:addLog'],
   'logger:getLogs': ['logger:log', 'logger:clear'],
   'db:getTodayProcedures': ['db:addProcedure'],
+  'db:getAllCommunications': ['db:addCommunication'],
   'db:getDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes'],
   'db:getAllDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes', 'db:selectAndUpload', 'db:addDocument', 'db:getDocuments'],
   'db:getProcedures': ['db:addProcedure'],
@@ -21,8 +23,7 @@ const cacheDeps = {
   'db:getBackupSettings': ['db:updateBackupSettings'],
   'db:getAlertSettings': ['db:updateAlertSettings'],
   'events:getAll': ['events:add', 'events:update', 'events:delete'],
-  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser'],
-  'db:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser'],
+  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser', 'auth:updateProfile'],
 };
 
 function invalidateCache(mutationChannel) {

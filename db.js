@@ -58,6 +58,7 @@ async function initDb() {
   db.run('CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT, email TEXT, address TEXT, notes TEXT, national_id TEXT, tags TEXT, status TEXT DEFAULT \'active\')');
   try { db.run("ALTER TABLE clients ADD COLUMN national_id TEXT"); } catch(e) {}
   try { db.run("ALTER TABLE clients ADD COLUMN tags TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE clients ADD COLUMN created_at TEXT"); } catch(e) {}
   try { db.run("ALTER TABLE clients ADD COLUMN status TEXT DEFAULT 'active'"); } catch(e) {}
   db.run('CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, case_number TEXT NOT NULL, title TEXT NOT NULL, client_name TEXT, client_id INTEGER, court TEXT, status TEXT DEFAULT \'active\', description TEXT, created_date TEXT DEFAULT (date(\'now\')), next_hearing TEXT, deadline_date TEXT, total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, expenses REAL DEFAULT 0, priority TEXT DEFAULT \'medium\', case_type TEXT DEFAULT \'مدني\', notes TEXT, archived INTEGER DEFAULT 0, honoraires_totaux REAL DEFAULT 0, access_level TEXT DEFAULT \'team\', FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)');
 
@@ -132,8 +133,23 @@ async function initDb() {
     avatar TEXT DEFAULT '', active INTEGER DEFAULT 1,
     last_login TEXT, created_at TEXT DEFAULT (datetime('now','localtime'))
   )`);
-  db.run(`INSERT OR IGNORE INTO users (id, name, email, password_hash, role, active) VALUES (1, 'المحامي المدير', 'admin@cabinet.ma', '', 'admin', 1)`);
+  db.run(`INSERT OR IGNORE INTO users (id, name, email, password_hash, role, active) VALUES (1, 'المحامي المدير', 'admin@cabinet.ma', '!disabled-' || hex(randomblob(16)), 'admin', 1)`);
   try { db.run("ALTER TABLE users ADD COLUMN last_login TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN phone TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN bar_number TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN city TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN specialties TEXT"); } catch(e) {}
+  try { db.run("ALTER TABLE users ADD COLUMN experience_years INTEGER DEFAULT 0"); } catch(e) {}
+  db.run('CREATE TABLE IF NOT EXISTS office_settings (key TEXT PRIMARY KEY, value TEXT)');
+  db.run(`CREATE TABLE IF NOT EXISTS security_questions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    question_index INTEGER NOT NULL,
+    question TEXT NOT NULL,
+    answer_hash TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE(user_id, question_index)
+  )`);
   db.run(`CREATE TABLE IF NOT EXISTS permissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL,
     permission TEXT NOT NULL, allowed INTEGER DEFAULT 1,
@@ -237,6 +253,28 @@ async function initDb() {
   });
 
   await saveDb();
+  try { db.run("DELETE FROM activity_log WHERE created_at < datetime('now', '-90 days')"); } catch (e) { /* ignore */ }
+}
+
+function safeJson(val, def) {
+  if (!val) return def || '[]';
+  try { JSON.parse(val); return val; } catch { return def || '[]'; }
+}
+
+/* ─── Async write queue: serializes saves without blocking ─── */
+let _dbWriteQueue = Promise.resolve();
+let _savePending = false;
+
+function queueSave() {
+  if (_savePending) return;
+  _savePending = true;
+  _dbWriteQueue = _dbWriteQueue.then(() => {
+    _savePending = false;
+    const err = saveDbSync();
+    if (err) throw new Error('DB write failed: ' + err.message);
+  }, () => {
+    _savePending = false;
+  });
 }
 
 /* ─── Synchronous save: guarantees durability after every mutation ─── */
@@ -318,25 +356,28 @@ function query(sql, params) {
       return obj;
     });
   } catch (err) {
-    console.error('SQL Query Error:', err, 'SQL:', sql);
+    console.error('SQL Query Error:', err, process.env.NODE_ENV !== 'production' ? 'SQL: ' + sql : '');
     return [];
   }
 }
 
+let _txCounter = 0;
+
 function mutate(sql, params) {
   db.run(sql, params ? params.map(v => v === undefined ? null : v) : []);
-  const err = saveDbSync();
-  if (err) throw new Error('DB write failed: ' + err.message);
+  if (!_txCounter) queueSave();
 }
 
 function transaction(fn) {
   try {
     db.run('BEGIN TRANSACTION');
+    _txCounter++;
     const result = fn();
-    db.run('COMMIT');
-    saveDbSync();
+    _txCounter--;
+    if (!_txCounter) { db.run('COMMIT'); queueSave(); }
     return result;
   } catch (err) {
+    _txCounter = 0;
     try { db.run('ROLLBACK'); } catch (e) { /* ignore rollback error */ }
     console.error('Transaction Error:', err);
     throw err;
@@ -478,10 +519,9 @@ function addClient(data) {
   const dup = findDuplicateClient(data);
   if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
   return transaction(() => {
-    mutate('INSERT INTO clients (name, phone, email, address, notes, national_id, tags) VALUES (?, ?, ?, ?, ?, ?, ?)', [data.name, data.phone, data.email, data.address, data.notes, data.national_id || '', data.tags || '']);
+    mutate('INSERT INTO clients (name, phone, email, address, notes, national_id, tags, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime(\'now\', \'localtime\'))', [data.name, data.phone, data.email, data.address, data.notes, data.national_id || '', data.tags || '']);
     const res = query('SELECT last_insert_rowid() as id');
     const id = res.length ? res[0].id : null;
-    addLog('add_client', `إضافة موكل ${data.name} @${id}`);
     if (id) mutate('UPDATE cases SET client_name = ? WHERE client_id = ?', [data.name, id]);
     return { id };
   });
@@ -505,7 +545,7 @@ function findDuplicateCase(caseNumber) {
 }
 
 function validateRef(table, id) {
-  if (!id) return true;
+  if (id == null) return true;
   const allowed = { cases: 'cases', clients: 'clients', tasks: 'tasks', events: 'events', documents: 'documents' };
   if (!allowed[table]) return false;
   try {
@@ -636,8 +676,8 @@ function addTask(data) {
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [data.title, data.description||'', data.priority||'medium', data.status||'todo',
      data.due_date||null, data.notes||'', data.case_id||null, data.client_id||null,
-     data.tags||'', data.assigned_to||'', data.attachments||'[]',
-     data.parent_id||null, data.depends_on||'[]', data.progress||0,
+     data.tags||'', data.assigned_to||'', safeJson(data.attachments, '[]'),
+     data.parent_id||null, safeJson(data.depends_on, '[]'), data.progress||0,
      data.time_tracked||0, data.workflow_id||null, data.template_id||null]);
   const res = query('SELECT last_insert_rowid() as id');
   addLog('add_task', `إضافة مهمة ${data.title}`);
@@ -752,7 +792,7 @@ function applyWorkflow(caseId, workflowId) {
 // Templates
 function getAllTemplates() { return query('SELECT * FROM task_templates ORDER BY name ASC'); }
 function addTemplate(data) {
-  mutate('INSERT INTO task_templates (name, description, tasks_json) VALUES (?, ?, ?)', [data.name, data.description||'', data.tasks_json||'[]']);
+  mutate('INSERT INTO task_templates (name, description, tasks_json) VALUES (?, ?, ?)', [data.name, data.description||'', safeJson(data.tasks_json, '[]')]);
   const res = query('SELECT last_insert_rowid() as id');
   return res.length ? res[0].id : null;
 }
@@ -793,11 +833,45 @@ function getDashboardStats() {
   return { ...base, casesByStatus, tasksByPriority };
 }
 
+function getDashboardExtendedStats() {
+  const totalCases = (query("SELECT COUNT(*) as c FROM cases")[0] || {}).c || 0;
+  const overdueTasks = (query("SELECT COUNT(*) as c FROM tasks WHERE due_date IS NOT NULL AND due_date < date('now') AND status NOT IN ('done','archived')")[0] || {}).c || 0;
+  const thisMonthHearings = (query("SELECT COUNT(*) as c FROM events WHERE type='hearing' AND status!='cancelled' AND strftime('%Y-%m',date)=strftime('%Y-%m','now')")[0] || {}).c || 0;
+  const opened = (query("SELECT COUNT(*) as c FROM cases WHERE created_date >= date('now','start of month')")[0] || {}).c || 0;
+  const closed = (query("SELECT COUNT(*) as c FROM cases WHERE (archived=1 OR status='closed') AND created_date >= date('now','start of month')")[0] || {}).c || 0;
+  const casesByType = query("SELECT case_type, COUNT(*) as count FROM cases WHERE case_type IS NOT NULL AND case_type!='' GROUP BY case_type ORDER BY count DESC");
+  const tasksByStatus = query("SELECT status, COUNT(*) as count FROM tasks GROUP BY status");
+  const paymentByMethod = query("SELECT mode_paiement, COUNT(*) as count, SUM(montant) as total FROM paiements GROUP BY mode_paiement ORDER BY total DESC");
+  const monthlyRevenue = query("SELECT strftime('%m',date) as month, SUM(montant) as total FROM paiements WHERE date >= date('now','-11 months') GROUP BY strftime('%m',date) ORDER BY month");
+  const docsByType = query("SELECT doc_type, COUNT(*) as count FROM documents GROUP BY doc_type ORDER BY count DESC");
+  const casesByCourt = query("SELECT court, COUNT(*) as count FROM cases WHERE court IS NOT NULL AND court!='' GROUP BY court ORDER BY count DESC LIMIT 5");
+  const totalPaid = (query("SELECT COALESCE(SUM(paid_fees),0) as c FROM cases")[0] || {}).c || 0;
+  const totalFees = (query("SELECT COALESCE(SUM(total_fees),0) as c FROM cases")[0] || {}).c || 0;
+  /* Trend data: compare current month with previous month */
+  const trend = {};
+  const lastMonthStart = "date('now','-1 month','start of month')";
+  const thisMonthStart = "date('now','start of month')";
+  trend.activeCasesNow = (query(`SELECT COUNT(*) as c FROM cases WHERE status='active'`)[0]||{}).c||0;
+  trend.activeCasesPrev = (query(`SELECT COUNT(*) as c FROM cases WHERE status='active' AND created_date < ${thisMonthStart}`)[0]||{}).c||0;
+  trend.clientsNow = (query(`SELECT COUNT(*) as c FROM clients`)[0]||{}).c||0;
+  trend.clientsPrev = (query(`SELECT COUNT(*) as c FROM clients WHERE id NOT IN (SELECT id FROM clients WHERE created_at >= ${thisMonthStart} AND created_at IS NOT NULL)`)[0]||{}).c||0;
+  trend.hearingsNow = thisMonthHearings;
+  trend.hearingsPrev = (query(`SELECT COUNT(*) as c FROM events WHERE type='hearing' AND status!='cancelled' AND strftime('%Y-%m',date)=strftime('%Y-%m',date('now','-1 month'))`)[0]||{}).c||0;
+  trend.revenueNow = (query(`SELECT COALESCE(SUM(montant),0) as c FROM paiements WHERE strftime('%Y-%m',date)=strftime('%Y-%m','now')`)[0]||{}).c||0;
+  trend.revenuePrev = (query(`SELECT COALESCE(SUM(montant),0) as c FROM paiements WHERE strftime('%Y-%m',date)=strftime('%Y-%m',date('now','-1 month'))`)[0]||{}).c||0;
+  trend.tasksNow = (query(`SELECT COUNT(*) as c FROM tasks WHERE status='todo'`)[0]||{}).c||0;
+  trend.tasksPrev = (query(`SELECT COUNT(*) as c FROM tasks WHERE status='todo' AND created_at < ${thisMonthStart}`)[0]||{}).c||0;
+  trend.docsNow = (query(`SELECT COUNT(*) as c FROM documents`)[0]||{}).c||0;
+  trend.docsPrev = (query(`SELECT COUNT(*) as c FROM documents WHERE upload_date < ${thisMonthStart}`)[0]||{}).c||0;
+  return { totalCases, overdueTasks, thisMonthHearings, opened, closed, casesByType, tasksByStatus, paymentByMethod, monthlyRevenue, docsByType, casesByCourt, totalPaid, totalFees, trend };
+}
+
 function updateCaseStatus(id, status) {
   const VALID_STATUSES = ['active', 'pending', 'closed'];
-  if (!VALID_STATUSES.includes(status)) { console.warn(`حالة غير صالحة: ${status}`); return; }
+  if (!VALID_STATUSES.includes(status)) { console.warn(`حالة غير صالحة: ${status}`); return false; }
   mutate('UPDATE cases SET status = ? WHERE id = ?', [status, id]);
   addLog('update_case_status', `تغيير حالة القضية #${id} إلى ${status}`);
+  return true;
 }
 function updateCaseNotes(id, notes) { mutate('UPDATE cases SET notes = ? WHERE id = ?', [notes, id]); addLog('update_case_notes', `تحديث ملاحظات القضية #${id}`); syncSearchIndex(id); }
 
@@ -969,7 +1043,7 @@ function cleanOrphanedFiles() {
           if (remaining.length === 0) { fs.rmdirSync(fullPath); }
         } catch {}
       } else if (entry.isFile()) {
-        const resolved = path.resolve(fullPath);
+        const resolved = fs.realpathSync(path.resolve(fullPath));
         const allowedBase = path.resolve(STORAGE_DIR);
         const isInAllowedDir = resolved.startsWith(allowedBase + path.sep) || resolved === allowedBase;
         if (!docPaths.has(resolved) && isInAllowedDir) {
@@ -1037,7 +1111,9 @@ function globalSearch(queryTerm) {
   if (rankedIds.length) {
     const safeIds = rankedIds.filter(id => Number.isInteger(id) && id > 0);
     if (safeIds.length) {
-      cases = query(`SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${safeIds.join(',')}) ORDER BY CASE id ${safeIds.map((id, i) => `WHEN ${id} THEN ${i}`).join(' ')} END`);
+      const placeholders = safeIds.map(() => '?').join(',');
+      const orderCases = safeIds.map((_, i) => `WHEN ? THEN ${i}`).join(' ');
+      cases = query(`SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${placeholders}) ORDER BY CASE id ${orderCases} END`, [...safeIds, ...safeIds]);
     }
   }
 
@@ -1163,10 +1239,12 @@ function addLog(action, details, userId, userName) {
 }
 
 // Users & Permissions
-function getUsers() { return query('SELECT id, name, email, role, avatar, active, last_login FROM users ORDER BY id ASC'); }
-function getAllUsers() { return query('SELECT * FROM users ORDER BY id ASC'); }
+function getUsers() { return query('SELECT id, name, email, role, avatar, active, last_login, phone, bar_number, city, specialties, experience_years FROM users ORDER BY id ASC'); }
+function getAllUsers() { return query('SELECT id, name, email, role, avatar, active, last_login, phone, bar_number, city, specialties, experience_years FROM users ORDER BY id ASC'); }
 function addUser(data) {
-  mutate('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)', [data.name, data.email||'', data.password_hash||'', data.role||'assistant']);
+  const hash = data.password_hash || '';
+  if (hash && !/^\$2[aby]\$/.test(hash)) { addLog('add_user_failed', `محاولة إضافة مستخدم ${data.name} بهاش غير صالح`); return null; }
+  mutate('INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)', [data.name, data.email||'', hash, data.role||'assistant']);
   addLog('add_user', `إضافة مستخدم ${data.name}`, data._userId, data._userName);
   return query('SELECT last_insert_rowid() as id')[0]?.id;
 }
@@ -1176,7 +1254,31 @@ function updateUser(id, data) {
   if (fields.length) { vals.push(id); mutate(`UPDATE users SET ${fields.join(',')} WHERE id=?`, vals); }
 }
 function deleteUser(id) { mutate('DELETE FROM users WHERE id=?', [id]); }
+function getUserById(id) { const r = query('SELECT * FROM users WHERE id=?', [id]); return r.length ? r[0] : null; }
+function getPasswordHashForUser(id) { const r = query('SELECT password_hash FROM users WHERE id=?', [id]); return r.length ? r[0].password_hash : null; }
+function updateOwnProfile(id, data) {
+  const fields = []; const vals = [];
+  ['name','email','phone','bar_number','city','specialties','experience_years','avatar'].forEach(k => { if (data[k] !== undefined) { fields.push(`${k}=?`); vals.push(data[k]); } });
+  if (fields.length) { vals.push(id); mutate(`UPDATE users SET ${fields.join(',')} WHERE id=?`, vals); }
+}
 function getUserByEmail(email) { const r = query('SELECT * FROM users WHERE email=?', [email]); return r.length ? r[0] : null; }
+function getOfficeSetting(key) { const r = query('SELECT value FROM office_settings WHERE key=?', [key]); return r.length ? r[0].value : null; }
+function setOfficeSetting(key, value) { mutate('INSERT OR REPLACE INTO office_settings (key, value) VALUES (?, ?)', [key, value]); }
+function setSecurityQuestions(userId, questions) {
+  mutate('DELETE FROM security_questions WHERE user_id=?', [userId]);
+  for (var i = 0; i < questions.length; i++) {
+    var q = questions[i];
+    mutate('INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)',
+      [userId, i + 1, q.question, q.answerHash]);
+  }
+}
+function getSecurityQuestions(userId) {
+  return query('SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
+}
+function getSecurityAnswer(userId, questionIndex) {
+  var r = query('SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
+  return r.length ? r[0].answer_hash : null;
+}
 function checkPermission(role, permission) { const r = query('SELECT allowed FROM permissions WHERE role=? AND permission=?', [role, permission]); return r.length ? !!r[0].allowed : false; }
 function getPermissions(role) { return query('SELECT permission, allowed FROM permissions WHERE role=?', [role]).reduce((a, r) => { a[r.permission] = !!r.allowed; return a; }, {}); }
 function setPermission(role, permission, allowed) {
@@ -1196,9 +1298,9 @@ function getLogs(filters) {
   if (filters.dateFrom) { sql += ' AND created_at >= ?'; params.push(filters.dateFrom + ' 00:00:00'); }
   if (filters.dateTo) { sql += ' AND created_at <= ?'; params.push(filters.dateTo + ' 23:59:59'); }
   sql += ' ORDER BY created_at DESC';
-  const limit = filters.limit ? parseInt(filters.limit) : 500;
+  const limit = Math.min(Math.max(parseInt(filters.limit) || 500, 1), 10000);
   sql += ' LIMIT ?'; params.push(limit);
-  if (filters.offset) { sql += ' OFFSET ?'; params.push(parseInt(filters.offset)); }
+  if (filters.offset) { sql += ' OFFSET ?'; params.push(Math.max(parseInt(filters.offset), 0)); }
   return query(sql, params);
 }
 
@@ -1239,18 +1341,15 @@ function createBackup(reason) {
   const filepath = path.join(BACKUP_DIR, filename);
   fs.writeFileSync(filepath, buffer);
   mutate("UPDATE backup_settings SET last_backup_at = ? WHERE id = 1", [now.toISOString()]);
-  // Rotate only auto backups — never touch manual, legacy, or crash-recovery files
-  if (!isManual) {
-    const settings = getBackupSettings();
-    const maxKeep = settings.keep_count || 30;
-    const autoFiles = fs.readdirSync(BACKUP_DIR).filter(f => isAutoBackup(f))
-      .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
-      .sort((a, b) => b.mtime - a.mtime);
-    if (autoFiles.length > maxKeep) {
-      autoFiles.slice(maxKeep).forEach(f => {
-        try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
-      });
-    }
+  const settings = getBackupSettings();
+  const maxKeep = settings.keep_count || 30;
+  const allFiles = fs.readdirSync(BACKUP_DIR).filter(f => f.endsWith('.db') && (isAutoBackup(f) || isManualBackup(f)))
+    .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
+    .sort((a, b) => b.mtime - a.mtime);
+  if (allFiles.length > maxKeep) {
+    allFiles.slice(maxKeep).forEach(f => {
+      try { fs.unlinkSync(path.join(BACKUP_DIR, f.name)); } catch (e) { /* best effort */ }
+    });
   }
   return filename;
 }
@@ -1372,7 +1471,7 @@ function exportFullArchive() {
 module.exports = {
   initDb, saveDb, saveDbSync, getAllCases, addCase, deleteCase, getCasesByClient, getAllClients, addClient, deleteClient, updateClient, validateRef,
   getAllTasks, getTask, addTask, updateTask, deleteTask, getSubtasks, addSubtask, toggleSubtask, deleteSubtask, getComments, addComment, getAllWorkflows, getWorkflow, addWorkflow, deleteWorkflow, applyWorkflow,   getAllTemplates, addTemplate, deleteTemplate, applyTemplate, getTaskAnalytics,
-  getDashboardStats, STORAGE_DIR, getDocuments, getAllDocuments, addDocument, getDocument, updateDocument, deleteDocument,
+  getDashboardStats, getDashboardExtendedStats, STORAGE_DIR, getDocuments, getAllDocuments, addDocument, getDocument, updateDocument, deleteDocument,
   getAllEvents, getEvent, addEvent, updateEvent, deleteEvent, getEventsByCase,
   getProcedures, addProcedure,
   getPaiements, addPaiement,
@@ -1382,12 +1481,13 @@ module.exports = {
   getBackupSettings, updateBackupSettings,
   createBackup, addDocumentText, getDocumentText, getDocumentAnalysis, saveDocumentAnalysis,
   globalSearch, getSearchIndex, syncSearchIndex, rebuildSearchIndex,
-  addCommunication, getClientCommunications,
+  addCommunication, getClientCommunications, getAllCommunications,
   addLog, getLogs, listBackups, validateBackupFile, deleteBackupFile, restoreFromBackup, exportFullArchive,
   getChartData, updateCaseStatus, updateCaseNotes, archiveCase, unarchiveCase, autoArchive, updateHonorairesTotaux,
-  getUsers, getAllUsers, addUser, updateUser, deleteUser,
+  getUsers, getAllUsers, addUser, updateUser, deleteUser, getUserById, getPasswordHashForUser, updateOwnProfile,
+  setSecurityQuestions, getSecurityQuestions, getSecurityAnswer,
   integrityCheck, repairOrphans, transaction,
-  checkPermission, getPermissions,
+  checkPermission, getPermissions, getOfficeSetting, setOfficeSetting,
   getEventsByDate, getTomorrowHearings,
   isSent, markSent, cleanOldSentNotifications, cleanOrphanedFiles
 };

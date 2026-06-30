@@ -3,20 +3,20 @@ var A = window.App = window.App || {};
 A.renderTableView = function(list) {
   const body = document.getElementById('casesBody');
   A.safeSet(body, esc => list.length ? list.map(c => `<tr>
-    <td><strong style="cursor:pointer;color:var(--navy);" onclick="openCaseDetail(${c.id})">${esc(c.case_number)}</strong></td>
+    <td><strong style="cursor:pointer;color:var(--foreground);" onclick="openCaseDetail(${c.id})">${esc(c.case_number)}</strong></td>
     <td>${esc(c.title)}</td>
     <td>${esc(c.client_name || '-')}</td>
     <td>${esc(c.court || '-')}</td>
     <td>${esc(c.case_type || '-')}</td>
     <td><span class="badge badge-${c.status}">${A.state.statusLabels[c.status] || esc(c.status)}</span></td>
     <td>${c.priority ? `<span class="badge badge-${c.priority === 'high' ? 'danger' : c.priority === 'medium' ? 'gold' : 'gray'}">${esc(c.priority)}</span>` : '-'}</td>
-    <td style="font-size:11px;color:var(--gray-400);">${esc(c.created_date || '-')}</td>
+    <td style="font-size:11px;color:var(--muted-foreground);">${esc(c.created_date || '-')}</td>
     <td>
       <button class="btn-icon ws-open-btn" data-id="${c.id}"><i class="ri-eye-line"></i></button>
       <button class="btn-icon ws-archive-btn" data-id="${c.id}"><i class="ri-${c.archived ? 'history' : 'archive'}-line"></i></button>
       <button class="btn-icon ws-delete-btn" data-id="${c.id}"><i class="ri-delete-bin-line"></i></button>
     </td>
-  </tr>`).join('') : '<tr><td colspan="9"><div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>');
+  </tr>`).join('') : `<tr><td colspan="9"><div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>`);
   A.attachCaseActions();
 };
 
@@ -27,11 +27,11 @@ A.renderCardView = function(list) {
       <div><div class="case-card-number">${esc(c.case_number)}</div><div class="case-card-client">${esc(c.client_name || '-')}</div></div>
       <span class="badge badge-${c.status}">${A.state.statusLabels[c.status] || esc(c.status)}</span>
     </div>
-    <div class="case-card-body"><div style="font-size:var(--font-size-sm);color:var(--gray-700);font-weight:var(--font-weight-medium);margin-bottom:4px;">${esc(c.title)}</div></div>
+    <div class="case-card-body"><div style="font-size:var(--type-body);color:var(--foreground);font-weight:var(--font-weight-medium);margin-bottom:4px;">${esc(c.title)}</div></div>
     <div class="case-card-progress"><div class="case-card-progress-bar" style="width:${c.paid_fees && c.total_fees ? Math.min(100, (c.paid_fees/c.total_fees)*100) : 0}%;background:var(--gold);"></div></div>
     <div class="case-card-meta"><span>${esc(c.court || '')}</span><span class="badge badge-${c.priority === 'high' ? 'danger' : 'gold'}">${esc(c.priority || _t('defaultPriority'))}</span></div>
-    <div class="case-card-footer"><span style="font-size:11px;color:var(--gray-400);">${esc(c.created_date || '')}</span><i class="ri-arrow-left-s-line" style="color:var(--gray-300);"></i></div>
-  </div>`).join('') : '<div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div>');
+    <div class="case-card-footer"><span style="font-size:11px;color:var(--muted-foreground);">${esc(c.created_date || '')}</span><i class="ri-arrow-left-s-line" style="color:var(--muted-foreground);"></i></div>
+  </div>`).join('') : `<div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div>`);
 };
 
 A.renderKanbanView = function(list) {
@@ -45,7 +45,7 @@ A.renderKanbanView = function(list) {
       <div class="kanban-card-title" onclick="openCaseDetail(${c.id})">${esc(c.case_number)}</div>
       <div class="kanban-card-sub">${esc(c.title)}</div>
       <div class="kanban-card-footer">
-        <div class="kanban-card-priority" style="background:${c.priority === 'high' ? 'var(--danger)' : c.priority === 'medium' ? 'var(--gold)' : 'var(--gray-300)'};"></div>
+        <div class="kanban-card-priority" style="background:${c.priority === 'high' ? 'var(--destructive)' : c.priority === 'medium' ? 'var(--gold)' : 'var(--muted-foreground)'};"></div>
         <span class="kanban-card-client">${esc(c.client_name || '')}</span>
       </div>
     </div>`).join(''));
@@ -79,7 +79,7 @@ A.loadWsOverview = function(c) {
         <div class="ws-info-row"><span class="ws-info-label">${_t('openDateInfoLabel')}</span><span class="ws-info-value">${esc(c.created_date || '-')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">${_t('lastActivityInfoLabel')}</span><span class="ws-info-value">${esc(c.updated_at || c.created_date || '-')}</span></div>
       </div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('quickActionsCaseLabel')}</h4>
+      <div class="ws-info-card" style="margin-top:var(--spacing-3);"><h4>${_t('quickActionsCaseLabel')}</h4>
         <div class="ws-quick-actions">
           <button class="ws-qa-btn ws-add-doc"><i class="ri-file-add-line"></i> ${_t('docQuickActionLabel')}</button>
           <button class="ws-qa-btn ws-add-hearing"><i class="ri-scales-line"></i> ${_t('hearingQuickActionLabel')}</button>
@@ -94,7 +94,7 @@ A.loadWsOverview = function(c) {
     </div>
     <div>
       <div class="ws-info-card"><h4>${_t('recentDocsLabel')}</h4><div id="wsOverviewDocs"><p class="empty-state-sm">${_t('noRecentDocs')}</p></div></div>
-      <div class="ws-info-card" style="margin-top:var(--space-4);"><h4>${_t('financialSummaryLabel')}</h4>
+      <div class="ws-info-card" style="margin-top:var(--spacing-3);"><h4>${_t('financialSummaryLabel')}</h4>
         <div class="ws-info-row"><span class="ws-info-label">${_t('feesAmount')}</span><span class="ws-info-value">${total.toFixed(2)} ${_t('currencyMAD')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">${_t('paidAmount')}</span><span class="ws-info-value" style="color:var(--success);">${paid.toFixed(2)} ${_t('currencyMAD')}</span></div>
         <div class="ws-info-row"><span class="ws-info-label">${_t('remainingAmount')}</span><span class="ws-info-value" style="color:var(--gold);">${(total - paid).toFixed(2)} ${_t('currencyMAD')}</span></div>
@@ -113,10 +113,10 @@ A.loadWsOverviewDocs = async function() {
   if (!A.state.ipc) return;
   const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
   const el = document.getElementById('wsOverviewDocs');
-  A.safeSet(el, esc => docs.slice(0, 3).map(d => `<div class="dash-doc-item" style="padding:var(--space-1) 0;">
+  A.safeSet(el, esc => docs.slice(0, 3).map(d => `<div class="dash-doc-item" style="padding:var(--spacing-px) 0;">
     <div class="dash-doc-icon" style="width:24px;height:24px;font-size:12px;background:rgba(198,161,91,0.1);color:var(--gold);"><i class="ri-file-4-line"></i></div>
     <div class="dash-doc-body"><div class="dash-doc-name" style="font-size:12px;">${esc(d.filename)}</div></div>
-  </div>`).join('') || '<p class="empty-state-sm">${_t('noRecentDocs')}</p>');
+  </div>`).join('') || `<p class="empty-state-sm">${_t('noRecentDocs')}</p>`);
 };
 
 A.loadWsTimeline = async function() {
@@ -127,9 +127,9 @@ A.loadWsTimeline = async function() {
     const caseLogs = (logs||[]).filter(l => l.details && l.details.includes('#' + A.state.currentCaseId)).slice(0, 30);
     A.safeSet(el, esc => caseLogs.length ? `<div class="dash-timeline" style="padding:0 !important;">${caseLogs.map(l => `<div class="tl-item">
       <span class="tl-time">${l.created_at ? l.created_at.slice(11, 16) : ''}</span>
-      <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--gray-50);color:var(--gray-500);"><i class="ri-history-line"></i></div>
+      <div class="tl-icon" style="width:24px;height:24px;font-size:11px;background:var(--muted);color:var(--muted-foreground);"><i class="ri-history-line"></i></div>
       <div class="tl-body"><div class="tl-title" style="font-size:13px;">${esc(l.details)}</div><div class="tl-sub">${l.created_at ? l.created_at.slice(0, 10) : ''}</div></div>
-    </div>`).join('')}</div>` : '<p class="empty-state-sm" style="padding:40px;text-align:center;">${_t('noActivityRecorded')}</p>');
+    </div>`).join('')}</div>` : `<p class="empty-state-sm" style="padding:40px;text-align:center;">${_t('noActivityRecorded')}</p>`);
   } catch (e) { A.logError('loadWsTimeline', e); A.showError(el, _t('failedLoadTimeline'), () => A.loadWsTimeline()); }
 };
 
@@ -141,14 +141,14 @@ A.loadWsDocuments = async function() {
     A.safeSet(el, esc => `<div class="ws-docs-header">
       <select id="wsDocType" class="input input-sm" style="width:150px;">${[_t('docTypeOpening'),_t('docTypeResponse'),_t('docTypeEvidence'),_t('docTypeJudgment'),_t('docTypeContract'),_t('docTypeReport'),_t('docTypeOther')].map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select>
       <button id="wsUploadDocBtn" class="btn btn-primary btn-sm"><i class="ri-upload-2-line"></i> ${_t('uploadBtnLabel')}</button>
-      <span class="ws-doc-count" style="font-size:12px;color:var(--gray-400);">${_t('docCount').replace('{n}', docs.length)}</span>
+      <span class="ws-doc-count" style="font-size:12px;color:var(--muted-foreground);">${_t('docCount').replace('{n}', docs.length)}</span>
     </div>
     <div class="ws-docs-grid">${docs.length ? docs.map(d => `<div class="ws-doc-card">
       <i class="ri-file-4-line ws-doc-icon"></i>
       <div class="ws-doc-name">${esc(d.filename)}</div>
       <div class="ws-doc-meta">${esc(d.doc_type)} · ${d.upload_date ? d.upload_date.slice(0, 10) : ''}</div>
-      <button class="btn btn-sm btn-outline" onclick="wsAiSummarizeDoc(${d.id},'${esc(d.filename).replace(/'/g,'\\\'')}')" style="margin-top:var(--space-2);font-size:11px;"><i class="ri-robot-3-line"></i> ${_t('aiSummaryLabel')}</button>
-    </div>`).join('') : '<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">${_t('noDocsLabel')}</p>'}</div>`);
+      <button class="btn btn-sm btn-outline" onclick="wsAiSummarizeDoc(${d.id},'${esc(d.filename).replace(/'/g,'\\\'')}')" style="margin-top:var(--spacing-1-5);font-size:11px;"><i class="ri-robot-3-line"></i> ${_t('aiSummaryLabel')}</button>
+    </div>`).join('') : `<p class="empty-state-sm" style="grid-column:1/-1;text-align:center;padding:40px;">${_t('noDocsLabel')}</p>`}</div>`);
     document.getElementById('wsUploadDocBtn')?.addEventListener('click', () => {
       const input = document.getElementById('fileInput');
       input.onchange = async (e) => {
@@ -182,12 +182,12 @@ A.loadWsHearings = async function() {
     const hearings = (procs||[]).filter(p => p.type === 'Audience').sort((a, b) => b.date?.localeCompare(a.date));
     const today = new Date().toISOString().slice(0, 10);
     A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newHearingBtn')}</button></div>
-      <div style="margin-top:var(--space-4);">${hearings.length ? hearings.map(h => `<div class="tl-item">
+      <div style="margin-top:var(--spacing-3);">${hearings.length ? hearings.map(h => `<div class="tl-item">
         <span class="tl-time">${esc(A.formatDate(h.date))}</span>
-        <div class="tl-icon" style="width:28px;height:28px;background:${h.date >= today ? 'rgba(198,161,91,0.12)' : 'var(--gray-50)'};color:${h.date >= today ? 'var(--gold)' : 'var(--gray-400)'};"><i class="ri-scales-3-line"></i></div>
+        <div class="tl-icon" style="width:28px;height:28px;background:${h.date >= today ? 'rgba(198,161,91,0.12)' : 'var(--muted)'};color:${h.date >= today ? 'var(--gold)' : 'var(--muted-foreground)'};"><i class="ri-scales-3-line"></i></div>
         <div class="tl-body"><div class="tl-title">${esc(A.formatDate(h.date))}</div><div class="tl-sub">${esc(h.description || '')}</div></div>
         <span class="badge ${h.date >= today ? 'badge-active' : 'badge-closed'}">${h.date >= today ? _t('upcomingBadge') : _t('pastBadge')}</span>
-      </div>`).join('') : '<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noHearingsLabel')}</p>'}</div>`);
+      </div>`).join('') : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noHearingsLabel')}</p>`}</div>`);
     document.getElementById('wsAddHearingBtn')?.addEventListener('click', () => A.wsAddHearing());
   } catch (e) { A.logError('loadWsHearings', e); A.showError(el, _t('failedLoadHearings'), () => A.loadWsHearings()); }
 };
@@ -211,10 +211,10 @@ A.loadWsTasks = async function() {
     const tasks = all.filter(t => t.case_id === A.state.currentCaseId || (t.notes && t.notes.includes('#' + A.state.currentCaseId)));
     const todo = tasks.filter(t => t.status === 'todo'), inprog = tasks.filter(t => t.status === 'in_progress' || t.status === 'pending'), done = tasks.filter(t => t.status === 'done');
     A.safeSet(el, esc => `<div class="toolbar"><button id="wsAddTaskBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newTaskBtn')}</button></div>
-      <div class="ws-kanban-mini" style="margin-top:var(--space-4);">
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gray-400);"></div><span class="dash-mk-label">${_t('taskTodoLabel')}</span><span class="dash-mk-count">${todo.length}</span></div>${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--danger)' : 'var(--gold)'};"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">${_t('taskInProgressLabel')}</span><span class="dash-mk-count">${inprog.length}</span></div>${inprog.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--gold);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
-        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">${_t('taskCompletedLabel')}</span><span class="dash-mk-count">${done.length}</span></div>${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || '<div style="font-size:12px;color:var(--gray-300);padding:8px 0;">${_t('taskNoneLabel')}</div>'}</div>
+      <div class="ws-kanban-mini" style="margin-top:var(--spacing-3);">
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--border);"></div><span class="dash-mk-label">${_t('taskTodoLabel')}</span><span class="dash-mk-count">${todo.length}</span></div>${todo.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:${t.priority === 'high' ? 'var(--destructive)' : 'var(--gold)'};"></div>${esc(t.title)}</div>`).join('') || `<div style="font-size:12px;color:var(--muted-foreground);padding:8px 0;">${_t('taskNoneLabel')}</div>`}</div>
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--gold);"></div><span class="dash-mk-label">${_t('taskInProgressLabel')}</span><span class="dash-mk-count">${inprog.length}</span></div>${inprog.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--gold);"></div>${esc(t.title)}</div>`).join('') || `<div style="font-size:12px;color:var(--muted-foreground);padding:8px 0;">${_t('taskNoneLabel')}</div>`}</div>
+        <div><div class="dash-mk-col-header"><div class="dash-mk-dot" style="background:var(--success);"></div><span class="dash-mk-label">${_t('taskCompletedLabel')}</span><span class="dash-mk-count">${done.length}</span></div>${done.map(t => `<div class="dash-mk-item"><div class="dash-mk-priority" style="background:var(--success);"></div>${esc(t.title)}</div>`).join('') || `<div style="font-size:12px;color:var(--muted-foreground);padding:8px 0;">${_t('taskNoneLabel')}</div>`}</div>
       </div>`);
     document.getElementById('wsAddTaskBtn')?.addEventListener('click', () => A.wsAddTask());
   } catch (e) { A.logError('loadWsTasks', e); A.showError(el, _t('failedLoadTasksLabel'), () => A.loadWsTasks()); }
@@ -248,8 +248,8 @@ A.loadWsNotes = async function() {
     </div>
     <div class="ws-notes-area">
       <textarea id="wsNotesText" placeholder="${_t('notesPlaceholderText')}" class="input">${esc(c.notes || c.description || '')}</textarea>
-      <div style="display:flex;justify-content:space-between;margin-top:var(--space-2);">
-        <span style="font-size:11px;color:var(--gray-400);" id="wsNotesStatus"></span>
+      <div style="display:flex;justify-content:space-between;margin-top:var(--spacing-1-5);">
+        <span style="font-size:11px;color:var(--muted-foreground);" id="wsNotesStatus"></span>
         <button id="wsSaveNotesBtn" class="btn btn-primary btn-sm"><i class="ri-save-line"></i> ${_t('saveBtnLabel')}</button>
       </div>
     </div>`);
@@ -294,7 +294,7 @@ A.loadWsExpenses = async function(c) {
       <div class="ws-exp-card"><div class="ws-exp-number" style="color:var(--gold);">${(total - paid).toFixed(2)}</div><div class="ws-exp-label">${_t('remainingLabel')}</div></div>
     </div>
     <div class="toolbar"><button id="wsAddExpenseBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('addPaymentBtn')}</button></div>
-    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--gray-100);margin-top:var(--space-3);"><table class="table"><thead><tr><th>${_t('paymentDateLabel')}</th><th>${_t('paymentAmountLabel')}</th><th>${_t('paymentModeLabel')}</th><th>${_t('paymentNotesLabel')}</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : '<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>'}`);
+    ${paiements.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('paymentDateLabel')}</th><th>${_t('paymentAmountLabel')}</th><th>${_t('paymentModeLabel')}</th><th>${_t('paymentNotesLabel')}</th></tr></thead><tbody>${paiements.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`);
     document.getElementById('wsAddExpenseBtn')?.addEventListener('click', () => A.wsAddExpense());
   } catch (e) { A.logError('loadWsExpenses', e); A.showError(el, _t('failedLoadExpenses'), () => A.loadWsExpenses({ id: A.state.currentCaseId, total_fees: 0, expenses: 0 })); }
 };
@@ -359,7 +359,7 @@ A.addWsAIMessage = function(text, isUser) {
   const container = document.getElementById('wsAiMessages');
   if (!container) return;
   const div = document.createElement('div');
-  div.style.cssText = `text-align:${isUser ? 'left' : 'right'};padding:8px 12px;background:${isUser ? 'var(--navy)' : 'var(--gray-50)'};color:${isUser ? '#fff' : 'var(--gray-700)'};border-radius:var(--radius-md);margin-bottom:8px;font-size:13px;line-height:1.6;${!isUser ? 'white-space:pre-wrap;' : ''}`;
+  div.style.cssText = `text-align:${isUser ? 'left' : 'right'};padding:8px 12px;background:${isUser ? 'var(--primary)' : 'var(--muted)'};color:${isUser ? '#fff' : 'var(--foreground)'};border-radius:var(--rounded-md);margin-bottom:8px;font-size:13px;line-height:1.6;${!isUser ? 'white-space:pre-wrap;' : ''}`;
   div.textContent = text;
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
@@ -370,7 +370,7 @@ A.loadWsAI = function() {
   if (!el) return;
   A.safeSetStatic(el, `<div class="ws-ai-chat">
     <div class="ws-ai-messages" id="wsAiMessages">
-      <div style="text-align:center;padding:20px;color:var(--gray-400);font-size:13px;">${_t('aiContextualQuestion')}</div>
+      <div style="text-align:center;padding:20px;color:var(--muted-foreground);font-size:13px;">${_t('aiContextualQuestion')}</div>
     </div>
     <div class="ws-ai-input">
       <input type="text" id="wsAiInput" placeholder="${_t('aiInputPlaceholder')}" class="input" style="flex:1;">
@@ -383,7 +383,7 @@ A.loadWsAI = function() {
     A.addWsAIMessage(msg, true);
     input.value = '';
     const loadingEl = document.createElement('div');
-    loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--gray-400);font-size:12px;';
+    loadingEl.style.cssText = 'text-align:right;padding:8px 12px;color:var(--muted-foreground);font-size:12px;';
     loadingEl.textContent = _t('aiLoadingMsg');
     document.getElementById('wsAiMessages')?.appendChild(loadingEl);
     try {

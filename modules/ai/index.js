@@ -59,9 +59,11 @@ A.initAI = function() {
       if (config.hasKey) {
         A.state.aiConfigured = true;
         aiSetup.style.display = 'none';
+        document.getElementById('aiMessages') && (document.getElementById('aiMessages').innerHTML = '');
         aiChat.style.display = 'flex';
         selectAiProvider(provider);
         if (model) populateModels(provider, model);
+        A.updateModelBar();
       } else {
         selectAiProvider(provider);
         populateModels(provider, '');
@@ -79,7 +81,9 @@ A.initAI = function() {
     if (result && result.ok) {
       A.state.aiConfigured = true;
       aiSetup.style.display = 'none';
+      document.getElementById('aiMessages') && (document.getElementById('aiMessages').innerHTML = '');
       aiChat.style.display = 'flex';
+      A.updateModelBar();
     } else {
       A.showToast(result?.error || 'فشل حفظ مفتاح API', 'error');
     }
@@ -116,15 +120,57 @@ A.initAI = function() {
   aiInput.addEventListener('keydown', e => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); A.sendAiMessage(); }
   });
+  aiInput.addEventListener('input', () => A.autoResizeInput(aiInput));
 
   if (A.state.ipc) {
     const floatBtn = document.createElement('button');
     floatBtn.className = 'ai-float-btn';
     A.safeSetStatic(floatBtn, '<i class="ri-robot-3-line"></i>');
     floatBtn.title = 'المساعد الذكي (Ctrl+K)';
-    floatBtn.addEventListener('click', () => { A.navigateTo('ai'); });
+    floatBtn.addEventListener('click', () => { if (!floatBtn._dragging) A.navigateTo('ai'); });
+    // Restore saved position
+    try {
+      const pos = JSON.parse(localStorage.getItem('aiFloatPos'));
+      if (pos) { floatBtn.style.left = pos.x; floatBtn.style.bottom = pos.y; }
+    } catch {}
+    // Dragging
+    let startX, startY, origX, origY, moved;
+    floatBtn.addEventListener('mousedown', (e) => {
+      startX = e.clientX; startY = e.clientY;
+      origX = floatBtn.style.left; origY = floatBtn.style.bottom;
+      moved = false; floatBtn._dragging = false;
+      floatBtn.style.cursor = 'grabbing';
+      floatBtn.style.transition = 'none';
+      const onMove = (ev) => {
+        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
+        floatBtn.style.left = (parseInt(origX) || 24) + dx + 'px';
+        floatBtn.style.bottom = Math.max(10, (parseInt(origY) || 24) - dy) + 'px';
+      };
+      const onUp = () => {
+        floatBtn._dragging = moved;
+        floatBtn.style.cursor = 'grab';
+        floatBtn.style.transition = '';
+        localStorage.setItem('aiFloatPos', JSON.stringify({ x: floatBtn.style.left, y: floatBtn.style.bottom }));
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
     document.getElementById('app')?.appendChild(floatBtn);
   }
+};
+
+A.updateModelBar = function() {
+  const bar = document.getElementById('aiModelBar');
+  const label = document.getElementById('aiModelLabel');
+  if (!bar || !label) return;
+  const provider = A.state.aiProvider || 'groq';
+  const model = A.state.aiModel || 'llama-3.1-8b-instant';
+  const names = { groq: 'Groq', openai: 'OpenAI', anthropic: 'Anthropic', gemini: 'Gemini' };
+  label.textContent = `${names[provider] || provider} · ${model}`;
+  bar.style.display = 'flex';
 };
 
 A.setAiContext = function(type, id, label) {
@@ -136,7 +182,7 @@ A.setAiContext = function(type, id, label) {
     labelEl.textContent = `السياق: ${label}`;
   }
   A.navigateTo('ai');
-  const modeLabels = { case: '🧠 حلل هذه القضية', client: '👤 حلل هذا الموكل', document: '📄 حلل هذه الوثيقة', hearing: '🎯 جهز لهذه الجلسة' };
+  const modeLabels = { case: 'حلل هذه القضية', client: 'حلل هذا الموكل', document: 'حلل هذه الوثيقة', hearing: 'جهز لهذه الجلسة' };
   const input = document.getElementById('aiInput');
   if (input) input.placeholder = modeLabels[type] || 'اسأل المساعد الذكي...';
 };
@@ -159,39 +205,49 @@ A.sendAiMessage = async function() {
   if (!msg) return;
   A.state.isAISending = true;
   input.disabled = true;
-  A.showLoading('aiMessages');
+  const typingEl = A.showTyping();
   try {
     A.addAiMessage('user', msg);
     input.value = '';
-    A.addAiMessage('assistant', '...');
+    A.autoResizeInput(input);
     let res;
     if (A.state.aiContext) {
       res = await A.state.ipc.invoke('ai:askContextual', { mode: A.state.aiMode, message: msg, contextType: A.state.aiContext.type, contextId: A.state.aiContext.id });
     } else {
       res = await A.state.ipc.invoke('ai:ask', { mode: A.state.aiMode, message: msg });
     }
-    const msgs = document.getElementById('aiMessages');
-    if (msgs) {
-      if (msgs.lastChild && msgs.lastChild.querySelector('.ai-msg-bubble')?.textContent === '...') {
-        msgs.removeChild(msgs.lastChild);
-      }
-    }
+    if (typingEl && typingEl.parentNode) typingEl.remove();
     A.addAiMessage('assistant', res.friendlyError || res.text || 'عذراً، لم أتمكن من معالجة طلبك.');
   } catch (error) {
     A.logError('sendAiMessage', error);
-    const msgs = document.getElementById('aiMessages');
-    if (msgs) {
-      if (msgs.lastChild && msgs.lastChild.querySelector('.ai-msg-bubble')?.textContent === '...') {
-        msgs.removeChild(msgs.lastChild);
-      }
-    }
+    if (typingEl && typingEl.parentNode) typingEl.remove();
     A.addAiMessage('assistant', 'حدث خطأ في الاتصال بالمساعد الذكي. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
   } finally {
     A.state.isAISending = false;
     input.disabled = false;
     input.focus();
-    A.hideLoading('aiMessages');
   }
+};
+
+A.showTyping = function() {
+  const container = document.getElementById('aiMessages');
+  if (!container) return null;
+  const div = document.createElement('div');
+  div.className = 'ai-typing';
+  for (let i = 0; i < 3; i++) {
+    const dot = document.createElement('div');
+    dot.className = 'ai-typing-dot';
+    div.appendChild(dot);
+  }
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+  return div;
+};
+
+A.autoResizeInput = function(el) {
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 };
 
 A.addAiMessage = function(role, text) {
@@ -199,11 +255,37 @@ A.addAiMessage = function(role, text) {
   if (!container) return;
   const div = document.createElement('div');
   div.className = `ai-msg ai-msg-${role}`;
+  const avatar = document.createElement('div');
+  avatar.className = 'ai-msg-avatar';
+  avatar.innerHTML = role === 'user' ? '<i class="ri-user-3-line"></i>' : '<i class="ri-robot-3-line"></i>';
+  div.appendChild(avatar);
+  const body = document.createElement('div');
+  body.style.cssText = 'display:flex;flex-direction:column;';
   const bubble = document.createElement('div');
   bubble.className = 'ai-msg-bubble';
   bubble.textContent = text;
-  A.safeSetStatic(div, `<div class="ai-msg-avatar">${role === 'user' ? '👤' : '🤖'}</div>`);
-  div.appendChild(bubble);
+  body.appendChild(bubble);
+  const footer = document.createElement('div');
+  footer.className = 'ai-msg-footer';
+  const time = document.createElement('div');
+  time.className = 'ai-msg-time';
+  const now = new Date();
+  time.textContent = now.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit' });
+  footer.appendChild(time);
+  const copyBtn = document.createElement('button');
+  copyBtn.className = 'ai-msg-copy';
+  copyBtn.innerHTML = '<i class="ri-file-copy-line"></i>';
+  copyBtn.title = 'نسخ الرسالة';
+  copyBtn.addEventListener('click', function() {
+    navigator.clipboard.writeText(text).then(() => {
+      this.innerHTML = '<i class="ri-check-line"></i>';
+      this.classList.add('copied');
+      setTimeout(() => { this.innerHTML = '<i class="ri-file-copy-line"></i>'; this.classList.remove('copied'); }, 2000);
+    }).catch(() => {});
+  });
+  footer.appendChild(copyBtn);
+  body.appendChild(footer);
+  div.appendChild(body);
   container.appendChild(div);
   container.scrollTop = container.scrollHeight;
 };
@@ -215,8 +297,8 @@ A.loadSmartInsights = async function() {
   try {
     const data = await A.state.ipc.invoke('ai:getSmartInsights');
     if (data) {
-      A.safeSet(el, esc => `<div style="margin-bottom:var(--space-2);font-size:var(--font-size-xs);color:var(--gray-500);line-height:1.6;">${esc(data.summary)}</div>
-        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--space-2);padding:6px 0;border-bottom:1px solid var(--gray-50);font-size:var(--font-size-xs);color:var(--gray-600);"><i class="ri-information-line" style="color:var(--gold);font-size:14px;"></i>${esc(i)}</div>`).join('')}`);
+      A.safeSet(el, esc => `<div style="margin-bottom:var(--spacing-1-5);font-size:var(--type-caption);color:var(--muted-foreground);line-height:1.6;">${esc(data.summary)}</div>
+        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--spacing-1-5);padding:6px 0;border-bottom:1px solid var(--muted);font-size:var(--type-caption);color:var(--foreground);"><i class="ri-information-line" style="color:var(--gold);font-size:14px;"></i>${esc(i)}</div>`).join('')}`);
     }
   } catch (e) { A.logError('loadSmartInsights', e); el.textContent = '—'; }
 };
@@ -237,27 +319,27 @@ A.loadAI = async function() {
 
 A.analyzeDoc = async function(docId) {
   if (!A.state.ipc) return;
-  A.showModal('تحليل الوثيقة بالذكاء الاصطناعي', '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--gray-400);">جاري تحليل الوثيقة...</p></div>', null, 'إغلاق');
+  A.showModal('تحليل الوثيقة بالذكاء الاصطناعي', '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>', null, 'إغلاق');
   try {
     const result = await A.state.ipc.invoke('ai:analyzeDocument', { docId });
     const content = document.getElementById('docAnalysisContent');
     if (!content) return;
     if (result.error) {
-      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--danger);"><i class="ri-alert-line" style="font-size:32px;"></i><p>${A.escapeHtml(result.error)}</p></div>`;
+      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-alert-line" style="font-size:32px;"></i><p>${A.escapeHtml(result.error)}</p></div>`;
       return;
     }
-    const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--gray-400);">(من الذاكرة المخبأة)</span>' : '';
+    const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">(من الذاكرة المخبأة)</span>' : '';
     const html = result.analysis
-      .replace(/=== الخلاصة ===/g, '<h4 style="color:var(--navy);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>')
-      .replace(/=== النقاط الرئيسية ===/g, '<h4 style="color:var(--navy);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>')
-      .replace(/=== التوصية القانونية ===/g, '<h4 style="color:var(--navy);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/=== الخلاصة ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>')
+      .replace(/=== النقاط الرئيسية ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>')
+      .replace(/=== التوصية القانونية ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>')
+      .replace(/\*\*(.*?)\*\*/g, (_, m) => '<strong>' + A.escapeHtml(m) + '</strong>')
       .replace(/\n/g, '<br>');
-    content.innerHTML = `<div style="text-align:start;font-size:13px;line-height:1.8;color:var(--gray-600);max-height:400px;overflow-y:auto;">${html}</div><div style="text-align:left;margin-top:8px;">${cachedLabel}</div>`;
+    content.innerHTML = `<div style="text-align:start;font-size:13px;line-height:1.8;color:var(--foreground);max-height:400px;overflow-y:auto;">${html}</div><div style="text-align:left;margin-top:8px;">${cachedLabel}</div>`;
   } catch (e) {
     A.logError('analyzeDoc', e);
     const content = document.getElementById('docAnalysisContent');
-    if (content) content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--danger);"><i class="ri-error-warning-line" style="font-size:32px;"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
+    if (content) content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:32px;"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
   }
 };
 
