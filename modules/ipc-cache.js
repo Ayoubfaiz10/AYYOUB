@@ -1,14 +1,37 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 const CACHE_TTL = 30000;
 const MAX_CACHE_SIZE = 200;
 const readCache = new Map();
 const cacheDeps = {
-  'db:getAllCases': ['db:addCase', 'db:deleteCase', 'db:updateCaseStatus', 'db:updateCaseNotes', 'db:archiveCase', 'db:unarchiveCase', 'db:addPaiement', 'db:updateHonorairesTotaux'],
+  'db:getAllCases': [
+    'db:addCase',
+    'db:deleteCase',
+    'db:updateCaseStatus',
+    'db:updateCaseNotes',
+    'db:archiveCase',
+    'db:unarchiveCase',
+    'db:addPaiement',
+    'db:updateHonorairesTotaux'
+  ],
   'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClientNotes'],
   'db:getAllTasks': ['db:addTask', 'db:deleteTask', 'db:updateTask', 'db:toggleSubtask', 'db:deleteSubtask', 'db:addSubtask'],
   'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement'],
-  'db:getDashboardExtendedStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement', 'db:updateTask', 'events:add', 'events:update', 'events:delete', 'db:addProcedure', 'db:uploadDocument', 'db:deleteDocument'],
+  'db:getDashboardExtendedStats': [
+    'db:addCase',
+    'db:deleteCase',
+    'db:addClient',
+    'db:deleteClient',
+    'db:addTask',
+    'db:addPaiement',
+    'db:updateTask',
+    'events:add',
+    'events:update',
+    'events:delete',
+    'db:addProcedure',
+    'db:uploadDocument',
+    'db:deleteDocument'
+  ],
   'db:getChartData': ['db:addPaiement', 'db:addCase', 'db:deleteCase'],
   'db:getUpcomingDeadlines': ['db:addCase', 'db:addTask', 'db:updateTask'],
   'db:getUpcomingHearings': ['events:add', 'events:update', 'events:delete'],
@@ -23,12 +46,14 @@ const cacheDeps = {
   'db:getBackupSettings': ['db:updateBackupSettings'],
   'db:getAlertSettings': ['db:updateAlertSettings'],
   'events:getAll': ['events:add', 'events:update', 'events:delete'],
-  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser', 'auth:updateProfile'],
+  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser', 'auth:updateProfile']
 };
 
 function invalidateCache(mutationChannel) {
   for (const [key, deps] of Object.entries(cacheDeps)) {
-    if (deps.includes(mutationChannel)) { readCache.delete(key); }
+    if (deps.includes(mutationChannel)) {
+      readCache.delete(key);
+    }
   }
 }
 A.invalidateCache = invalidateCache;
@@ -41,7 +66,7 @@ function trimCache() {
   toDelete.forEach(([k]) => readCache.delete(k));
 }
 
-A.cachedInvoke = async function(channel, ...args) {
+A.cachedInvoke = async function (channel, ...args) {
   if (!A.state?.ipc) return null;
   const key = channel + '-' + JSON.stringify(args);
   const cached = readCache.get(key);
@@ -61,7 +86,7 @@ A.cachedInvoke = async function(channel, ...args) {
   }
 };
 
-A.mutate = async function(channel, ...args) {
+A.mutate = async function (channel, ...args) {
   if (!A.state?.ipc) return null;
   invalidateCache(channel);
   try {

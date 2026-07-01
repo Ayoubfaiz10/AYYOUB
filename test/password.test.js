@@ -8,16 +8,27 @@ let passed = 0;
 let failed = 0;
 
 function assert(condition, label) {
-  if (condition) { passed++; process.stdout.write('  \u2713 '); }
-  else { failed++; process.stdout.write('  \u2717 '); }
+  if (condition) {
+    passed++;
+    process.stdout.write('  \u2713 ');
+  } else {
+    failed++;
+    process.stdout.write('  \u2717 ');
+  }
   console.log(label);
 }
 
 function assertDeepEqual(actual, expected, label) {
   const a = JSON.stringify(actual);
   const e = JSON.stringify(expected);
-  if (a === e) { passed++; process.stdout.write('  \u2713 '); }
-  else { failed++; process.stdout.write('  \u2717 '); console.log('\n    Expected: ' + e + '\n    Actual:   ' + a); }
+  if (a === e) {
+    passed++;
+    process.stdout.write('  \u2713 ');
+  } else {
+    failed++;
+    process.stdout.write('  \u2717 ');
+    console.log('\n    Expected: ' + e + '\n    Actual:   ' + a);
+  }
   console.log(label);
 }
 
@@ -49,10 +60,13 @@ function getPasswordHash(filePath) {
   try {
     if (fs.existsSync(filePath)) {
       const parsed = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      if (!parsed || typeof parsed.hash !== 'string') return { error: '\u0645\u0644\u0641 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u062A\u0627\u0644\u0641' };
+      if (!parsed || typeof parsed.hash !== 'string')
+        return { error: '\u0645\u0644\u0641 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u062A\u0627\u0644\u0641' };
       return parsed.hash || '';
     }
-  } catch (e) { return { error: '\u0645\u0644\u0641 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u062A\u0627\u0644\u0641: ' + e.message }; }
+  } catch (e) {
+    return { error: '\u0645\u0644\u0641 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631 \u062A\u0627\u0644\u0641: ' + e.message };
+  }
   return '';
 }
 
@@ -92,10 +106,14 @@ function handleAuthSetPassword(pwdPath, pwd) {
     const hash = hashBcrypt(pwd);
     setPasswordHash(pwdPath, hash);
     const verify = getPasswordHash(pwdPath);
-    if (isPasswordHashError(verify) || !verify) return { ok: false, error: '\u0641\u0634\u0644 \u062D\u0641\u0638 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631' };
+    if (isPasswordHashError(verify) || !verify)
+      return { ok: false, error: '\u0641\u0634\u0644 \u062D\u0641\u0638 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631' };
     return { ok: true };
   } catch (e) {
-    return { ok: false, error: '\u062E\u0637\u0623 \u0641\u064A \u062A\u0634\u0641\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631: ' + e.message };
+    return {
+      ok: false,
+      error: '\u062E\u0637\u0623 \u0641\u064A \u062A\u0634\u0641\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631: ' + e.message
+    };
   }
 }
 
@@ -105,7 +123,10 @@ function handleAuthHashPassword(pwd) {
   try {
     return { ok: true, hash: hashBcrypt(pwd) };
   } catch (e) {
-    return { ok: false, error: '\u062E\u0637\u0623 \u0641\u064A \u062A\u0634\u0641\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631: ' + e.message };
+    return {
+      ok: false,
+      error: '\u062E\u0637\u0623 \u0641\u064A \u062A\u0634\u0641\u064A\u0631 \u0643\u0644\u0645\u0629 \u0627\u0644\u0633\u0631: ' + e.message
+    };
   }
 }
 
@@ -126,7 +147,7 @@ runSuite('SHA256 Hash Detection', [
   () => assert(isSHA256Hash(null) === false, 'null returns false'),
   () => assert(isSHA256Hash(undefined) === false, 'undefined returns false'),
   () => assert(isSHA256Hash(12345) === false, 'number returns false'),
-  () => assert(isSHA256Hash('z' + 'a'.repeat(63)) === false, 'non-hex char returns false'),
+  () => assert(isSHA256Hash('z' + 'a'.repeat(63)) === false, 'non-hex char returns false')
 ]);
 
 runSuite('Bcrypt Hash Detection', [
@@ -136,7 +157,7 @@ runSuite('Bcrypt Hash Detection', [
   () => assert(isBcryptHash('') === false, 'empty string returns false'),
   () => assert(isBcryptHash('abc') === false, 'no $ prefix returns false'),
   () => assert(isBcryptHash(null) === false, 'null returns false'),
-  () => assert(isBcryptHash('$2a$AB$LJ3m4ys3Lk0TSwHlsVJC') === false, 'non-numeric rounds returns false'),
+  () => assert(isBcryptHash('$2a$AB$LJ3m4ys3Lk0TSwHlsVJC') === false, 'non-numeric rounds returns false')
 ]);
 
 runSuite('SHA256 Hashing', [
@@ -147,7 +168,7 @@ runSuite('SHA256 Hashing', [
   },
   () => assert(hashSHA256('hello') === '2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824', 'hello hashes to known value'),
   () => assert(hashSHA256('') === 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855', 'empty string hashes correctly'),
-  () => assert(hashSHA256('a') !== hashSHA256('b'), 'different inputs produce different hashes'),
+  () => assert(hashSHA256('a') !== hashSHA256('b'), 'different inputs produce different hashes')
 ]);
 
 runSuite('Bcrypt Hashing', [
@@ -161,7 +182,7 @@ runSuite('Bcrypt Hashing', [
     assert(h1 !== h2, 'each call produces unique salt (different hashes)');
   },
   () => assert(bcrypt.compareSync('testpwd', hashBcrypt('testpwd')) === true, 'bcrypt compare: correct password matches'),
-  () => assert(bcrypt.compareSync('wrong', hashBcrypt('testpwd')) === false, 'bcrypt compare: wrong password rejected'),
+  () => assert(bcrypt.compareSync('wrong', hashBcrypt('testpwd')) === false, 'bcrypt compare: wrong password rejected')
 ]);
 
 runSuite('Password Verification', [
@@ -183,7 +204,7 @@ runSuite('Password Verification', [
   },
   () => assert(verifyPassword('any', '') === false, 'empty stored hash returns false'),
   () => assert(verifyPassword('any', 'invalid!!!') === false, 'invalid stored hash returns false'),
-  () => assert(verifyPassword('any', null) === false, 'null stored hash returns false'),
+  () => assert(verifyPassword('any', null) === false, 'null stored hash returns false')
 ]);
 
 // ─── 2. IPC Handler Simulation Tests ───
@@ -211,7 +232,7 @@ runSuite('IPC: auth:hasPassword', [
     fs.writeFileSync(testPwdPath, '{"hash":12345}');
     const r = handleAuthHasPassword(testPwdPath);
     assert(r.corrupt === true, 'non-string hash returns corrupt flag');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:setPassword', [
@@ -251,7 +272,7 @@ runSuite('IPC: auth:setPassword', [
     const isBcrypt = isBcryptHash(stored);
     assert(isBcrypt === true, 'after setPassword, stored hash is bcrypt');
   },
-  () => assert(bcrypt.compareSync('reset', getPasswordHash(testPwdPath)) === true, 'stored hash verifies correctly'),
+  () => assert(bcrypt.compareSync('reset', getPasswordHash(testPwdPath)) === true, 'stored hash verifies correctly')
 ]);
 
 runSuite('IPC: auth:login — successful flow', [
@@ -259,7 +280,7 @@ runSuite('IPC: auth:login — successful flow', [
     setPasswordHash(testPwdPath, hashBcrypt('secret123'));
     const r = handleAuthLogin(testPwdPath, 'secret123');
     assert(r.ok === true && !r.firstTime, 'correct password logs in');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:login — wrong password', [
@@ -267,7 +288,7 @@ runSuite('IPC: auth:login — wrong password', [
     setPasswordHash(testPwdPath, hashBcrypt('secret123'));
     const r = handleAuthLogin(testPwdPath, 'wrongpwd');
     assert(r.ok === false && r.error !== undefined, 'wrong password returns error');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:login — empty password', [
@@ -283,7 +304,7 @@ runSuite('IPC: auth:login — empty password', [
   () => {
     const r = handleAuthLogin(testPwdPath, undefined);
     assert(r.ok === false, 'undefined password returns error');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:login — no password set (first time)', [
@@ -291,7 +312,7 @@ runSuite('IPC: auth:login — no password set (first time)', [
     fs.unlinkSync(testPwdPath);
     const r = handleAuthLogin(testPwdPath, 'anything');
     assert(r.ok === true && r.firstTime === true, 'no password file returns firstTime');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:login — corrupted hash', [
@@ -309,7 +330,7 @@ runSuite('IPC: auth:login — corrupted hash', [
     fs.writeFileSync(testPwdPath, '{"hash":123}');
     const r = handleAuthLogin(testPwdPath, 'anything');
     assert(r.corrupt === true, 'number hash returns corrupt flag');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:hashPassword', [
@@ -328,7 +349,7 @@ runSuite('IPC: auth:hashPassword', [
   () => {
     const r = handleAuthHashPassword(null);
     assert(r.ok === false, 'null returns error');
-  },
+  }
 ]);
 
 runSuite('IPC: auth:login — SHA256 → bcrypt migration', [
@@ -342,12 +363,14 @@ runSuite('IPC: auth:login — SHA256 → bcrypt migration', [
     const storedAfter = getPasswordHash(testPwdPath);
     assert(isBcryptHash(storedAfter) === true, 'hash migrated to bcrypt after login');
     assert(bcrypt.compareSync('oldstyle', storedAfter) === true, 'migrated bcrypt hash verifies original password');
-  },
+  }
 ]);
 
 // ─── 4. Cleanup ───
 
-try { fs.rmSync(testDir, { recursive: true, force: true }); } catch (e) {}
+try {
+  fs.rmSync(testDir, { recursive: true, force: true });
+} catch (e) {}
 
 // ════════════════════════════════════════════
 // SUMMARY

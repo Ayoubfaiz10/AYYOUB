@@ -1,4 +1,4 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A.i18n = {
   // ─── App ───
@@ -9,7 +9,10 @@ A.i18n = {
 
   // ─── Onboarding ───
   onbTitle: { ar: 'مرحباً بك في مدير المكتب', fr: 'Bienvenue dans Cabinet Manager' },
-  onbDesc: { ar: 'منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد.', fr: 'Plateforme de gestion juridique — organisez vos dossiers, clients, documents et audiences en un seul endroit.' },
+  onbDesc: {
+    ar: 'منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد.',
+    fr: 'Plateforme de gestion juridique — organisez vos dossiers, clients, documents et audiences en un seul endroit.'
+  },
   onbSkip: { ar: 'تخطي', fr: 'Passer' },
   onbNext: { ar: 'التالي', fr: 'Suivant' },
 
@@ -22,7 +25,7 @@ A.i18n = {
   newPwdPlaceholder: { ar: 'كلمة سر جديدة', fr: 'Nouveau mot de passe' },
   confirmPwdPlaceholder: { ar: 'تأكيد كلمة السر', fr: 'Confirmer le mot de passe' },
   saveBtn: { ar: 'حفظ', fr: 'Enregistrer' },
-  adminNameLabel: { ar: 'اسم المدير', fr: 'Nom de l\'administrateur' },
+  adminNameLabel: { ar: 'اسم المدير', fr: "Nom de l'administrateur" },
   adminEmailLabel: { ar: 'البريد الإلكتروني', fr: 'Email' },
   createAdminBtn: { ar: 'إنشاء حساب المدير', fr: 'Créer le compte administrateur' },
 
@@ -77,7 +80,7 @@ A.i18n = {
   dashTasksPriority: { ar: 'المهام حسب الأولوية', fr: 'Tâches par priorité' },
   dashTodayAgenda: { ar: 'جدول اليوم', fr: 'Agenda du jour' },
   dashViewAll: { ar: 'عرض الكل', fr: 'Voir tout' },
-  dashNoEvents: { ar: 'لا توجد أحداث اليوم', fr: 'Aucun événement aujourd\'hui' },
+  dashNoEvents: { ar: 'لا توجد أحداث اليوم', fr: "Aucun événement aujourd'hui" },
 
   // ─── Clients ───
   clientsTitle: { ar: 'الموكلين', fr: 'Clients' },
@@ -92,7 +95,7 @@ A.i18n = {
   casesTitle: { ar: 'القضايا', fr: 'Affaires' },
   casesSub: { ar: 'إدارة القضايا و الملفات', fr: 'Gérer les affaires et dossiers' },
   addCaseBtn: { ar: 'إضافة قضية', fr: 'Ajouter une affaire' },
-  caseNumber: { ar: 'رقم القضية', fr: 'N° d\'affaire' },
+  caseNumber: { ar: 'رقم القضية', fr: "N° d'affaire" },
   caseClient: { ar: 'الموكل', fr: 'Client' },
   caseStatus: { ar: 'الحالة', fr: 'Statut' },
   caseDate: { ar: 'التاريخ', fr: 'Date' },
@@ -214,7 +217,7 @@ A.i18n = {
   statusActive: { ar: 'نشط', fr: 'Actif' },
   statusInactive: { ar: 'غير نشط', fr: 'Inactif' },
   statusAll: { ar: 'الكل', fr: 'Tous' },
-  statusToday: { ar: 'اليوم', fr: 'Aujourd\'hui' },
+  statusToday: { ar: 'اليوم', fr: "Aujourd'hui" },
   statusWeek: { ar: 'هذا الأسبوع', fr: 'Cette semaine' },
   statusMonth: { ar: 'هذا الشهر', fr: 'Ce mois' },
   statusCompleted: { ar: 'مكتمل', fr: 'Terminé' },
@@ -265,7 +268,7 @@ A.i18n = {
   dashFinExpenses: { ar: 'المصروفات', fr: 'Dépenses' },
   dashFinOutstanding: { ar: 'المستحق', fr: 'Impayé' },
   dashAiInsightLabel: { ar: 'المساعد الذكي', fr: 'Assistant IA' },
-  dashNoEvents: { ar: 'لا توجد أحداث اليوم', fr: 'Aucun événement aujourd\'hui' },
+  dashNoEvents: { ar: 'لا توجد أحداث اليوم', fr: "Aucun événement aujourd'hui" },
   dashNoDeadlines: { ar: 'لا توجد آجال', fr: 'Aucune échéance' },
   dashNoActivity: { ar: 'لا توجد نشاطات', fr: 'Aucune activité' },
   dashNoCases: { ar: 'لا توجد قضايا', fr: 'Aucune affaire' },
@@ -281,7 +284,7 @@ A.i18n = {
   filterBtn: { ar: 'فلاتر', fr: 'Filtres' },
   applyBtn: { ar: 'تطبيق', fr: 'Appliquer' },
   resetBtn: { ar: 'إعادة', fr: 'Réinitialiser' },
-  todayBtn: { ar: 'اليوم', fr: 'Aujourd\'hui' },
+  todayBtn: { ar: 'اليوم', fr: "Aujourd'hui" },
   allLabel: { ar: 'الكل', fr: 'Tous' },
   upcomingLabel: { ar: 'القادمة', fr: 'À venir' },
   pastLabel: { ar: 'السابقة', fr: 'Passées' },
@@ -293,13 +296,13 @@ A.i18n = {
   casesDesc: { ar: 'مساحة عمل القضايا — إدارة ومتابعة الملفات القانونية', fr: 'Espace de travail — Gestion des dossiers juridiques' },
   hearingsDesc: { ar: 'جدولة ومتابعة جميع جلسات المحكمة والمواعيد القانونية', fr: 'Calendrier et suivi des audiences' },
   calendarDesc: { ar: 'نظام تقويم قانوني متكامل — جلسات، مواعيد، مهام', fr: 'Calendrier juridique intégré' },
-  tasksDesc: { ar: 'نظام تنفيذ قانوني — مهام، مهام فرعية، تبعيات، سير عمل، تتبع زمني', fr: 'Système d\'exécution juridique' },
+  tasksDesc: { ar: 'نظام تنفيذ قانوني — مهام، مهام فرعية، تبعيات، سير عمل، تتبع زمني', fr: "Système d'exécution juridique" },
   documentsDesc: { ar: 'نظام إدارة الوثائق القانونية — بحث، تصنيف، إصدارات', fr: 'Gestion documentaire juridique' },
   expensesDesc: { ar: 'تتبع المصاريف والمدفوعات والفواتير', fr: 'Suivi des dépenses et paiements' },
   notificationsDesc: { ar: 'مركز الإشعارات والتنبيهات', fr: 'Centre de notifications' },
   searchDesc: { ar: 'بحث شامل في جميع بيانات التطبيق', fr: 'Recherche complète' },
   reportsDesc: { ar: 'إنشاء وتصدير التقارير والإحصائيات', fr: 'Générer des rapports' },
-  aiDesc: { ar: 'محرك الذكاء القانوني — تحليل، صياغة، استراتيجية، مخاطر', fr: 'Moteur d\'IA juridique' },
+  aiDesc: { ar: 'محرك الذكاء القانوني — تحليل، صياغة، استراتيجية، مخاطر', fr: "Moteur d'IA juridique" },
   archiveDesc: { ar: 'القضايا المؤرشفة والملفات المنتهية', fr: 'Affaires archivées' },
   settingsDesc: { ar: 'تخصيص إعدادات التطبيق', fr: 'Personnaliser les paramètres' },
 
@@ -348,7 +351,7 @@ A.i18n = {
 
   // ─── AI Setup ───
   aiSetupTitle: { ar: 'المساعد الذكي', fr: 'Assistant IA' },
-  aiSetupDesc: { ar: 'اختر مزود الذكاء الاصطناعي المفضل لديك', fr: 'Choisissez votre fournisseur d\'IA' },
+  aiSetupDesc: { ar: 'اختر مزود الذكاء الاصطناعي المفضل لديك', fr: "Choisissez votre fournisseur d'IA" },
   aiApiKeyLabel: { ar: 'مفتاح API (Groq)', fr: 'Clé API (Groq)' },
   aiModelLabel: { ar: 'النموذج', fr: 'Modèle' },
   aiSaveKey: { ar: 'حفظ المفتاح وبدء المحادثة', fr: 'Sauvegarder la clé' },
@@ -366,20 +369,23 @@ A.i18n = {
   darkModeLabel: { ar: 'الوضع الليلي', fr: 'Mode sombre' },
   passwordTitle: { ar: 'كلمة السر', fr: 'Mot de passe' },
   userManagement: { ar: 'إدارة المستخدمين', fr: 'Gestion des utilisateurs' },
-  activityLog: { ar: 'سجل النشاط', fr: 'Journal d\'activité' },
+  activityLog: { ar: 'سجل النشاط', fr: "Journal d'activité" },
   errorLog: { ar: 'سجل الأخطاء', fr: 'Journal des erreurs' },
   logExport: { ar: 'تصدير', fr: 'Exporter' },
   logClear: { ar: 'مسح', fr: 'Effacer' },
   autoBackup: { ar: 'النسخ الاحتياطي التلقائي', fr: 'Sauvegarde automatique' },
   manualBackup: { ar: 'إنشاء نسخة احتياطية يدوية', fr: 'Sauvegarde manuelle' },
   createBackupNow: { ar: 'إنشاء نسخة الآن', fr: 'Sauvegarder maintenant' },
-  exportArchiveFull: { ar: 'تصدير أرشيف كامل', fr: 'Exporter l\'archive' },
+  exportArchiveFull: { ar: 'تصدير أرشيف كامل', fr: "Exporter l'archive" },
   restorePoints: { ar: 'نقاط الاستعادة', fr: 'Points de restauration' },
   loadingBackups: { ar: 'جاري تحميل النسخ الاحتياطية...', fr: 'Chargement des sauvegardes...' },
   restoreConfirmTitle: { ar: 'تأكيد الاستعادة', fr: 'Confirmer la restauration' },
   restoreWarning: { ar: 'تحذير: استعادة النسخة الاحتياطية ستستبدل جميع البيانات الحالية!', fr: 'Attention: La restauration remplacera toutes les données!' },
   storageMaintenance: { ar: 'صيانة التخزين', fr: 'Maintenance du stockage' },
-  storageMaintenanceDesc: { ar: 'تنظيف الملفات الوهمية (orphan files) — الملفات الموجودة على القرص الصلب دون وجودها في قاعدة البيانات.', fr: 'Nettoyage des fichiers orphelins — fichiers présents sur le disque sans référence en base.' },
+  storageMaintenanceDesc: {
+    ar: 'تنظيف الملفات الوهمية (orphan files) — الملفات الموجودة على القرص الصلب دون وجودها في قاعدة البيانات.',
+    fr: 'Nettoyage des fichiers orphelins — fichiers présents sur le disque sans référence en base.'
+  },
   cleanOrphansBtn: { ar: 'تنظيف الملفات الزائدة', fr: 'Nettoyer les fichiers orphelins' },
   alertSettings: { ar: 'إعدادات التنبيهات', fr: 'Paramètres des alertes' },
   saveSettings: { ar: 'حفظ الإعدادات', fr: 'Enregistrer' },
@@ -414,7 +420,7 @@ A.i18n = {
   thCases: { ar: 'القضايا', fr: 'Affaires' },
   thLastActivity: { ar: 'آخر نشاط', fr: 'Dernière activité' },
   thBalance: { ar: 'الرصيد', fr: 'Solde' },
-  thCaseNumber: { ar: 'رقم القضية', fr: 'N° d\'affaire' },
+  thCaseNumber: { ar: 'رقم القضية', fr: "N° d'affaire" },
   thSubject: { ar: 'الموضوع', fr: 'Objet' },
   thClient: { ar: 'الموكل', fr: 'Client' },
   thCourt: { ar: 'المحكمة', fr: 'Tribunal' },
@@ -428,11 +434,11 @@ A.i18n = {
   thPaymentMethod: { ar: 'طريقة الدفع', fr: 'Mode de paiement' },
   thNotes: { ar: 'ملاحظات', fr: 'Notes' },
   thActions: { ar: 'الإجراءات', fr: 'Actions' },
-  thArchiveDate: { ar: 'تاريخ الأرشفة', fr: 'Date d\'archivage' },
+  thArchiveDate: { ar: 'تاريخ الأرشفة', fr: "Date d'archivage" },
 
   // ─── Search placeholders ───
   searchPlaceholderClients: { ar: 'اسم، هاتف، بريد...', fr: 'Nom, téléphone, email...' },
-  searchPlaceholderCases: { ar: 'رقم القضية، الموكل، المحكمة...', fr: 'N° d\'affaire, client, tribunal...' },
+  searchPlaceholderCases: { ar: 'رقم القضية، الموكل، المحكمة...', fr: "N° d'affaire, client, tribunal..." },
   searchPlaceholderHearings: { ar: 'بحث في الجلسات...', fr: 'Rechercher dans les audiences...' },
   searchPlaceholderTasks: { ar: 'بحث في المهام...', fr: 'Rechercher dans les tâches...' },
   searchPlaceholderDocs: { ar: 'بحث في الوثائق...', fr: 'Rechercher dans les documents...' },
@@ -474,18 +480,21 @@ A.i18n = {
   totalCasesN: { ar: 'إجمالي القضايا: {n}', fr: 'Total des affaires : {n}' },
   totalClientsN: { ar: 'إجمالي الموكلين: {n}', fr: 'Total des clients : {n}' },
   failedLoadReport: { ar: 'تعذر تحميل بيانات التقرير', fr: 'Échec du chargement du rapport' },
-  pdfExportComing: { ar: 'تصدير PDF سيكون متاحاً في التحديث القادم', fr: 'L\'export PDF sera disponible dans la prochaine mise à jour' },
+  pdfExportComing: { ar: 'تصدير PDF سيكون متاحاً في التحديث القادم', fr: "L'export PDF sera disponible dans la prochaine mise à jour" },
 
   // ─── UI ───
   sessionExpired: { ar: 'انتهت الجلسة — الرجاء إعادة تسجيل الدخول', fr: 'Session expirée — veuillez vous reconnecter' },
 
   // ─── Modal ───
-  confirmArchive: { ar: 'تأكيد الأرشفة', fr: 'Confirmer l\'archivage' },
+  confirmArchive: { ar: 'تأكيد الأرشفة', fr: "Confirmer l'archivage" },
 
   // ─── Autosave ───
   autosaveUnsaved: { ar: 'تعديلات غير محفوظة', fr: 'Modifications non enregistrées' },
   autosaveError: { ar: 'فشل الحفظ', fr: 'Échec de la sauvegarde' },
-  autosaveFoundDrafts: { ar: 'تم العثور على {count} مسودة غير محفوظة قبل إعادة التشغيل. هل تريد استعادتها؟', fr: '{count} brouillon(s) non sauvegardé(s) trouvé(s). Voulez-vous les restaurer ?' },
+  autosaveFoundDrafts: {
+    ar: 'تم العثور على {count} مسودة غير محفوظة قبل إعادة التشغيل. هل تريد استعادتها؟',
+    fr: '{count} brouillon(s) non sauvegardé(s) trouvé(s). Voulez-vous les restaurer ?'
+  },
   autosaveRestoreAll: { ar: 'استعادة الكل', fr: 'Tout restaurer' },
   autosaveDismiss: { ar: 'تجاهل', fr: 'Ignorer' },
   autosaveRestored: { ar: 'تم استعادة المسودات بنجاح', fr: 'Brouillons restaurés avec succès' },
@@ -501,12 +510,12 @@ A.i18n = {
   // ─── Hearings ───
   failedLoadHearings: { ar: 'تعذر تحميل الجلسات والمواعيد.', fr: 'Échec du chargement des audiences' },
   hearingsPast: { ar: 'سابقة', fr: 'Passée' },
-  hearingsToday: { ar: 'اليوم', fr: 'Aujourd\'hui' },
+  hearingsToday: { ar: 'اليوم', fr: "Aujourd'hui" },
   hearingsUpcoming: { ar: 'قادمة', fr: 'À venir' },
   noEvents: { ar: 'لا توجد أحداث', fr: 'Aucun événement' },
 
   // ─── Kanban ───
-  caseStatusChanged: { ar: 'تم تغيير حالة القضية', fr: 'Statut de l\'affaire modifié' },
+  caseStatusChanged: { ar: 'تم تغيير حالة القضية', fr: "Statut de l'affaire modifié" },
   failedStatusChange: { ar: 'فشل تغيير الحالة', fr: 'Échec de la modification du statut' },
 
   // ─── Auth ───
@@ -517,17 +526,26 @@ A.i18n = {
   loginErrorOccurred: { ar: 'حدث خطأ في تسجيل الدخول', fr: 'Erreur de connexion' },
   passwordMinLength: { ar: 'كلمة السر يجب أن تكون 8 أحرف على الأقل', fr: 'Le mot de passe doit avoir au moins 8 caractères' },
   passwordsNoMatch: { ar: 'كلمتا السر غير متطابقتين', fr: 'Les mots de passe ne correspondent pas' },
-  savePasswordFailed: { ar: 'فشل حفظ كلمة السر', fr: 'Échec de l\'enregistrement du mot de passe' },
-  errorSavingPassword: { ar: 'خطأ في حفظ كلمة السر', fr: 'Erreur lors de l\'enregistrement du mot de passe' },
-  adminNameRequired: { ar: 'اسم المدير مطلوب', fr: 'Nom de l\'administrateur requis' },
+  savePasswordFailed: { ar: 'فشل حفظ كلمة السر', fr: "Échec de l'enregistrement du mot de passe" },
+  errorSavingPassword: { ar: 'خطأ في حفظ كلمة السر', fr: "Erreur lors de l'enregistrement du mot de passe" },
+  adminNameRequired: { ar: 'اسم المدير مطلوب', fr: "Nom de l'administrateur requis" },
   createAdminFailed: { ar: 'فشل إنشاء حساب المدير', fr: 'Échec de la création du compte administrateur' },
   errorCreatingAdmin: { ar: 'خطأ في إنشاء حساب المدير', fr: 'Erreur lors de la création du compte' },
   onbTitleStep1: { ar: 'إدارة القضايا والموكلين', fr: 'Gestion des affaires et clients' },
-  onbDescStep1: { ar: 'أنشئ القضايا، أضف الموكلين، وتابع كل التفاصيل في مساحات عمل متخصصة. كل شيء مترابط.', fr: 'Créez des affaires, ajoutez des clients, suivez tous les détails.' },
+  onbDescStep1: {
+    ar: 'أنشئ القضايا، أضف الموكلين، وتابع كل التفاصيل في مساحات عمل متخصصة. كل شيء مترابط.',
+    fr: 'Créez des affaires, ajoutez des clients, suivez tous les détails.'
+  },
   onbTitleStep2: { ar: 'التقويم والجلسات', fr: 'Calendrier et audiences' },
-  onbDescStep2: { ar: 'جدول زمني قانوني شامل مع 4 طرق عرض، تنبيهات ذكية، وجلسات مرتبطة بالقضايا.', fr: 'Calendrier juridique complet avec 4 vues, alertes intégrées.' },
+  onbDescStep2: {
+    ar: 'جدول زمني قانوني شامل مع 4 طرق عرض، تنبيهات ذكية، وجلسات مرتبطة بالقضايا.',
+    fr: 'Calendrier juridique complet avec 4 vues, alertes intégrées.'
+  },
   onbTitleStep3: { ar: 'المساعد الذكي', fr: 'Assistant IA' },
-  onbDescStep3: { ar: 'محرك ذكاء اصطناعي قانوني — حلل، صغ، استشر. سياق كامل لجميع قضاياك ووثائقك.', fr: 'Moteur d\'IA juridique — analysez, rédigez, consultez.' },
+  onbDescStep3: {
+    ar: 'محرك ذكاء اصطناعي قانوني — حلل، صغ، استشر. سياق كامل لجميع قضاياك ووثائقك.',
+    fr: "Moteur d'IA juridique — analysez, rédigez, consultez."
+  },
   getStarted: { ar: 'ابدأ الآن', fr: 'Commencez' },
   securityQuestions: { ar: 'سؤال الأمان (لاستعادة كلمة السر)', fr: 'Question de sécurité (récupération du mot de passe)' },
   securityQuestionsRequired: { ar: 'الرجاء اختيار سؤال الأمان وإدخال الإجابة', fr: 'Veuillez choisir la question de sécurité et saisir la réponse' },
@@ -539,15 +557,18 @@ A.i18n = {
   setupStep2Desc: { ar: 'اختر كلمة سر قوية لحساب المدير', fr: 'Choisissez un mot de passe fort pour le compte administrateur' },
   setupStep3: { ar: 'سؤال الأمان', fr: 'Question de sécurité' },
   setupStep3Heading: { ar: 'سؤال الأمان', fr: 'Question de sécurité' },
-  setupStep3Desc: { ar: 'اختر سؤالاً وإجابة لاستعادة كلمة السر لاحقاً', fr: 'Choisissez une question et une réponse pour récupérer votre mot de passe plus tard' },
+  setupStep3Desc: {
+    ar: 'اختر سؤالاً وإجابة لاستعادة كلمة السر لاحقاً',
+    fr: 'Choisissez une question et une réponse pour récupérer votre mot de passe plus tard'
+  },
 
   forgotPassword: { ar: 'نسيت كلمة السر؟', fr: 'Mot de passe oublié ?' },
   forgotPasswordTitle: { ar: 'استعادة كلمة السر', fr: 'Récupération du mot de passe' },
-  forgotSelectUser: { ar: 'اختر المستخدم لاستعادة كلمة السر', fr: 'Choisissez l\'utilisateur pour récupérer le mot de passe' },
+  forgotSelectUser: { ar: 'اختر المستخدم لاستعادة كلمة السر', fr: "Choisissez l'utilisateur pour récupérer le mot de passe" },
   verifyAnswer: { ar: 'تحقق', fr: 'Vérifier' },
   resetPassword: { ar: 'إعادة تعيين كلمة السر', fr: 'Réinitialiser le mot de passe' },
   backToLogin: { ar: '→ العودة لتسجيل الدخول', fr: '← Retour à la connexion' },
-  selectUserFirst: { ar: 'الرجاء اختيار مستخدم أولاً', fr: 'Veuillez d\'abord sélectionner un utilisateur' },
+  selectUserFirst: { ar: 'الرجاء اختيار مستخدم أولاً', fr: "Veuillez d'abord sélectionner un utilisateur" },
   enterAnswer: { ar: 'الرجاء إدخال الإجابة', fr: 'Veuillez saisir la réponse' },
   wrongSecurityAnswer: { ar: 'الإجابة غير صحيحة', fr: 'Réponse incorrecte' },
   noSecurityQuestions: { ar: 'لا توجد أسئلة أمان لهذا المستخدم', fr: 'Aucune question de sécurité pour cet utilisateur' },
@@ -565,7 +586,7 @@ A.i18n = {
   eveningGreeting: { ar: 'مساء الخير', fr: 'Bonsoir' },
   defaultLawyer: { ar: 'محامي', fr: 'Avocat' },
   currencyMAD: { ar: ' د.م.', fr: ' MAD' },
-  noEventsToday: { ar: 'لا توجد أحداث اليوم', fr: 'Aucun événement aujourd\'hui' },
+  noEventsToday: { ar: 'لا توجد أحداث اليوم', fr: "Aucun événement aujourd'hui" },
   hearingLabel: { ar: 'جلسة', fr: 'Audience' },
   deadlineLabel: { ar: 'أجل', fr: 'Échéance' },
   remainingDays: { ar: 'باقي {n} يوم', fr: '{n} jour(s) restant(s)' },
@@ -600,7 +621,7 @@ A.i18n = {
   caseLabel: { ar: 'قضية', fr: 'Affaire' },
   noUpcomingDates: { ar: 'لا توجد مواعيد قادمة', fr: 'Aucun rendez-vous à venir' },
   overdueLabel: { ar: 'فائت!', fr: 'En retard !' },
-  todayLabel: { ar: 'اليوم', fr: 'Aujourd\'hui' },
+  todayLabel: { ar: 'اليوم', fr: "Aujourd'hui" },
   withinDays: { ar: 'خلال {n} أيام', fr: 'Dans {n} jours' },
   moreAppointments: { ar: '+{n} موعد آخر', fr: '+{n} autre(s) rendez-vous' },
   activeF: { ar: 'نشطة', fr: 'Active' },
@@ -611,16 +632,19 @@ A.i18n = {
   // ─── Documents ───
   failedLoadDocuments: { ar: 'تعذر تحميل الوثائق.', fr: 'Échec du chargement des documents' },
   docNotFound: { ar: 'لم يتم العثور على الوثيقة', fr: 'Document introuvable' },
-  docDeleteConfirm: { ar: 'هل تريد حذف هذه الوثيقة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.', fr: 'Voulez-vous vraiment supprimer ce document ? Cette action est irréversible.' },
+  docDeleteConfirm: {
+    ar: 'هل تريد حذف هذه الوثيقة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.',
+    fr: 'Voulez-vous vraiment supprimer ce document ? Cette action est irréversible.'
+  },
   docDeleted: { ar: 'تم حذف الوثيقة', fr: 'Document supprimé' },
   docDeleteFailed: { ar: 'فشل حذف الوثيقة', fr: 'Échec de la suppression du document' },
   docDownloaded: { ar: 'تم تحميل الوثيقة', fr: 'Document téléchargé' },
   noTagsLabel: { ar: 'لا توجد', fr: 'Aucun' },
   currentVersionLabel: { ar: 'الإصدار الحالي', fr: 'Version actuelle' },
-  failedOpenFile: { ar: 'تعذر فتح الملف', fr: 'Impossible d\'ouvrir le fichier' },
+  failedOpenFile: { ar: 'تعذر فتح الملف', fr: "Impossible d'ouvrir le fichier" },
   failedLoadFile: { ar: 'تعذر تحميل الملف', fr: 'Impossible de télécharger le fichier' },
   notesSaved: { ar: 'تم حفظ الملاحظات', fr: 'Notes enregistrées' },
-  failedSaveNotes: { ar: 'فشل حفظ الملاحظات', fr: 'Échec de l\'enregistrement des notes' },
+  failedSaveNotes: { ar: 'فشل حفظ الملاحظات', fr: "Échec de l'enregistrement des notes" },
   uploadDocTitle: { ar: 'رفع وثيقة', fr: 'Téléverser un document' },
   caseSelectLabel: { ar: 'القضية', fr: 'Affaire' },
   selectCasePlaceholder: { ar: 'اختر القضية...', fr: 'Choisir une affaire...' },
@@ -628,7 +652,7 @@ A.i18n = {
   docTagsPlaceholder: { ar: 'عاجل، سري، مهم', fr: 'Urgent, secret, important' },
   selectFileBtn: { ar: 'اختيار ملف ورفعه', fr: 'Sélectionner et téléverser' },
   uploadFileLimit: { ar: 'PDF, DOC, DOCX, JPG, PNG, TXT — حد أقصى 50 MB', fr: 'PDF, DOC, DOCX, JPG, PNG, TXT — max 50 Mo' },
-  selectCaseFirst: { ar: 'اختر القضية أولاً', fr: 'Choisissez d\'abord l\'affaire' },
+  selectCaseFirst: { ar: 'اختر القضية أولاً', fr: "Choisissez d'abord l'affaire" },
   uploadingLabel: { ar: 'جاري الرفع...', fr: 'Téléversement...' },
   uploadingToast: { ar: 'جاري رفع الملف...', fr: 'Fichier en cours de téléversement...' },
   uploadSuccess: { ar: 'تم رفع {n} ملف بنجاح', fr: '{n} fichier(s) téléversé(s) avec succès' },
@@ -654,14 +678,14 @@ A.i18n = {
   duplicateClientPrefix: { ar: 'موكل مكرر: ', fr: 'Client en double: ' },
   nameRequired: { ar: 'الاسم إجباري', fr: 'Nom requis' },
   clientAdded: { ar: 'تم إضافة الموكل بنجاح', fr: 'Client ajouté avec succès' },
-  clientAddFailed: { ar: 'فشل إضافة الموكل', fr: 'Échec de l\'ajout du client' },
+  clientAddFailed: { ar: 'فشل إضافة الموكل', fr: "Échec de l'ajout du client" },
   editClientComing: { ar: 'سيتم إضافة تعديل الموكل قريباً', fr: 'Modification client bientôt disponible' },
   archiveClientConfirm: { ar: 'أرشفة هذا الموكل؟', fr: 'Archiver ce client ?' },
   clientArchived: { ar: 'تم أرشفة الموكل', fr: 'Client archivé' },
   clientLabel: { ar: 'موكل', fr: 'Client' },
 
   // ─── Settings (user management etc.) ───
-  editUserTitle: { ar: 'تعديل المستخدم', fr: 'Modifier l\'utilisateur' },
+  editUserTitle: { ar: 'تعديل المستخدم', fr: "Modifier l'utilisateur" },
   userNameLabel: { ar: 'الاسم', fr: 'Nom' },
   userEmailLabel: { ar: 'البريد', fr: 'Email' },
   userRoleLabel: { ar: 'الدور', fr: 'Rôle' },
@@ -683,7 +707,7 @@ A.i18n = {
   pwdSaved: { ar: 'تم حفظ كلمة السر بنجاح', fr: 'Mot de passe enregistré' },
   pwdChanged: { ar: 'تم تغيير كلمة السر بنجاح', fr: 'Mot de passe modifié avec succès' },
   settingsSaved: { ar: 'تم حفظ الإعدادات', fr: 'Paramètres enregistrés' },
-  settingsSaveFailed: { ar: 'فشل حفظ الإعدادات', fr: 'Échec de l\'enregistrement' },
+  settingsSaveFailed: { ar: 'فشل حفظ الإعدادات', fr: "Échec de l'enregistrement" },
   cleaningRunning: { ar: 'جاري التنظيف...', fr: 'Nettoyage en cours...' },
   cleanedOrphans: { ar: 'تم تنظيف {n} ملفاً يتيماً ({m} MB)', fr: '{n} fichier(s) orphelin(s) nettoyé(s) ({m} MB)' },
   cleanFailed: { ar: 'فشل تنظيف الملفات', fr: 'Échec du nettoyage' },
@@ -691,7 +715,7 @@ A.i18n = {
   backupCreateFailed: { ar: 'فشل إنشاء النسخة الاحتياطية', fr: 'Échec de la création de la sauvegarde' },
   archiveExported: { ar: 'تم التصدير: {n}', fr: 'Exporté : {n}' },
   archiveExportSuccess: { ar: 'تم تصدير الأرشيف بنجاح', fr: 'Archive exportée avec succès' },
-  archiveExportFailed: { ar: 'فشل تصدير الأرشيف', fr: 'Échec de l\'export' },
+  archiveExportFailed: { ar: 'فشل تصدير الأرشيف', fr: "Échec de l'export" },
   noBackupsList: { ar: 'لا توجد نسخ احتياطية', fr: 'Aucune sauvegarde' },
   backupTypeManual: { ar: 'يدوي', fr: 'Manuelle' },
   backupTypeAuto: { ar: 'تلقائي', fr: 'Automatique' },
@@ -718,13 +742,13 @@ A.i18n = {
   backupDeleted: { ar: 'تم حذف النسخة', fr: 'Sauvegarde supprimée' },
   backupDeleteFailed: { ar: 'فشل حذف النسخة', fr: 'Échec de la suppression' },
   failedLoadList: { ar: 'فشل تحميل القائمة', fr: 'Échec du chargement de la liste' },
-  alertSettingsSaved: { ar: 'تم حفظ إعدادات التنبيهات', fr: 'Paramètres d\'alertes enregistrés' },
+  alertSettingsSaved: { ar: 'تم حفظ إعدادات التنبيهات', fr: "Paramètres d'alertes enregistrés" },
   logStatsLabel: { ar: '{n} مدخلة | {s}KB', fr: '{n} entrées | {s}KB' },
   logsExported: { ar: 'تم تصدير السجلات بنجاح', fr: 'Journaux exportés avec succès' },
-  logsExportFailed: { ar: 'فشل تصدير السجلات', fr: 'Échec de l\'export' },
+  logsExportFailed: { ar: 'فشل تصدير السجلات', fr: "Échec de l'export" },
   clearLogsConfirm: { ar: 'مسح جميع سجلات الأخطاء؟', fr: 'Effacer tous les journaux ?' },
   logsCleared: { ar: 'تم مسح السجلات', fr: 'Journaux effacés' },
-  logsClearFailed: { ar: 'فشل مسح السجلات', fr: 'Échec de l\'effacement' },
+  logsClearFailed: { ar: 'فشل مسح السجلات', fr: "Échec de l'effacement" },
   loadMoreBtn: { ar: 'تحميل المزيد', fr: 'Charger plus' },
   inactiveBadge: { ar: 'غير نشط', fr: 'Inactif' },
 
@@ -734,7 +758,7 @@ A.i18n = {
   defaultPriority: { ar: 'عادي', fr: 'Normal' },
   caseRestored: { ar: 'تم إرجاع القضية', fr: 'Affaire restaurée' },
   caseArchivedToast: { ar: 'تم أرشفة القضية', fr: 'Affaire archivée' },
-  archiveToggleFailed: { ar: 'فشل تغيير حالة الأرشفة', fr: 'Échec du changement d\'état' },
+  archiveToggleFailed: { ar: 'فشل تغيير حالة الأرشفة', fr: "Échec du changement d'état" },
   deleteCaseConfirm: { ar: 'حذف هذه القضية؟', fr: 'Supprimer cette affaire ?' },
   caseDeleted: { ar: 'تم حذف القضية', fr: 'Affaire supprimée' },
   caseDeleteFailed: { ar: 'فشل حذف القضية', fr: 'Échec de la suppression' },
@@ -743,7 +767,7 @@ A.i18n = {
   courtInfoLabel: { ar: 'المحكمة', fr: 'Tribunal' },
   typeInfoLabel: { ar: 'النوع', fr: 'Type' },
   priorityInfoLabel: { ar: 'الأولوية', fr: 'Priorité' },
-  openDateInfoLabel: { ar: 'تاريخ الفتح', fr: 'Date d\'ouverture' },
+  openDateInfoLabel: { ar: 'تاريخ الفتح', fr: "Date d'ouverture" },
   lastActivityInfoLabel: { ar: 'آخر نشاط', fr: 'Dernière activité' },
   quickActionsCaseLabel: { ar: 'إجراءات سريعة', fr: 'Actions rapides' },
   docQuickActionLabel: { ar: 'وثيقة', fr: 'Document' },
@@ -781,18 +805,18 @@ A.i18n = {
   hearingPleading: { ar: 'مرافعة', fr: 'Plaidoirie' },
   hearingDeliberation: { ar: 'تأجيل للنطق', fr: 'Mise en délibéré' },
   hearingNotesLabel: { ar: 'ملاحظات', fr: 'Notes' },
-  hearingAddFailed: { ar: 'فشل إضافة الجلسة', fr: 'Échec d\'ajout' },
+  hearingAddFailed: { ar: 'فشل إضافة الجلسة', fr: "Échec d'ajout" },
   newTaskBtn: { ar: 'مهمة جديدة', fr: 'Nouvelle tâche' },
   taskTitleLabel: { ar: 'العنوان', fr: 'Titre' },
   taskPriorityLabel: { ar: 'الأولوية', fr: 'Priorité' },
   taskDueDateLabel: { ar: 'تاريخ الاستحقاق', fr: 'Échéance' },
   taskTitleRequired: { ar: 'العنوان إجباري', fr: 'Titre requis' },
-  taskAddFailed: { ar: 'فشل إضافة المهمة', fr: 'Échec d\'ajout' },
+  taskAddFailed: { ar: 'فشل إضافة المهمة', fr: "Échec d'ajout" },
   boldLabel: { ar: 'عريض', fr: 'Gras' },
   italicLabel: { ar: 'مائل', fr: 'Italique' },
   listLabel: { ar: 'قائمة', fr: 'Liste' },
   notesPlaceholderText: { ar: 'اكتب ملاحظاتك هنا...', fr: 'Écrivez vos notes ici...' },
-  notesSaveFailed: { ar: 'فشل حفظ الملاحظات', fr: 'Échec d\'enregistrement' },
+  notesSaveFailed: { ar: 'فشل حفظ الملاحظات', fr: "Échec d'enregistrement" },
   notSavedYet: { ar: 'لم يتم الحفظ بعد...', fr: 'Pas enregistré...' },
   addPaymentBtn: { ar: 'إضافة دفعة', fr: 'Ajouter un paiement' },
   paymentDateLabel: { ar: 'التاريخ', fr: 'Date' },
@@ -803,7 +827,7 @@ A.i18n = {
   paymentCheque: { ar: 'شيك', fr: 'Chèque' },
   paymentNotesLabel: { ar: 'ملاحظات', fr: 'Notes' },
   paymentAmountRequired: { ar: 'المبلغ إجباري', fr: 'Montant requis' },
-  paymentAddFailed: { ar: 'فشل إضافة الدفعة', fr: 'Échec d\'ajout' },
+  paymentAddFailed: { ar: 'فشل إضافة الدفعة', fr: "Échec d'ajout" },
   contactClientRole: { ar: 'الموكل', fr: 'Client' },
   contactOpposing: { ar: 'المحامي المقابل', fr: 'Avocat adverse' },
   contactWitnesses: { ar: 'الشهود', fr: 'Témoins' },
@@ -831,10 +855,10 @@ A.i18n = {
   eventStatusPostponed: { ar: 'مؤجل', fr: 'Reporté' },
   eventStatusCompleted: { ar: 'مكتمل', fr: 'Terminé' },
   eventStatusCancelled: { ar: 'ملغي', fr: 'Annulé' },
-  editEventTitle: { ar: 'تعديل الحدث', fr: 'Modifier l\'événement' },
+  editEventTitle: { ar: 'تعديل الحدث', fr: "Modifier l'événement" },
   newEventTitle: { ar: 'حدث جديد', fr: 'Nouvel événement' },
   eventTitleLabel: { ar: 'العنوان', fr: 'Titre' },
-  eventTitlePlaceholder: { ar: 'عنوان الحدث', fr: 'Titre de l\'événement' },
+  eventTitlePlaceholder: { ar: 'عنوان الحدث', fr: "Titre de l'événement" },
   eventCaseLabel: { ar: 'القضية', fr: 'Affaire' },
   eventOptional: { ar: '-- اختياري --', fr: '-- Optionnel --' },
   eventClientLabel: { ar: 'الموكل', fr: 'Client' },
@@ -859,7 +883,7 @@ A.i18n = {
   eventOutcomeLabel: { ar: 'النتيجة (للجلسات المنجزة)', fr: 'Résultat (audiences)' },
   eventTitleRequired: { ar: 'العنوان مطلوب', fr: 'Titre requis' },
   eventDateRequired: { ar: 'التاريخ مطلوب', fr: 'Date requise' },
-  eventSaveFailed: { ar: 'فشل حفظ الحدث', fr: 'Échec d\'enregistrement' },
+  eventSaveFailed: { ar: 'فشل حفظ الحدث', fr: "Échec d'enregistrement" },
   eventLoadError: { ar: 'حدث خطأ أثناء تحميل الحدث', fr: 'Erreur de chargement' },
   eventNotFound: { ar: 'الحدث غير موجود', fr: 'Événement introuvable' },
   eventInfoLabel: { ar: 'معلومات الحدث', fr: 'Informations' },
@@ -929,7 +953,7 @@ A.i18n = {
   cmdEmptyTitle: { ar: 'ابدأ الكتابة للبحث...', fr: 'Commencez à chercher...' },
   cmdEmptyDesc: { ar: 'ابحث عن قضايا، موكلين، وثائق، مهام، أو اكتب أمراً', fr: 'Cherchez des affaires, clients, documents...' },
   cmdNoResults: { ar: 'لا توجد نتائج لـ "{q}"', fr: 'Aucun résultat pour "{q}"' },
-  cmdTryDifferent: { ar: 'جرب كلمات مختلفة أو استخدم البحث المتقدم', fr: 'Essayez d\'autres mots' },
+  cmdTryDifferent: { ar: 'جرب كلمات مختلفة أو استخدم البحث المتقدم', fr: "Essayez d'autres mots" },
 
   // ─── Clients Views remaining ───
   noResultsSearch: { ar: 'لا توجد نتائج', fr: 'Aucun résultat' },
@@ -956,7 +980,7 @@ A.i18n = {
   lastContactLabel: { ar: 'آخر اتصال', fr: 'Dernier contact' },
   noActivityLabel: { ar: 'لا توجد', fr: 'Aucun' },
   newCaseBtn: { ar: 'قضية جديدة', fr: 'Nouvelle affaire' },
-  caseNumberHeader: { ar: 'رقم القضية', fr: 'N° d\'affaire' },
+  caseNumberHeader: { ar: 'رقم القضية', fr: "N° d'affaire" },
   subjectHeader: { ar: 'الموضوع', fr: 'Objet' },
   courtHeader: { ar: 'المحكمة', fr: 'Tribunal' },
   statusHeader: { ar: 'الحالة', fr: 'Statut' },
@@ -1001,10 +1025,10 @@ A.i18n = {
   profilePersonalInfo: { ar: 'معلومات شخصية', fr: 'Informations personnelles' },
   profileProfessionalInfo: { ar: 'معلومات مهنية', fr: 'Informations professionnelles' },
   profileSecurity: { ar: 'الأمان', fr: 'Sécurité' },
-  profileBarNumber: { ar: 'رقم القيد', fr: 'N° d\'inscription au barreau' },
+  profileBarNumber: { ar: 'رقم القيد', fr: "N° d'inscription au barreau" },
   profileCity: { ar: 'المدينة', fr: 'Ville' },
   profileSpecialties: { ar: 'التخصصات', fr: 'Spécialités' },
-  profileExperience: { ar: 'سنوات الخبرة', fr: 'Années d\'expérience' },
+  profileExperience: { ar: 'سنوات الخبرة', fr: "Années d'expérience" },
   profileApiKey: { ar: 'مفتاح API', fr: 'Clé API' },
   profileApiKeyNotSet: { ar: 'غير مضبوط', fr: 'Non configuré' },
   profileApiKeySet: { ar: 'مضبوط', fr: 'Configuré' },
@@ -1013,7 +1037,7 @@ A.i18n = {
   profileChangePhoto: { ar: 'تغيير الصورة', fr: 'Changer la photo' },
   savedSuccessfully: { ar: 'تم الحفظ بنجاح', fr: 'Enregistré avec succès' },
   licenseTitle: { ar: 'تفعيل الترخيص', fr: 'Activation de la licence' },
-  licenseSub: { ar: 'أدخل مفتاح التفعيل لبدء استخدام مدير مكتب المحامي', fr: 'Entrez la clé d\'activation pour utiliser Cabinet Manager' },
+  licenseSub: { ar: 'أدخل مفتاح التفعيل لبدء استخدام مدير مكتب المحامي', fr: "Entrez la clé d'activation pour utiliser Cabinet Manager" },
   licenseActivation: { ar: 'تفعيل الترخيص', fr: 'Activation de la licence' },
   licenseActivationDesc: { ar: 'الرجاء إدخال مفتاح الترخيص الخاص بك', fr: 'Veuillez entrer votre clé de licence' },
   licenseActivateBtn: { ar: 'تفعيل', fr: 'Activer' },
@@ -1021,7 +1045,7 @@ A.i18n = {
   licenseChecking: { ar: 'جارٍ التحقق من الترخيص...', fr: 'Vérification de la licence...' },
   licenseActivating: { ar: 'جارٍ التفعيل...', fr: 'Activation en cours...' },
   licenseInvalidKey: { ar: 'مفتاح الترخيص غير صالح', fr: 'Clé de licence invalide' },
-  licenseActivationFailed: { ar: 'فشل التفعيل. تحقق من المفتاح وحاول مرة أخرى.', fr: 'Échec de l\'activation. Vérifiez la clé et réessayez.' },
+  licenseActivationFailed: { ar: 'فشل التفعيل. تحقق من المفتاح وحاول مرة أخرى.', fr: "Échec de l'activation. Vérifiez la clé et réessayez." },
   licenseActivationSuccess: { ar: 'تم التفعيل بنجاح!', fr: 'Activée avec succès !' },
   licenseAlreadyActivated: { ar: 'الترخيص مفعل بالفعل على هذا الجهاز', fr: 'Licence déjà activée sur cet appareil' },
   licenseOffline: { ar: 'لا يمكن التحقق من الترخيص (الرجاء الاتصال بالإنترنت)', fr: 'Impossible de vérifier la licence (veuillez vous connecter à Internet)' },
@@ -1039,21 +1063,21 @@ A.i18n = {
   licenseValidStatus: { ar: 'الترخيص مفعل', fr: 'Licence activée' },
   licenseKeyLabel: { ar: 'المفتاح:', fr: 'Clé:' },
   licenseDeviceLabel: { ar: 'الجهاز:', fr: 'Appareil:' },
-  licenseGraceLabel: { ar: 'فترة السماح:', fr: 'Période de grâce:' },
+  licenseGraceLabel: { ar: 'فترة السماح:', fr: 'Période de grâce:' }
 };
 
 function _t(key) {
   var lang = A._currentLang || 'ar';
   var entry = A.i18n[key];
-  return entry ? (entry[lang] || entry.en || entry.ar || key) : key;
+  return entry ? entry[lang] || entry.en || entry.ar || key : key;
 }
 
-A.getLocale = function() {
+A.getLocale = function () {
   var lang = A._currentLang || 'ar';
-  return lang === 'fr' ? 'fr-FR' : (lang === 'en' ? 'en-US' : 'ar-MA');
+  return lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'ar-MA';
 };
 
-A.getDayNames = function(len) {
+A.getDayNames = function (len) {
   var locale = A.getLocale();
   len = len || 'long';
   var base = new Date(2024, 0, 1);
@@ -1066,11 +1090,11 @@ A.getDayNames = function(len) {
   return days;
 };
 
-A.getShortDayNames = function() {
+A.getShortDayNames = function () {
   return A.getDayNames('narrow');
 };
 
-A.setLanguage = function(lang) {
+A.setLanguage = function (lang) {
   A._currentLang = lang;
   if (lang === 'fr') {
     document.documentElement.dir = 'ltr';
@@ -1081,7 +1105,9 @@ A.setLanguage = function(lang) {
     document.documentElement.lang = 'ar';
     document.body.classList.remove('lang-fr');
   }
-  try { localStorage.setItem('app_lang', lang); } catch(e) {}
+  try {
+    localStorage.setItem('app_lang', lang);
+  } catch (e) {}
   const sel = document.getElementById('settingLang');
   if (sel) sel.value = lang;
   A.updateUI();
@@ -1093,13 +1119,13 @@ A.setLanguage = function(lang) {
   if (A.AutoSave) A.AutoSave.markDirty('i18n');
 };
 
-A.getLanguage = function() {
+A.getLanguage = function () {
   return A._currentLang || 'ar';
 };
 
-A.updateUI = function() {
+A.updateUI = function () {
   var lang = A._currentLang || 'ar';
-  document.querySelectorAll('[data-i18n]').forEach(function(el) {
+  document.querySelectorAll('[data-i18n]').forEach(function (el) {
     var key = el.getAttribute('data-i18n');
     var entry = A.i18n[key];
     if (!entry) return;
@@ -1113,17 +1139,22 @@ A.updateUI = function() {
       el.textContent = text;
     }
   });
-  document.querySelectorAll('[data-i18n-html]').forEach(function(el) {
+  document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
     var key = el.getAttribute('data-i18n-html');
     var entry = A.i18n[key];
     if (!entry) return;
-    el.innerHTML = entry[lang] || entry.en || entry.ar || key;
+    var html = entry[lang] || entry.en || entry.ar || key;
+    html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    html = html.replace(/\bon\w+\s*=\s*['"][^'"]*['"]/gi, '');
+    el.innerHTML = html;
   });
 };
 
-A.initI18n = function() {
+A.initI18n = function () {
   var saved = 'ar';
-  try { saved = localStorage.getItem('app_lang') || 'ar'; } catch(e) {}
+  try {
+    saved = localStorage.getItem('app_lang') || 'ar';
+  } catch (e) {}
   A.setLanguage(saved);
 };
 

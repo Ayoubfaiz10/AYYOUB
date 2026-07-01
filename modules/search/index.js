@@ -1,22 +1,29 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A._searchIndex = [];
 A._searchIndexLoaded = false;
 
-A.loadSearchIndex = async function() {
+A.loadSearchIndex = async function () {
   if (A._searchIndexLoaded || !A.state.ipc) return;
   A.showLoading('globalSearch');
   try {
     const idx = await A.state.ipc.invoke('db:getSearchIndex');
-    if (idx && idx.length) {
+    if (idx && Array.isArray(idx) && idx.length) {
       A._searchIndex = idx.map(r => {
         const lower = r.text.toLowerCase();
         return { ...r, _lower: lower, _words: lower.split(/\s+/).filter(Boolean) };
       });
       A._searchIndexLoaded = true;
+    } else if (idx && idx.error) {
+      // Not authenticated yet — retry after auth
+      setTimeout(() => A.loadSearchIndex(), 2000);
     }
-  } catch (e) { A.logError('loadSearchIndex', e); }
-  finally { A.hideLoading('globalSearch'); }
+  } catch (e) {
+    A.logError('loadSearchIndex', e);
+    setTimeout(() => A.loadSearchIndex(), 3000);
+  } finally {
+    A.hideLoading('globalSearch');
+  }
 };
 
 function scoreResult(item, qWords) {
@@ -55,12 +62,32 @@ function renderSearchResults(results, q, container, inputEl) {
     return;
   }
   const escQ = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const hl = (t) => t ? A.escapeHtml(t).replace(new RegExp('(' + escQ.split(/\s+/).join('|') + ')', 'gi'), '<span class="gsr-highlight">$1</span>') : '';
-  const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
-  const groupIcons = { case: 'ri-briefcase-line', client: 'ri-user-shared-line', hearing: 'ri-calendar-event-line', document: 'ri-file-line', task: 'ri-task-line', expense: 'ri-money-dollar-circle-line' };
+  const hlTerms = escQ.split(/\s+/).filter(Boolean).slice(0, 20);
+  const hlPattern = hlTerms.length ? hlTerms.join('|') : null;
+  const hl = t => (t && hlPattern ? A.escapeHtml(t).replace(new RegExp('(' + hlPattern + ')', 'gi'), '<span class="gsr-highlight">$1</span>') : A.escapeHtml(t || ''));
+  const groupLabels = {
+    case: _t('groupCases'),
+    client: _t('groupClients'),
+    hearing: _t('groupHearings'),
+    document: _t('groupDocuments'),
+    task: _t('groupTasks'),
+    expense: _t('groupExpenses')
+  };
+  const groupIcons = {
+    case: 'ri-briefcase-line',
+    client: 'ri-user-shared-line',
+    hearing: 'ri-calendar-event-line',
+    document: 'ri-file-line',
+    task: 'ri-task-line',
+    expense: 'ri-money-dollar-circle-line'
+  };
   const groups = {};
-  results.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
-  let html = '<div class="gsr-nav-hint"><kbd>↑</kbd><kbd>↓</kbd> ' + _t('navHint') + ' <kbd>↵</kbd> ' + _t('openHint') + ' <kbd>Esc</kbd> ' + _t('closeHint') + '</div>';
+  results.forEach(r => {
+    if (!groups[r.type]) groups[r.type] = [];
+    groups[r.type].push(r);
+  });
+  let html =
+    '<div class="gsr-nav-hint"><kbd>↑</kbd><kbd>↓</kbd> ' + _t('navHint') + ' <kbd>↵</kbd> ' + _t('openHint') + ' <kbd>Esc</kbd> ' + _t('closeHint') + '</div>';
   Object.keys(groups).forEach(type => {
     const items = groups[type];
     html += `<div class="gsr-group"><i class="${groupIcons[type] || 'ri-search-line'}"></i> ${groupLabels[type] || type} (${items.length})</div>`;
@@ -74,14 +101,20 @@ function renderSearchResults(results, q, container, inputEl) {
     el.addEventListener('click', () => {
       container.style.display = 'none';
       if (inputEl) inputEl.value = '';
-      if (el.dataset.type === 'expense') { A.navigateTo('expenses'); return; }
-      if (el.dataset.type === 'document') { A.navigateTo('documents'); return; }
+      if (el.dataset.type === 'expense') {
+        A.navigateTo('expenses');
+        return;
+      }
+      if (el.dataset.type === 'document') {
+        A.navigateTo('documents');
+        return;
+      }
       A.navigateTo(el.dataset.section);
     });
   });
 }
 
-A.initGlobalSearch = function() {
+A.initGlobalSearch = function () {
   const gs = document.getElementById('globalSearch');
   const gsr = document.getElementById('globalSearchResults');
   if (!gs || !gsr) return;
@@ -89,28 +122,57 @@ A.initGlobalSearch = function() {
 
   gs.addEventListener('input', () => {
     const q = gs.value.trim();
-    if (!q) { gsr.style.display = 'none'; return; }
+    if (!q) {
+      gsr.style.display = 'none';
+      return;
+    }
     const results = searchLocal(q);
     renderSearchResults(results, q, gsr, gs);
   });
 
-  gs.addEventListener('blur', () => setTimeout(() => { gsr.style.display = 'none'; gsActiveIdx = -1; }, 200));
+  gs.addEventListener('blur', () =>
+    setTimeout(() => {
+      gsr.style.display = 'none';
+      gsActiveIdx = -1;
+    }, 200)
+  );
   gs.addEventListener('focus', () => {
     const q = gs.value.trim();
-    if (q) { const results = searchLocal(q); renderSearchResults(results, q, gsr, gs); }
+    if (q) {
+      const results = searchLocal(q);
+      renderSearchResults(results, q, gsr, gs);
+    }
   });
 
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); gs.focus(); gs.select(); }
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      gs.focus();
+      gs.select();
+    }
   });
 
-  gs.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') { gsr.style.display = 'none'; gsActiveIdx = -1; gs.blur(); return; }
+  gs.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      gsr.style.display = 'none';
+      gsActiveIdx = -1;
+      gs.blur();
+      return;
+    }
     const items = gsr.querySelectorAll('.gsr-item');
     if (!items.length) return;
-    if (e.key === 'ArrowDown') { e.preventDefault(); gsActiveIdx = gsActiveIdx < items.length - 1 ? gsActiveIdx + 1 : 0; updateActive(items); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); gsActiveIdx = gsActiveIdx > 0 ? gsActiveIdx - 1 : items.length - 1; updateActive(items); }
-    else if (e.key === 'Enter' && gsActiveIdx >= 0) { e.preventDefault(); items[gsActiveIdx].click(); }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      gsActiveIdx = gsActiveIdx < items.length - 1 ? gsActiveIdx + 1 : 0;
+      updateActive(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      gsActiveIdx = gsActiveIdx > 0 ? gsActiveIdx - 1 : items.length - 1;
+      updateActive(items);
+    } else if (e.key === 'Enter' && gsActiveIdx >= 0) {
+      e.preventDefault();
+      items[gsActiveIdx].click();
+    }
   });
 
   function updateActive(items) {
@@ -122,19 +184,21 @@ A.initGlobalSearch = function() {
 // ─── Recent Items ───
 A._recentItems = [];
 
-A.addRecentItem = function(type, id, label, sub, nav) {
+A.addRecentItem = function (type, id, label, sub, nav) {
   const key = type + '_' + id;
   A._recentItems = A._recentItems.filter(r => r.key !== key);
   A._recentItems.unshift({ key, type, id, label, sub, nav, time: Date.now() });
   if (A._recentItems.length > 8) A._recentItems.pop();
-  try { localStorage.setItem('cp_recent', JSON.stringify(A._recentItems.map(r => ({ ...r, time: 0 })))); } catch {}
+  try {
+    localStorage.setItem('cp_recent', JSON.stringify(A._recentItems.map(r => ({ ...r, time: 0 }))));
+  } catch {}
 };
 
-A.getRecentItems = function() {
+A.getRecentItems = function () {
   return A._recentItems.slice(0, 6);
 };
 
-A.loadRecentItems = function() {
+A.loadRecentItems = function () {
   try {
     const saved = localStorage.getItem('cp_recent');
     if (saved) A._recentItems = JSON.parse(saved);
@@ -143,18 +207,52 @@ A.loadRecentItems = function() {
 
 // ─── Navigation commands ───
 const CMD_NAV_ACTIONS = [
-  { text: _t('cmdDashboard'), sub: _t('cmdDashboardSub'), words: 'dashboard لوحة القيادة الرئيسية الرئيسي home accueil', nav: 'dashboard', icon: 'ri-dashboard-line', kbd: '1' },
+  {
+    text: _t('cmdDashboard'),
+    sub: _t('cmdDashboardSub'),
+    words: 'dashboard لوحة القيادة الرئيسية الرئيسي home accueil',
+    nav: 'dashboard',
+    icon: 'ri-dashboard-line',
+    kbd: '1'
+  },
   { text: _t('cmdCases'), sub: _t('cmdCasesSub'), words: 'cases قضايا ملفات affaires', nav: 'cases', icon: 'ri-briefcase-line', kbd: '2' },
   { text: _t('cmdClients'), sub: _t('cmdClientsSub'), words: 'clients موكلين عملاء clients', nav: 'clients', icon: 'ri-user-3-line', kbd: '3' },
   { text: _t('cmdDocs'), sub: _t('cmdDocsSub'), words: 'documents وثائق ملفات مستندات documents', nav: 'documents', icon: 'ri-file-4-line', kbd: '4' },
-  { text: _t('cmdCalendar'), sub: _t('cmdCalendarSub'), words: 'calendar تقويم جلسات مواعيد calendrier rendez-vous', nav: 'calendar', icon: 'ri-calendar-event-line', kbd: '5' },
+  {
+    text: _t('cmdCalendar'),
+    sub: _t('cmdCalendarSub'),
+    words: 'calendar تقويم جلسات مواعيد calendrier rendez-vous',
+    nav: 'calendar',
+    icon: 'ri-calendar-event-line',
+    kbd: '5'
+  },
   { text: _t('cmdTasks'), sub: _t('cmdTasksSub'), words: 'tasks مهام مهمات taches', nav: 'tasks', icon: 'ri-task-line', kbd: '6' },
-  { text: _t('cmdAdvancedSearch'), sub: _t('cmdAdvancedSearchSub'), words: 'search بحث متقدم recherche avancée', nav: 'search', icon: 'ri-search-line', kbd: '7' },
-  { text: _t('cmdSettings'), sub: _t('cmdSettingsSub'), words: 'settings إعدادات parametres configuration', nav: 'settings', icon: 'ri-settings-4-line', kbd: '8' },
+  {
+    text: _t('cmdAdvancedSearch'),
+    sub: _t('cmdAdvancedSearchSub'),
+    words: 'search بحث متقدم recherche avancée',
+    nav: 'search',
+    icon: 'ri-search-line',
+    kbd: '7'
+  },
+  {
+    text: _t('cmdSettings'),
+    sub: _t('cmdSettingsSub'),
+    words: 'settings إعدادات parametres configuration',
+    nav: 'settings',
+    icon: 'ri-settings-4-line',
+    kbd: '8'
+  },
   { text: _t('cmdReports'), sub: _t('cmdReportsSub'), words: 'reports تقارير rapports statistiques', nav: 'reports', icon: 'ri-bar-chart-line', kbd: '9' },
   { text: _t('cmdAI'), sub: _t('cmdAISub'), words: 'ai مساعد ذكي robot intelligence artificielle', nav: 'ai', icon: 'ri-robot-3-line', kbd: '0' },
-  { text: _t('cmdExpenses'), sub: _t('cmdExpensesSub'), words: 'expenses مصاريف مدفوعات dépenses paiements', nav: 'expenses', icon: 'ri-money-dollar-circle-line' },
-  { text: _t('cmdArchive'), sub: _t('cmdArchiveSub'), words: 'archive أرشيف archivées', nav: 'archive', icon: 'ri-archive-line' },
+  {
+    text: _t('cmdExpenses'),
+    sub: _t('cmdExpensesSub'),
+    words: 'expenses مصاريف مدفوعات dépenses paiements',
+    nav: 'expenses',
+    icon: 'ri-money-dollar-circle-line'
+  },
+  { text: _t('cmdArchive'), sub: _t('cmdArchiveSub'), words: 'archive أرشيف archivées', nav: 'archive', icon: 'ri-archive-line' }
 ];
 
 const CMD_CREATE_ACTIONS = [
@@ -162,14 +260,42 @@ const CMD_CREATE_ACTIONS = [
   { icon: 'ri-user-add-line', iconBg: '#1E2A38', text: _t('cmdNewClient'), sub: _t('cmdNewClientSub'), action: 'newclient', kbd: 'U' },
   { icon: 'ri-file-add-line', iconBg: '#C6A15B', text: _t('cmdUploadDoc'), sub: _t('cmdUploadDocSub'), action: 'doc', kbd: 'D' },
   { icon: 'ri-task-add-line', iconBg: '#C6A15B', text: _t('cmdNewTask'), sub: _t('cmdNewTaskSub'), action: 'task', kbd: 'T' },
-  { icon: 'ri-scales-line', iconBg: '#C6A15B', text: _t('cmdNewHearing'), sub: _t('cmdNewHearingSub'), action: 'hearing', kbd: 'H' },
+  { icon: 'ri-scales-line', iconBg: '#C6A15B', text: _t('cmdNewHearing'), sub: _t('cmdNewHearingSub'), action: 'hearing', kbd: 'H' }
 ];
 
 const CMD_QUICK_ACTIONS = [
-  { text: _t('cmdCreateBackup'), sub: _t('cmdCreateBackupSub'), words: 'backup نسخة احتياطية sauvegarde', action: 'backup', icon: 'ri-save-3-line', iconBg: '#1E2A38' },
-  { text: _t('cmdIntegrityCheck'), sub: _t('cmdIntegrityCheckSub'), words: 'integrity سلامة بيانات تحقق vérification', action: 'integrity', icon: 'ri-check-double-line', iconBg: '#C6A15B' },
-  { text: _t('cmdRepairData'), sub: _t('cmdRepairDataSub'), words: 'repair إصلاح بيانات correction', action: 'repair', icon: 'ri-tools-line', iconBg: '#C6A15B' },
-  { text: _t('cmdViewDashboard'), sub: _t('cmdViewDashboardSub'), words: 'dashboard home الرئيسية', action: 'nav_dashboard', icon: 'ri-dashboard-line', iconBg: '#1E2A38' },
+  {
+    text: _t('cmdCreateBackup'),
+    sub: _t('cmdCreateBackupSub'),
+    words: 'backup نسخة احتياطية sauvegarde',
+    action: 'backup',
+    icon: 'ri-save-3-line',
+    iconBg: '#1E2A38'
+  },
+  {
+    text: _t('cmdIntegrityCheck'),
+    sub: _t('cmdIntegrityCheckSub'),
+    words: 'integrity سلامة بيانات تحقق vérification',
+    action: 'integrity',
+    icon: 'ri-check-double-line',
+    iconBg: '#C6A15B'
+  },
+  {
+    text: _t('cmdRepairData'),
+    sub: _t('cmdRepairDataSub'),
+    words: 'repair إصلاح بيانات correction',
+    action: 'repair',
+    icon: 'ri-tools-line',
+    iconBg: '#C6A15B'
+  },
+  {
+    text: _t('cmdViewDashboard'),
+    sub: _t('cmdViewDashboardSub'),
+    words: 'dashboard home الرئيسية',
+    action: 'nav_dashboard',
+    icon: 'ri-dashboard-line',
+    iconBg: '#1E2A38'
+  }
 ];
 
 function matchNavAction(q, action) {
@@ -185,22 +311,44 @@ function execCmdItem() {
   const id = this.dataset.id;
   const section = this.dataset.section;
 
-  if (action === 'nav' && section) { A.navigateTo(section); }
-  else if (action === 'case' && id) { A.addRecentItem('case', id, this.dataset.label, this.dataset.sub, 'cases'); A.navigateTo('cases'); setTimeout(() => A.openCaseDetail(parseInt(id)), 200); }
-  else if (action === 'client' && id) { A.addRecentItem('client', id, this.dataset.label, this.dataset.sub, 'clients'); A.navigateTo('clients'); setTimeout(() => A.openClientDetail(parseInt(id)), 200); }
-  else if (action === 'expense') { A.navigateTo('expenses'); }
-  else if (action === 'doc') document.getElementById('uploadDocGlobalBtn')?.click();
+  if (action === 'nav' && section) {
+    A.navigateTo(section);
+  } else if (action === 'case' && id) {
+    A.addRecentItem('case', id, this.dataset.label, this.dataset.sub, 'cases');
+    A.navigateTo('cases');
+    setTimeout(() => A.openCaseDetail(parseInt(id)), 200);
+  } else if (action === 'client' && id) {
+    A.addRecentItem('client', id, this.dataset.label, this.dataset.sub, 'clients');
+    A.navigateTo('clients');
+    setTimeout(() => A.openClientDetail(parseInt(id)), 200);
+  } else if (action === 'expense') {
+    A.navigateTo('expenses');
+  } else if (action === 'doc') document.getElementById('uploadDocGlobalBtn')?.click();
   else if (action === 'task') A.showTaskForm();
   else if (action === 'hearing') A.showEventForm();
   else if (action === 'newcase') document.getElementById('addCaseBtn')?.click();
-  else if (action === 'newclient') { A.navigateTo('clients'); setTimeout(() => document.getElementById('addClientBtn')?.click(), 100); }
-  else if (action === 'backup') { A.navigateTo('settings'); setTimeout(() => document.querySelector('[data-setting="backup"]')?.click(), 200); }
-  else if (action === 'integrity') { A.navigateTo('settings'); setTimeout(() => { if (A.runIntegrityCheck) A.runIntegrityCheck(); }, 200); }
-  else if (action === 'repair') { A.navigateTo('settings'); setTimeout(() => { if (A.repairOrphans) A.repairOrphans(); }, 200); }
-  else if (action === 'nav_dashboard') { A.navigateTo('dashboard'); }
+  else if (action === 'newclient') {
+    A.navigateTo('clients');
+    setTimeout(() => document.getElementById('addClientBtn')?.click(), 100);
+  } else if (action === 'backup') {
+    A.navigateTo('settings');
+    setTimeout(() => document.querySelector('[data-setting="backup"]')?.click(), 200);
+  } else if (action === 'integrity') {
+    A.navigateTo('settings');
+    setTimeout(() => {
+      if (A.runIntegrityCheck) A.runIntegrityCheck();
+    }, 200);
+  } else if (action === 'repair') {
+    A.navigateTo('settings');
+    setTimeout(() => {
+      if (A.repairOrphans) A.repairOrphans();
+    }, 200);
+  } else if (action === 'nav_dashboard') {
+    A.navigateTo('dashboard');
+  }
 }
 
-A.initCommandPalette = function() {
+A.initCommandPalette = function () {
   A.loadRecentItems();
   let cmdIndex = -1;
   let cmdAbort = false;
@@ -231,15 +379,41 @@ A.initCommandPalette = function() {
 
     // Empty state
     if (!hasQuery && !recent.length && !createItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdEmptyTitle') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdEmptyDesc') + '</p></div>';
+      return (
+        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
+        _t('cmdEmptyTitle') +
+        '</p><p style="font-size:11px;margin-top:4px;">' +
+        _t('cmdEmptyDesc') +
+        '</p></div>'
+      );
     }
     if (hasQuery && !searchResults.length && !navItems.length && !createItems.length && !quickItems.length) {
-      return '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' + _t('cmdNoResults').replace('{q}', '<strong style="color:var(--muted-foreground);">' + A.escapeHtml(query) + '</strong>') + '</p><p style="font-size:11px;margin-top:4px;">' + _t('cmdTryDifferent') + '</p></div>';
+      return (
+        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
+        _t('cmdNoResults').replace('{q}', '<strong style="color:var(--muted-foreground);">' + A.escapeHtml(query) + '</strong>') +
+        '</p><p style="font-size:11px;margin-top:4px;">' +
+        _t('cmdTryDifferent') +
+        '</p></div>'
+      );
     }
 
     const esc = A.escapeHtml;
-    const groupIcons = { case: 'ri-briefcase-line', client: 'ri-user-3-line', hearing: 'ri-calendar-event-line', document: 'ri-file-4-line', task: 'ri-task-line', expense: 'ri-money-dollar-circle-line' };
-    const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
+    const groupIcons = {
+      case: 'ri-briefcase-line',
+      client: 'ri-user-3-line',
+      hearing: 'ri-calendar-event-line',
+      document: 'ri-file-4-line',
+      task: 'ri-task-line',
+      expense: 'ri-money-dollar-circle-line'
+    };
+    const groupLabels = {
+      case: _t('groupCases'),
+      client: _t('groupClients'),
+      hearing: _t('groupHearings'),
+      document: _t('groupDocuments'),
+      task: _t('groupTasks'),
+      expense: _t('groupExpenses')
+    };
     const actionMap = { case: 'case', client: 'client', hearing: 'hearing', document: 'docopen', task: 'task', expense: 'expense' };
 
     let h = '';
@@ -272,16 +446,21 @@ A.initCommandPalette = function() {
     // Search results
     if (searchResults.length) {
       const groups = {};
-      searchResults.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
-      Object.keys(groups).slice(0, 4).forEach(type => {
-        h += '<div class="cmd-category">' + (groupLabels[type] || type) + '</div>';
-        groups[type].slice(0, 4).forEach(item => {
-          h += `<div class="cmd-item" data-action="${actionMap[type] || 'case'}" data-id="${item.id}" data-label="${esc(item.label)}" data-sub="${esc(item.sub)}" data-section="${esc(item.nav)}">
+      searchResults.forEach(r => {
+        if (!groups[r.type]) groups[r.type] = [];
+        groups[r.type].push(r);
+      });
+      Object.keys(groups)
+        .slice(0, 4)
+        .forEach(type => {
+          h += '<div class="cmd-category">' + (groupLabels[type] || type) + '</div>';
+          groups[type].slice(0, 4).forEach(item => {
+            h += `<div class="cmd-item" data-action="${actionMap[type] || 'case'}" data-id="${item.id}" data-label="${esc(item.label)}" data-sub="${esc(item.sub)}" data-section="${esc(item.nav)}">
             <div class="cmd-item-icon" style="background:rgba(30,42,56,0.08);color:var(--foreground);"><i class="${groupIcons[type] || 'ri-search-line'}"></i></div>
             <div class="cmd-item-text"><div class="cmd-item-title">${esc(item.label)}</div><div class="cmd-item-sub">${esc(item.sub)}</div></div>
           </div>`;
+          });
         });
-      });
     }
 
     // Create actions
@@ -317,18 +496,22 @@ A.initCommandPalette = function() {
     results.querySelectorAll('.cmd-item').forEach(item => item.addEventListener('click', execCmdItem));
   }
 
-  A.showCommandPalette = function() {
+  A.showCommandPalette = function () {
     const isOpen = palette.style.display !== 'none';
     palette.style.display = isOpen ? 'none' : 'flex';
-    if (!isOpen) { input.value = ''; input.focus(); refresh(); }
+    if (!isOpen) {
+      input.value = '';
+      input.focus();
+      refresh();
+    }
   };
-  A.hideCommandPalette = function() {
+  A.hideCommandPalette = function () {
     palette.style.display = 'none';
     input.value = '';
   };
 
   // Open/close
-  document.addEventListener('keydown', (e) => {
+  document.addEventListener('keydown', e => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       A.showCommandPalette();
@@ -343,13 +526,32 @@ A.initCommandPalette = function() {
   input.addEventListener('input', refresh);
 
   // Keyboard navigation
-  input.addEventListener('keydown', (e) => {
+  input.addEventListener('keydown', e => {
     const items = results.querySelectorAll('.cmd-item');
-    if (!items.length) { if (e.key === 'Enter') { e.preventDefault(); palette.style.display = 'none'; } return; }
-    if (e.key === 'ArrowDown') { e.preventDefault(); cmdIndex = Math.min(cmdIndex + 1, items.length - 1); updateActive(items); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); cmdIndex = Math.max(cmdIndex - 1, 0); updateActive(items); }
-    else if (e.key === 'Enter') { e.preventDefault(); if (cmdIndex >= 0 && items[cmdIndex]) items[cmdIndex].click(); else items[0].click(); }
-    else if (e.key === 'Tab') { e.preventDefault(); cmdIndex = cmdIndex < items.length - 1 ? cmdIndex + 1 : 0; updateActive(items); }
+    if (!items.length) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        palette.style.display = 'none';
+      }
+      return;
+    }
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      cmdIndex = Math.min(cmdIndex + 1, items.length - 1);
+      updateActive(items);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      cmdIndex = Math.max(cmdIndex - 1, 0);
+      updateActive(items);
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (cmdIndex >= 0 && items[cmdIndex]) items[cmdIndex].click();
+      else items[0].click();
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      cmdIndex = cmdIndex < items.length - 1 ? cmdIndex + 1 : 0;
+      updateActive(items);
+    }
   });
 
   function updateActive(items) {
@@ -358,20 +560,25 @@ A.initCommandPalette = function() {
   }
 
   // Close on overlay click
-  palette.addEventListener('click', (e) => { if (e.target === palette) A.hideCommandPalette(); });
+  palette.addEventListener('click', e => {
+    if (e.target === palette) A.hideCommandPalette();
+  });
 };
 
 window.showCommandPalette = () => A.showCommandPalette();
 window.hideCommandPalette = () => A.hideCommandPalette();
 
-A.initAdvancedSearch = function() {
+A.initAdvancedSearch = function () {
   const input = document.getElementById('advancedSearchInput');
   const resultsEl = document.getElementById('advancedSearchResults');
   if (!input) return;
 
   input.addEventListener('input', () => {
     const q = input.value.trim();
-    if (!q || !A.state.ipc) { if (resultsEl) resultsEl.innerHTML = ''; return; }
+    if (!q || !A.state.ipc) {
+      if (resultsEl) resultsEl.innerHTML = '';
+      return;
+    }
     const container = resultsEl;
     // Use local index for instant results, then supplement with IPC
     const local = searchLocal(q);
@@ -379,9 +586,19 @@ A.initAdvancedSearch = function() {
     const esc = A.escapeHtml;
     const items = [];
     if (local.length) {
-      const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks'), expense: _t('groupExpenses') };
+      const groupLabels = {
+        case: _t('groupCases'),
+        client: _t('groupClients'),
+        hearing: _t('groupHearings'),
+        document: _t('groupDocuments'),
+        task: _t('groupTasks'),
+        expense: _t('groupExpenses')
+      };
       const groups = {};
-      local.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
+      local.forEach(r => {
+        if (!groups[r.type]) groups[r.type] = [];
+        groups[r.type].push(r);
+      });
       Object.keys(groups).forEach(type => {
         if (type === 'case' && !document.getElementById('searchInCases')?.checked) return;
         if (type === 'client' && !document.getElementById('searchInClients')?.checked) return;
@@ -393,14 +610,31 @@ A.initAdvancedSearch = function() {
       });
     }
     if (items.length) {
-      const hl = (t) => t ? esc(t).replace(new RegExp('(' + q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split(/\s+/).join('|') + ')', 'gi'), '<span class="gsr-highlight">$1</span>') : '';
-      const groupLabels = { case: _t('groupCases'), client: _t('groupClients'), hearing: _t('groupHearings'), document: _t('groupDocuments'), task: _t('groupTasks') };
+      var _hlTerms = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split(/\s+/).filter(Boolean).slice(0, 20);
+      var _hlPattern = _hlTerms.length ? _hlTerms.join('|') : null;
+      const hl = t =>
+        t && _hlPattern
+          ? esc(t).replace(
+              new RegExp('(' + _hlPattern + ')', 'gi'),
+              '<span class="gsr-highlight">$1</span>'
+            )
+          : esc(t || '');
+      const groupLabels = {
+        case: _t('groupCases'),
+        client: _t('groupClients'),
+        hearing: _t('groupHearings'),
+        document: _t('groupDocuments'),
+        task: _t('groupTasks')
+      };
       const groups = {};
-      items.forEach(r => { if (!groups[r.type]) groups[r.type] = []; groups[r.type].push(r); });
+      items.forEach(r => {
+        if (!groups[r.type]) groups[r.type] = [];
+        groups[r.type].push(r);
+      });
       Object.keys(groups).forEach(type => {
         html += `<h4 style="margin:12px 0 8px;font-size:13px;color:var(--muted-foreground);">${groupLabels[type] || type} (${groups[type].length})</h4>`;
         groups[type].forEach(item => {
-          html += `<div class="dash-item" style="cursor:pointer;" onclick="A.navigateTo('${esc(item.nav)}')"><div class="dash-item-body"><div class="dash-item-title">${hl(item.label)}</div><div class="dash-item-sub">${hl(item.sub)}</div></div></div>`;
+          html += `<div class="dash-item" style="cursor:pointer;" data-click="nav:${esc(item.nav)}"><div class="dash-item-body"><div class="dash-item-title">${hl(item.label)}</div><div class="dash-item-sub">${hl(item.sub)}</div></div></div>`;
         });
       });
     } else {

@@ -1,4 +1,3 @@
-const { describe, it } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -51,12 +50,43 @@ function verifyToken(token) {
 // ───── Token Test Helpers ─────
 
 const ROLE_ACCESS = {
-  admin:        ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support','settings'],
-  senior_lawyer: ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support'],
-  junior_lawyer: ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','ai','support'],
-  assistant:    ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','support'],
-  intern:       ['dashboard','search','notifications','clients','cases','hearings','documents','tasks','support'],
-  external:     ['dashboard','search','notifications','clients','cases','hearings','documents','support']
+  admin: [
+    'dashboard',
+    'search',
+    'notifications',
+    'clients',
+    'cases',
+    'hearings',
+    'documents',
+    'calendar',
+    'tasks',
+    'expenses',
+    'reports',
+    'ai',
+    'archive',
+    'support',
+    'settings'
+  ],
+  senior_lawyer: [
+    'dashboard',
+    'search',
+    'notifications',
+    'clients',
+    'cases',
+    'hearings',
+    'documents',
+    'calendar',
+    'tasks',
+    'expenses',
+    'reports',
+    'ai',
+    'archive',
+    'support'
+  ],
+  junior_lawyer: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'ai', 'support'],
+  assistant: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'support'],
+  intern: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'tasks', 'support'],
+  external: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'support']
 };
 
 function canAccess(role, sectionId) {
@@ -153,11 +183,27 @@ describe('Role-Based Navigation Access', () => {
   it('intern cannot access calendar', () => assert.equal(canAccess('intern', 'calendar'), false));
   it('external cannot access tasks', () => assert.equal(canAccess('external', 'tasks'), false));
   it('all roles can access dashboard', () => {
-    const roles = ['admin','senior_lawyer','junior_lawyer','assistant','intern','external'];
+    const roles = ['admin', 'senior_lawyer', 'junior_lawyer', 'assistant', 'intern', 'external'];
     roles.forEach(r => assert.equal(canAccess(r, 'dashboard'), true));
   });
   it('admin can access all sections', () => {
-    const sections = ['dashboard','search','notifications','clients','cases','hearings','documents','calendar','tasks','expenses','reports','ai','archive','support','settings'];
+    const sections = [
+      'dashboard',
+      'search',
+      'notifications',
+      'clients',
+      'cases',
+      'hearings',
+      'documents',
+      'calendar',
+      'tasks',
+      'expenses',
+      'reports',
+      'ai',
+      'archive',
+      'support',
+      'settings'
+    ];
     sections.forEach(s => assert.equal(canAccess('admin', s), true));
   });
   it('unknown role falls back to admin access', () => assert.equal(canAccess('unknown_role', 'settings'), true));

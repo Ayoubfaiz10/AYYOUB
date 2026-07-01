@@ -1,4 +1,4 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A.AutoSave = {
   _prefix: 'as_',
@@ -62,7 +62,9 @@ A.AutoSave = {
       const raw = localStorage.getItem(this._prefix + key);
       if (!raw) return null;
       return JSON.parse(raw).value;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   },
 
   clear(key) {
@@ -96,7 +98,8 @@ A.AutoSave = {
   _indicator(key, status) {
     const opts = this._reg[key];
     if (!opts) return;
-    const el = typeof opts.indicator === 'function' ? opts.indicator() : (typeof opts.indicator === 'string' ? document.getElementById(opts.indicator) : opts.indicator);
+    const el =
+      typeof opts.indicator === 'function' ? opts.indicator() : typeof opts.indicator === 'string' ? document.getElementById(opts.indicator) : opts.indicator;
     if (!el) return;
     const states = {
       unsaved: { text: _t('autosaveUnsaved'), color: 'var(--gold)' },
@@ -115,11 +118,22 @@ A.AutoSave = {
     const banner = document.createElement('div');
     banner.id = 'asBanner';
     Object.assign(banner.style, {
-      position:'fixed', bottom:'80px', right:'50%', transform:'translateX(50%)',
-      background:'var(--primary)', color:'#fff', padding:'14px 24px',
-      borderRadius:'var(--rounded-lg)', boxShadow:'0 8px 32px rgba(0,0,0,0.3)',
-      zIndex:10000, display:'flex', alignItems:'center', gap:'14px',
-      fontSize:'13px', direction:'rtl', maxWidth:'620px'
+      position: 'fixed',
+      bottom: '80px',
+      right: '50%',
+      transform: 'translateX(50%)',
+      background: 'var(--primary)',
+      color: '#fff',
+      padding: '14px 24px',
+      borderRadius: 'var(--rounded-lg)',
+      boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+      zIndex: 10000,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '14px',
+      fontSize: '13px',
+      direction: 'rtl',
+      maxWidth: '620px'
     });
     const esc = A.escapeHtml;
     banner.innerHTML = `
@@ -143,17 +157,21 @@ A.AutoSave = {
       this.clearAll();
       banner.remove();
     };
-    setTimeout(() => { if (banner.parentNode) banner.remove(); }, 20000);
+    setTimeout(() => {
+      if (banner.parentNode) banner.remove();
+    }, 20000);
   },
 
   init() {
     setInterval(() => A.AutoSave.saveAll(), 30000);
     window.addEventListener('beforeunload', () => A.AutoSave.saveAll());
-    document.addEventListener('visibilitychange', () => { if (document.hidden) A.AutoSave.saveAll(); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) A.AutoSave.saveAll();
+    });
     A.AutoSave._updateGlobalIndicator();
     setInterval(() => A.AutoSave._updateGlobalIndicator(), 5000);
     setTimeout(() => A.AutoSave.showRestoreNotification(), 2000);
-    document.getElementById('topbar')?.addEventListener('click', (e) => {
+    document.getElementById('topbar')?.addEventListener('click', e => {
       if (e.target.closest('#asGlobalStatus')) {
         A.AutoSave.saveAll();
         A.showToast('تم حفظ جميع التعديلات', 'success');

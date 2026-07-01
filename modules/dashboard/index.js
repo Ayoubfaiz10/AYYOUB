@@ -1,18 +1,23 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A.state.quotes = [
-  '"العدالة أساس الملك"', '"الحق فوق القوة"', '"القانون سلاح الضعفاء"', '"العدل أساس العمران"',
-  '"من حكم بين الناس بالعدل فهو في ذمة الله"', '"القاضي العادل يُحيي الأرض"', '"العدل حياة القلوب"'
+  '"العدالة أساس الملك"',
+  '"الحق فوق القوة"',
+  '"القانون سلاح الضعفاء"',
+  '"العدل أساس العمران"',
+  '"من حكم بين الناس بالعدل فهو في ذمة الله"',
+  '"القاضي العادل يُحيي الأرض"',
+  '"العدل حياة القلوب"'
 ];
 
 A.state.dashboardCache = null;
 A.state.dashboardCacheTime = null;
 const DASHBOARD_CACHE_DURATION = 30000;
 
-A.loadDashboard = async function(force = false) {
+A.loadDashboard = async function (force = false) {
   if (!A.state.ipc) return;
   const now = Date.now();
-  if (!force && A.state.dashboardCache && A.state.dashboardCacheTime && (now - A.state.dashboardCacheTime) < DASHBOARD_CACHE_DURATION) {
+  if (!force && A.state.dashboardCache && A.state.dashboardCacheTime && now - A.state.dashboardCacheTime < DASHBOARD_CACHE_DURATION) {
     A.renderDashboard(A.state.dashboardCache);
     return;
   }
@@ -38,7 +43,7 @@ A.loadDashboard = async function(force = false) {
   }
 };
 
-A.initDashboard = function() {
+A.initDashboard = function () {
   // Dashboard event listeners are set up at render time via initQuickActions
 };
 

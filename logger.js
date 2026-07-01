@@ -59,7 +59,9 @@ function log(level, context, message, data) {
       const action = LEVEL_NAMES[level].toLowerCase();
       const detail = `[${context}] ${String(message).slice(0, 500)}`;
       dbLogFn(action, detail);
-    } catch (e) { /* best effort */ }
+    } catch (e) {
+      /* best effort */
+    }
   }
 }
 
@@ -81,17 +83,22 @@ const logger = {
       for (const f of files) {
         try {
           const content = fs.readFileSync(f, 'utf8');
-          content.split('\n').filter(Boolean).forEach(line => {
-            const match = line.match(/^(\S+) \[(\w+)\] \[([^\]]+)\] (.*)$/);
-            if (match) {
-              const entry = { timestamp: match[1], level: match[2], context: match[3], message: match[4] };
-              if (filters.level && entry.level !== filters.level) return;
-              if (filters.context && !entry.context.toLowerCase().includes(filters.context.toLowerCase())) return;
-              if (filters.search && !entry.message.toLowerCase().includes(filters.search.toLowerCase())) return;
-              lines.push(entry);
-            }
-          });
-        } catch (e) { /* skip unreadable */ }
+          content
+            .split('\n')
+            .filter(Boolean)
+            .forEach(line => {
+              const match = line.match(/^(\S+) \[(\w+)\] \[([^\]]+)\] (.*)$/);
+              if (match) {
+                const entry = { timestamp: match[1], level: match[2], context: match[3], message: match[4] };
+                if (filters.level && entry.level !== filters.level) return;
+                if (filters.context && !entry.context.toLowerCase().includes(filters.context.toLowerCase())) return;
+                if (filters.search && !entry.message.toLowerCase().includes(filters.search.toLowerCase())) return;
+                lines.push(entry);
+              }
+            });
+        } catch (e) {
+          /* skip unreadable */
+        }
       }
       const limit = filters.limit || 500;
       const offset = filters.offset || 0;

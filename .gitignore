@@ -35,3 +35,9 @@ Thumbs.db
 
 # Temp files (password .tmp, editor swap, etc.)
 *.tmp
+
+# Playwright test results
+test-results/
+
+# Git-tracked modules snapshot
+modules_backup/

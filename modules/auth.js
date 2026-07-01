@@ -1,4 +1,4 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A._selectedUserId = null;
 A._dashboardLoaded = false;
@@ -20,7 +20,7 @@ A.SECURITY_QUESTIONS = [
   'ما هو اسم فيلمك المفضل؟'
 ];
 
-A.populateSecurityQuestions = function() {
+A.populateSecurityQuestions = function () {
   var sel = document.getElementById('sq1');
   if (!sel) return;
   sel.innerHTML = '<option value="">اختر سؤال الأمان...</option>';
@@ -34,7 +34,7 @@ A.populateSecurityQuestions = function() {
 
 A._currentSetupStep = 1;
 
-A.goToSetupStep = function(n) {
+A.goToSetupStep = function (n) {
   A._currentSetupStep = n;
   for (var i = 1; i <= 3; i++) {
     var content = document.getElementById('setupStep' + i + 'Content');
@@ -51,7 +51,7 @@ A.goToSetupStep = function(n) {
   if (pctEl) pctEl.textContent = pct + '%';
 };
 
-A.nextSetupStep = function() {
+A.nextSetupStep = function () {
   var errorEl = document.getElementById('setupError');
   if (errorEl) errorEl.style.display = 'none';
   var step = A._currentSetupStep;
@@ -59,12 +59,18 @@ A.nextSetupStep = function() {
     var officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
     var adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
     if (!officeName) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('officeNameRequired'); }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('officeNameRequired');
+      }
       document.getElementById('setupOfficeName').focus();
       return;
     }
     if (!adminName) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('adminNameRequired'); }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('adminNameRequired');
+      }
       document.getElementById('setupAdminName').focus();
       return;
     }
@@ -74,12 +80,18 @@ A.nextSetupStep = function() {
     var pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
     var confirm = document.getElementById('setupConfirmPassword') ? document.getElementById('setupConfirmPassword').value : '';
     if (!pw || pw.length < 8) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('passwordMinLength');
+      }
       document.getElementById('setupPassword').focus();
       return;
     }
     if (pw !== confirm) {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('passwordsNoMatch');
+      }
       document.getElementById('setupConfirmPassword').focus();
       return;
     }
@@ -88,7 +100,7 @@ A.nextSetupStep = function() {
   }
 };
 
-A.prevSetupStep = function() {
+A.prevSetupStep = function () {
   var errorEl = document.getElementById('setupError');
   if (errorEl) errorEl.style.display = 'none';
   if (A._currentSetupStep > 1) {
@@ -96,7 +108,7 @@ A.prevSetupStep = function() {
   }
 };
 
-A.showSetupScreen = function() {
+A.showSetupScreen = function () {
   document.getElementById('authSetupScreen').style.display = 'flex';
   document.getElementById('authLoginScreen').style.display = 'none';
   document.getElementById('forgotPasswordModal').style.display = 'none';
@@ -108,7 +120,7 @@ A.showSetupScreen = function() {
   A.goToSetupStep(1);
 };
 
-A.showLoginScreen = function(users) {
+A.showLoginScreen = function (users) {
   document.getElementById('authSetupScreen').style.display = 'none';
   document.getElementById('authLoginScreen').style.display = 'flex';
   document.getElementById('forgotPasswordModal').style.display = 'none';
@@ -120,11 +132,12 @@ A.showLoginScreen = function(users) {
   if (users) A.renderUserCards(users);
 };
 
-A.renderUserCards = function(users) {
+A.renderUserCards = function (users) {
   var container = document.getElementById('userCardsContainer');
   if (!container) return;
   if (!users || !users.length) {
-    container.innerHTML = '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>';
+    A.safeSetStatic(container,
+      '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>');
     return;
   }
   var html = '';
@@ -139,11 +152,11 @@ A.renderUserCards = function(users) {
     html += '<div class="user-card-role">' + A.escapeHtml(roleLabel) + '</div>';
     html += '</div></div>';
   }
-  container.innerHTML = html;
+  A.safeSetStatic(container, html);
   var cards = container.querySelectorAll('.user-card');
   for (var j = 0; j < cards.length; j++) {
-    (function(card) {
-      card.addEventListener('click', function() {
+    (function (card) {
+      card.addEventListener('click', function () {
         var prev = container.querySelector('.user-card.selected');
         if (prev) prev.classList.remove('selected');
         card.classList.add('selected');
@@ -155,11 +168,12 @@ A.renderUserCards = function(users) {
   }
 };
 
-A.renderForgotUserCards = function(users) {
+A.renderForgotUserCards = function (users) {
   var container = document.getElementById('forgotUserCardsContainer');
   if (!container) return;
   if (!users || !users.length) {
-    container.innerHTML = '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>';
+    A.safeSetStatic(container,
+      '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>');
     return;
   }
   var html = '';
@@ -174,11 +188,11 @@ A.renderForgotUserCards = function(users) {
     html += '<div class="user-card-role">' + A.escapeHtml(roleLabel) + '</div>';
     html += '</div></div>';
   }
-  container.innerHTML = html;
+  A.safeSetStatic(container, html);
   var cards = container.querySelectorAll('.user-card');
   for (var j = 0; j < cards.length; j++) {
-    (function(card) {
-      card.addEventListener('click', function() {
+    (function (card) {
+      card.addEventListener('click', function () {
         var prev = container.querySelector('.user-card.selected');
         if (prev) prev.classList.remove('selected');
         card.classList.add('selected');
@@ -189,14 +203,14 @@ A.renderForgotUserCards = function(users) {
   }
 };
 
-A.hideAuth = function() {
+A.hideAuth = function () {
   var overlay = document.getElementById('loginOverlay');
   if (overlay) overlay.style.display = 'none';
   var appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'flex';
 };
 
-A.checkAuth = async function() {
+A.checkAuth = async function () {
   if (!A.state.ipc) return;
   try {
     var token = localStorage.getItem('session_token');
@@ -214,7 +228,9 @@ A.checkAuth = async function() {
       }
       localStorage.removeItem('session_token');
     }
-  } catch (e) { /* token check failed, continue to boot */ }
+  } catch (e) {
+    /* token check failed, continue to boot */
+  }
   try {
     var boot = await A.state.ipc.invoke('auth:boot');
     if (boot.hasPassword) {
@@ -227,7 +243,7 @@ A.checkAuth = async function() {
   }
 };
 
-A.doSetup = function() {
+A.doSetup = function () {
   var officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
   var adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
   var pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
@@ -236,19 +252,31 @@ A.doSetup = function() {
   var errorEl = document.getElementById('setupError');
 
   if (!officeName) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('officeNameRequired'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('officeNameRequired');
+    }
     return;
   }
   if (!adminName) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('adminNameRequired'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('adminNameRequired');
+    }
     return;
   }
   if (!pw || pw.length < 8) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordMinLength');
+    }
     return;
   }
   if (pw !== confirm) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordsNoMatch');
+    }
     return;
   }
 
@@ -256,38 +284,57 @@ A.doSetup = function() {
   var sa1 = document.getElementById('sa1') ? document.getElementById('sa1').value.trim() : '';
 
   if (!sq1 || !sa1) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('securityQuestionsRequired'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('securityQuestionsRequired');
+    }
     return;
   }
 
-  A.state.ipc.invoke('auth:setup', { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 }).then(function(result) {
-    if (result && result.ok) {
-      if (errorEl) errorEl.style.display = 'none';
-      var token = result.sessionToken;
-      if (token) localStorage.setItem('session_token', token);
-      if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
-      A.hideAuth();
-      if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
-        A._dashboardLoaded = true;
-        A.loadDashboard();
+  A.state.ipc
+    .invoke('auth:setup', { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 })
+    .then(function (result) {
+      if (result && result.ok) {
+        if (errorEl) errorEl.style.display = 'none';
+        var token = result.sessionToken;
+        if (token) localStorage.setItem('session_token', token);
+        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
+        A.hideAuth();
+        if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
+          A._dashboardLoaded = true;
+          A.loadDashboard();
+        }
+        if (typeof A.loadSearchIndex === 'function')
+          setTimeout(function () {
+            A.loadSearchIndex();
+          }, 300);
+      } else {
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = (result && result.error) || _t('createAdminFailed');
+        }
       }
-    } else {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (result && result.error) || _t('createAdminFailed'); }
-    }
-  }).catch(function(e) {
-    console.error('Setup error:', e);
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorCreatingAdmin'); }
-  });
+    })
+    .catch(function (e) {
+      console.error('Setup error:', e);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('errorCreatingAdmin');
+      }
+    });
 };
 
-A.doLogin = function() {
+A.doLogin = function () {
   var password = document.getElementById('loginPassword') ? document.getElementById('loginPassword').value : '';
   var errorEl = document.getElementById('loginError');
   var remember = document.getElementById('loginRemember') ? document.getElementById('loginRemember').checked : true;
   var email = '';
 
   if (!password) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('enterPassword'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('enterPassword');
+    }
     return;
   }
 
@@ -296,31 +343,44 @@ A.doLogin = function() {
     if (card) email = card.dataset.userEmail || '';
   }
 
-  A.state.ipc.invoke('auth:login', { email: email || null, password: password, remember: remember }).then(function(result) {
-    if (result && result.ok) {
-      if (errorEl) errorEl.style.display = 'none';
-      A.state.currentUser = result.user;
-      if (result.sessionToken) {
-        localStorage.setItem('session_token', result.sessionToken);
+  A.state.ipc
+    .invoke('auth:login', { email: email || null, password: password, remember: remember })
+    .then(function (result) {
+      if (result && result.ok) {
+        if (errorEl) errorEl.style.display = 'none';
+        A.state.currentUser = result.user;
+        if (result.sessionToken) {
+          localStorage.setItem('session_token', result.sessionToken);
+        } else {
+          localStorage.removeItem('session_token');
+        }
+        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
+        A.hideAuth();
+        if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
+          A._dashboardLoaded = true;
+          A.loadDashboard();
+        }
+        if (typeof A.loadSearchIndex === 'function')
+          setTimeout(function () {
+            A.loadSearchIndex();
+          }, 300);
       } else {
-        localStorage.removeItem('session_token');
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = (result && result.error) || _t('passwordIncorrect');
+        }
       }
-      if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
-      A.hideAuth();
-      if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
-        A._dashboardLoaded = true;
-        A.loadDashboard();
+    })
+    .catch(function (e) {
+      console.error('Login error:', e);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('loginErrorOccurred');
       }
-    } else {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (result && result.error) || _t('passwordIncorrect'); }
-    }
-  }).catch(function(e) {
-    console.error('Login error:', e);
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('loginErrorOccurred'); }
-  });
+    });
 };
 
-A.showForgotPassword = function() {
+A.showForgotPassword = function () {
   document.getElementById('authLoginScreen').style.display = 'none';
   document.getElementById('forgotPasswordModal').style.display = 'flex';
   document.getElementById('forgotStep1').style.display = 'block';
@@ -340,162 +400,226 @@ A.showForgotPassword = function() {
   A._forgotUserId = null;
   A._forgotQuestionIndex = null;
 
-  A.state.ipc.invoke('auth:boot').then(function(boot) {
-    if (boot && boot.users && boot.users.length) {
-      A.renderForgotUserCards(boot.users);
-    } else {
+  A.state.ipc
+    .invoke('auth:boot')
+    .then(function (boot) {
+      if (boot && boot.users && boot.users.length) {
+        A.renderForgotUserCards(boot.users);
+      } else {
+        var container = document.getElementById('forgotUserCardsContainer');
+        if (container)
+          container.innerHTML =
+            '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>';
+      }
+    })
+    .catch(function () {
       var container = document.getElementById('forgotUserCardsContainer');
-      if (container) container.innerHTML = '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>';
-    }
-  }).catch(function() {
-    var container = document.getElementById('forgotUserCardsContainer');
-    if (container) container.innerHTML = '<div style="text-align:center;padding:var(--spacing-3);color:var(--destructive);font-size:var(--type-body);">' + _t('errorOccurred') + '</div>';
-  });
+      if (container)
+        container.innerHTML =
+          '<div style="text-align:center;padding:var(--spacing-3);color:var(--destructive);font-size:var(--type-body);">' + _t('errorOccurred') + '</div>';
+    });
 };
 
-A.doForgotCheckAnswer = function() {
+A.doForgotCheckAnswer = function () {
   var answer = document.getElementById('forgotAnswer') ? document.getElementById('forgotAnswer').value.trim() : '';
   var errorEl = document.getElementById('forgotAnswerError');
   if (!A._forgotUserId) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('selectUserFirst'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('selectUserFirst');
+    }
     return;
   }
   if (!A._forgotQuestionIndex) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('selectUserFirst'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('selectUserFirst');
+    }
     return;
   }
   if (!answer) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('enterAnswer'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('enterAnswer');
+    }
     return;
   }
-  A.state.ipc.invoke('auth:checkSecurityAnswer', { userId: A._forgotUserId, questionIndex: A._forgotQuestionIndex, answer: answer }).then(function(result) {
-    if (result && result.ok) {
-      errorEl.style.display = 'none';
-      document.getElementById('forgotStep2').style.display = 'none';
-      document.getElementById('forgotStep3').style.display = 'block';
-    } else {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (result && result.error) || _t('wrongSecurityAnswer'); }
-    }
-  }).catch(function(e) {
-    console.error('Check answer error:', e);
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorOccurred'); }
-  });
+  A.state.ipc
+    .invoke('auth:checkSecurityAnswer', { userId: A._forgotUserId, questionIndex: A._forgotQuestionIndex, answer: answer })
+    .then(function (result) {
+      if (result && result.ok) {
+        errorEl.style.display = 'none';
+        document.getElementById('forgotStep2').style.display = 'none';
+        document.getElementById('forgotStep3').style.display = 'block';
+      } else {
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = (result && result.error) || _t('wrongSecurityAnswer');
+        }
+      }
+    })
+    .catch(function (e) {
+      console.error('Check answer error:', e);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('errorOccurred');
+      }
+    });
 };
 
-A.doForgotReset = function() {
+A.doForgotReset = function () {
   var newPw = document.getElementById('forgotNewPassword') ? document.getElementById('forgotNewPassword').value : '';
   var confirmPw = document.getElementById('forgotConfirmPassword') ? document.getElementById('forgotConfirmPassword').value : '';
   var errorEl = document.getElementById('forgotResetError');
   if (!newPw || newPw.length < 8) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordMinLength');
+    }
     return;
   }
   if (newPw !== confirmPw) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordsNoMatch');
+    }
     return;
   }
-  A.state.ipc.invoke('auth:resetPassword', { userId: A._forgotUserId, newPassword: newPw, remember: true }).then(function(result) {
-    if (result && result.ok) {
-      errorEl.style.display = 'none';
-      A.state.currentUser = result.user;
-      if (result.sessionToken) {
-        localStorage.setItem('session_token', result.sessionToken);
+  A.state.ipc
+    .invoke('auth:resetPassword', { userId: A._forgotUserId, newPassword: newPw, remember: true })
+    .then(function (result) {
+      if (result && result.ok) {
+        errorEl.style.display = 'none';
+        A.state.currentUser = result.user;
+        if (result.sessionToken) {
+          localStorage.setItem('session_token', result.sessionToken);
+        }
+        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
+        document.getElementById('forgotPasswordModal').style.display = 'none';
+        A.hideAuth();
+        if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
+          A._dashboardLoaded = true;
+          A.loadDashboard();
+        }
+      } else {
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = (result && result.error) || _t('resetFailed');
+        }
       }
-      if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
-      document.getElementById('forgotPasswordModal').style.display = 'none';
-      A.hideAuth();
-      if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
-        A._dashboardLoaded = true;
-        A.loadDashboard();
+    })
+    .catch(function (e) {
+      console.error('Reset error:', e);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('errorOccurred');
       }
-    } else {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (result && result.error) || _t('resetFailed'); }
-    }
-  }).catch(function(e) {
-    console.error('Reset error:', e);
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorOccurred'); }
-  });
+    });
 };
 
-A.doForgotSelectUser = function() {
+A.doForgotSelectUser = function () {
   if (!A._forgotUserId) {
     document.getElementById('forgotError').style.display = 'block';
     document.getElementById('forgotError').textContent = _t('selectUserFirst');
     return;
   }
   document.getElementById('forgotError').style.display = 'none';
-  A.state.ipc.invoke('auth:getSecurityQuestion', A._forgotUserId).then(function(result) {
-    if (result && result.ok) {
-      A._forgotQuestionIndex = result.questionIndex;
-      document.getElementById('forgotQuestionDisplay').textContent = result.question;
-      document.getElementById('forgotStep1').style.display = 'none';
-      document.getElementById('forgotStep2').style.display = 'block';
-      document.getElementById('forgotStep3').style.display = 'none';
-      document.getElementById('forgotAnswer').focus();
-    } else {
+  A.state.ipc
+    .invoke('auth:getSecurityQuestion', A._forgotUserId)
+    .then(function (result) {
+      if (result && result.ok) {
+        A._forgotQuestionIndex = result.questionIndex;
+        document.getElementById('forgotQuestionDisplay').textContent = result.question;
+        document.getElementById('forgotStep1').style.display = 'none';
+        document.getElementById('forgotStep2').style.display = 'block';
+        document.getElementById('forgotStep3').style.display = 'none';
+        document.getElementById('forgotAnswer').focus();
+      } else {
+        document.getElementById('forgotError').style.display = 'block';
+        document.getElementById('forgotError').textContent = (result && result.error) || _t('noSecurityQuestions');
+        document.getElementById('forgotMasterKeySection').style.display = 'block';
+        document.getElementById('forgotMasterKey').focus();
+      }
+    })
+    .catch(function (e) {
+      console.error('Get question error:', e);
       document.getElementById('forgotError').style.display = 'block';
-      document.getElementById('forgotError').textContent = (result && result.error) || _t('noSecurityQuestions');
-      document.getElementById('forgotMasterKeySection').style.display = 'block';
-      document.getElementById('forgotMasterKey').focus();
-    }
-  }).catch(function(e) {
-    console.error('Get question error:', e);
-    document.getElementById('forgotError').style.display = 'block';
-    document.getElementById('forgotError').textContent = _t('errorOccurred');
-  });
+      document.getElementById('forgotError').textContent = _t('errorOccurred');
+    });
 };
 
-A.doForgotMasterReset = function() {
+A.doForgotMasterReset = function () {
   var masterKey = document.getElementById('forgotMasterKey') ? document.getElementById('forgotMasterKey').value.trim() : '';
   var newPw = document.getElementById('forgotMasterNewPassword') ? document.getElementById('forgotMasterNewPassword').value : '';
   var confirmPw = document.getElementById('forgotMasterConfirmPassword') ? document.getElementById('forgotMasterConfirmPassword').value : '';
   var errorEl = document.getElementById('forgotMasterError');
   if (!masterKey) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('enterMasterKey'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('enterMasterKey');
+    }
     return;
   }
   if (!newPw || newPw.length < 8) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordMinLength'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordMinLength');
+    }
     return;
   }
   if (newPw !== confirmPw) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('passwordsNoMatch'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('passwordsNoMatch');
+    }
     return;
   }
   var userId = A._forgotUserId;
   if (!userId) {
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('selectUserFirst'); }
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('selectUserFirst');
+    }
     return;
   }
-  A.state.ipc.invoke('auth:resetWithMasterKey', { userId: userId, newPassword: newPw, masterKey: masterKey }).then(function(result) {
-    if (result && result.ok) {
-      errorEl.style.display = 'none';
-      A.state.currentUser = result.user;
-      if (result.sessionToken) {
-        localStorage.setItem('session_token', result.sessionToken);
+  A.state.ipc
+    .invoke('auth:resetWithMasterKey', { userId: userId, newPassword: newPw, masterKey: masterKey })
+    .then(function (result) {
+      if (result && result.ok) {
+        errorEl.style.display = 'none';
+        A.state.currentUser = result.user;
+        if (result.sessionToken) {
+          localStorage.setItem('session_token', result.sessionToken);
+        }
+        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
+        document.getElementById('forgotPasswordModal').style.display = 'none';
+        A.hideAuth();
+        if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
+          A._dashboardLoaded = true;
+          A.loadDashboard();
+        }
+      } else {
+        if (errorEl) {
+          errorEl.style.display = 'block';
+          errorEl.textContent = (result && result.error) || _t('resetFailed');
+        }
       }
-      if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
-      document.getElementById('forgotPasswordModal').style.display = 'none';
-      A.hideAuth();
-      if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
-        A._dashboardLoaded = true;
-        A.loadDashboard();
+    })
+    .catch(function (e) {
+      console.error('Master reset error:', e);
+      if (errorEl) {
+        errorEl.style.display = 'block';
+        errorEl.textContent = _t('errorOccurred');
       }
-    } else {
-      if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = (result && result.error) || _t('resetFailed'); }
-    }
-  }).catch(function(e) {
-    console.error('Master reset error:', e);
-    if (errorEl) { errorEl.style.display = 'block'; errorEl.textContent = _t('errorOccurred'); }
-  });
+    });
 };
 
-A.backToLogin = function() {
+A.backToLogin = function () {
   document.getElementById('forgotPasswordModal').style.display = 'none';
   document.getElementById('authLoginScreen').style.display = 'flex';
 };
 
-A.initAuth = function() {
+A.initAuth = function () {
   var loginBtn = document.getElementById('loginBtn');
   var loginPw = document.getElementById('loginPassword');
   var lockBtn = document.getElementById('lockAppBtn');
@@ -503,7 +627,9 @@ A.initAuth = function() {
   var forgotCheckBtn = document.getElementById('forgotCheckAnswerBtn');
   var forgotResetBtn = document.getElementById('forgotResetBtn');
   var forgotBackLink = document.getElementById('forgotBackToLogin');
-  function onLoginKeydown(e) { if (e.key === 'Enter') A.doLogin(); }
+  function onLoginKeydown(e) {
+    if (e.key === 'Enter') A.doLogin();
+  }
 
   if (loginBtn) loginBtn.addEventListener('click', A.doLogin);
   if (loginPw) loginPw.addEventListener('keydown', onLoginKeydown);
@@ -515,43 +641,49 @@ A.initAuth = function() {
   document.getElementById('setupPrev3')?.addEventListener('click', A.prevSetupStep);
   document.getElementById('authSetupBtn')?.addEventListener('click', A.doSetup);
 
-  document.getElementById('setupOfficeName')?.addEventListener('keydown', function(e) {
+  document.getElementById('setupOfficeName')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.nextSetupStep();
   });
-  document.getElementById('setupAdminName')?.addEventListener('keydown', function(e) {
+  document.getElementById('setupAdminName')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.nextSetupStep();
   });
-  document.getElementById('setupPassword')?.addEventListener('keydown', function(e) {
+  document.getElementById('setupPassword')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.nextSetupStep();
   });
-  document.getElementById('setupConfirmPassword')?.addEventListener('keydown', function(e) {
+  document.getElementById('setupConfirmPassword')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.nextSetupStep();
   });
-  document.getElementById('sa1')?.addEventListener('keydown', function(e) {
+  document.getElementById('sa1')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.doSetup();
   });
 
-  if (lockBtn) lockBtn.addEventListener('click', function() {
-    var pw = document.getElementById('loginPassword');
-    if (pw) pw.value = '';
-    var errorEl = document.getElementById('loginError');
-    if (errorEl) errorEl.style.display = 'none';
-    A._selectedUserId = null;
-    localStorage.removeItem('session_token');
-    A.state.ipc.invoke('auth:logout').catch(function() {});
-    A.state.currentUser = null;
-    A._dashboardLoaded = false;
-    A.state.ipc.invoke('auth:boot').then(function(boot) {
-      if (boot && boot.users) A.showLoginScreen(boot.users);
-    }).catch(function() { A.showLoginScreen(); });
-  });
+  if (lockBtn)
+    lockBtn.addEventListener('click', function () {
+      var pw = document.getElementById('loginPassword');
+      if (pw) pw.value = '';
+      var errorEl = document.getElementById('loginError');
+      if (errorEl) errorEl.style.display = 'none';
+      A._selectedUserId = null;
+      localStorage.removeItem('session_token');
+      A.state.ipc.invoke('auth:logout').catch(function () {});
+      A.state.currentUser = null;
+      A._dashboardLoaded = false;
+      A.state.ipc
+        .invoke('auth:boot')
+        .then(function (boot) {
+          if (boot && boot.users) A.showLoginScreen(boot.users);
+        })
+        .catch(function () {
+          A.showLoginScreen();
+        });
+    });
 
   // Forgot password
   if (forgotLink) forgotLink.addEventListener('click', A.showForgotPassword);
   if (forgotBackLink) forgotBackLink.addEventListener('click', A.backToLogin);
 
   // When a user card is clicked in forgot step 1, auto-proceed
-  document.getElementById('forgotUserCardsContainer')?.addEventListener('click', function(e) {
+  document.getElementById('forgotUserCardsContainer')?.addEventListener('click', function (e) {
     var card = e.target.closest('.user-card');
     if (card) {
       A._forgotUserId = parseInt(card.dataset.userId, 10);
@@ -566,18 +698,22 @@ A.initAuth = function() {
 
   // Enter key in forgot answer field
   var forgotAnswer = document.getElementById('forgotAnswer');
-  if (forgotAnswer) forgotAnswer.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') A.doForgotCheckAnswer();
-  });
+  if (forgotAnswer)
+    forgotAnswer.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') A.doForgotCheckAnswer();
+    });
 
   // Enter key in forgot new password fields
   var forgotNewPw = document.getElementById('forgotNewPassword');
   var forgotConfirmPw = document.getElementById('forgotConfirmPassword');
-  if (forgotConfirmPw) forgotConfirmPw.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') A.doForgotReset();
-  });
+  if (forgotConfirmPw)
+    forgotConfirmPw.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') A.doForgotReset();
+    });
 
-  document.querySelector('.topbar-user')?.addEventListener('click', function() { A.navigateTo('profile'); });
+  document.querySelector('.topbar-user')?.addEventListener('click', function () {
+    A.navigateTo('profile');
+  });
 
   /* ─── Onboarding ─── */
   var onbStep = 0;
@@ -585,7 +721,7 @@ A.initAuth = function() {
     { title: _t('onbTitle'), desc: _t('onbDesc') },
     { title: _t('onbTitleStep1'), desc: _t('onbDescStep1') },
     { title: _t('onbTitleStep2'), desc: _t('onbDescStep2') },
-    { title: _t('onbTitleStep3'), desc: _t('onbDescStep3') },
+    { title: _t('onbTitleStep3'), desc: _t('onbDescStep3') }
   ];
 
   function updateOnbStep() {
@@ -595,7 +731,9 @@ A.initAuth = function() {
     var next = document.getElementById('onbNext');
     if (title) title.textContent = onbData[onbStep].title;
     if (desc) desc.textContent = onbData[onbStep].desc;
-    dots.forEach(function(d, i) { d.classList.toggle('active', i === onbStep); });
+    dots.forEach(function (d, i) {
+      d.classList.toggle('active', i === onbStep);
+    });
     if (next) next.textContent = onbStep === onbData.length - 1 ? _t('getStarted') : _t('onbNext');
   }
 
@@ -607,7 +745,7 @@ A.initAuth = function() {
     updateOnbStep();
   }
 
-  document.getElementById('onbNext')?.addEventListener('click', function() {
+  document.getElementById('onbNext')?.addEventListener('click', function () {
     onbStep++;
     if (onbStep >= onbData.length) {
       var overlay = document.getElementById('onboardingOverlay');
@@ -618,7 +756,7 @@ A.initAuth = function() {
     }
   });
 
-  document.getElementById('onbSkip')?.addEventListener('click', function() {
+  document.getElementById('onbSkip')?.addEventListener('click', function () {
     var overlay = document.getElementById('onboardingOverlay');
     if (overlay) overlay.style.display = 'none';
     localStorage.setItem('onboardingDone', 'true');

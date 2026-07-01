@@ -1,15 +1,25 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
-A.initKanbanDragDrop = function() {
+A.initKanbanDragDrop = function () {
   document.querySelectorAll('.kanban-card').forEach(card => {
-    card.addEventListener('dragstart', () => { card.classList.add('dragging'); });
-    card.addEventListener('dragend', () => { card.classList.remove('dragging'); });
+    card.addEventListener('dragstart', () => {
+      card.classList.add('dragging');
+    });
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
   });
   document.querySelectorAll('.kanban-col-body').forEach(col => {
-    col.addEventListener('dragover', e => { e.preventDefault(); col.parentElement.classList.add('drag-over'); });
-    col.addEventListener('dragleave', () => { col.parentElement.classList.remove('drag-over'); });
-    col.addEventListener('drop', async (e) => {
-      e.preventDefault(); col.parentElement.classList.remove('drag-over');
+    col.addEventListener('dragover', e => {
+      e.preventDefault();
+      col.parentElement.classList.add('drag-over');
+    });
+    col.addEventListener('dragleave', () => {
+      col.parentElement.classList.remove('drag-over');
+    });
+    col.addEventListener('drop', async e => {
+      e.preventDefault();
+      col.parentElement.classList.remove('drag-over');
       const dragging = document.querySelector('.dragging');
       if (!dragging) return;
       const id = parseInt(dragging.dataset?.id);
@@ -18,11 +28,14 @@ A.initKanbanDragDrop = function() {
       try {
         if (newStatus === 'archived') await A.mutate('db:archiveCase', id);
         else if (newStatus) {
-          const statusMap = { 'new': 'active', 'appeal': 'pending' };
+          const statusMap = { new: 'active', appeal: 'pending' };
           await A.mutate('db:updateCaseStatus', { id, status: statusMap[newStatus] || newStatus });
         }
         A.showToast(_t('caseStatusChanged'), 'success');
-      } catch (e) { A.logError('kanbanDrop', e); A.showToast(_t('failedStatusChange'), 'error'); }
+      } catch (e) {
+        A.logError('kanbanDrop', e);
+        A.showToast(_t('failedStatusChange'), 'error');
+      }
       A.loadCases();
     });
   });

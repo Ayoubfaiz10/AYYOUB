@@ -9,12 +9,12 @@
 
 ## Stack
 
-| التقنية | Technology |
-|---------|------------|
-| **App** | Electron 42 + Vanilla JS + CSS3 + HTML5 |
-| **DB** | SQLite via sql.js (in-memory + file persist) |
-| **AI** | Groq API — llama-3.1-8b-instant (OpenAI-compatible) |
-| **Build** | electron-builder NSIS (Windows) |
+| التقنية   | Technology                                          |
+| --------- | --------------------------------------------------- |
+| **App**   | Electron 42 + Vanilla JS + CSS3 + HTML5             |
+| **DB**    | SQLite via sql.js (in-memory + file persist)        |
+| **AI**    | Groq API — llama-3.1-8b-instant (OpenAI-compatible) |
+| **Build** | electron-builder NSIS (Windows)                     |
 
 ## Features
 

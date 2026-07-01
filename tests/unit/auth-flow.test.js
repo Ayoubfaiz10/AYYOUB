@@ -1,4 +1,3 @@
-const { describe, it, before, after } = require('node:test');
 const assert = require('node:assert/strict');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
@@ -26,8 +25,12 @@ function getUsers(db) {
 
 function addUser(db, data) {
   try {
-    mutate(db, 'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
-      [data.name, data.email || '', data.password_hash || '', data.role || 'assistant']);
+    mutate(db, 'INSERT INTO users (name, email, password_hash, role) VALUES (?, ?, ?, ?)', [
+      data.name,
+      data.email || '',
+      data.password_hash || '',
+      data.role || 'assistant'
+    ]);
     const res = query(db, 'SELECT last_insert_rowid() as id');
     return res.length ? res[0].id : null;
   } catch (e) {
@@ -63,7 +66,9 @@ function setOfficeSetting(db, key, value) {
 describe('Auth Flow — First Admin Setup', () => {
   let db;
 
-  before(async () => { db = await createDb(); });
+  before(async () => {
+    db = await createDb();
+  });
 
   it('admin user is seeded in DB', () => {
     const users = getUsers(db);
@@ -108,7 +113,9 @@ describe('Auth Flow — First Admin Setup', () => {
 describe('Office Settings', () => {
   let db;
 
-  before(async () => { db = await createDb(); });
+  before(async () => {
+    db = await createDb();
+  });
 
   it('getOfficeSetting returns null for missing key', () => {
     assert.equal(getOfficeSetting(db, 'nonexistent'), null);
@@ -138,7 +145,9 @@ describe('Office Settings', () => {
 describe('Auth Flow — Register New User', () => {
   let db;
 
-  before(async () => { db = await createDb(); });
+  before(async () => {
+    db = await createDb();
+  });
 
   it('starts with one admin user', () => {
     assert.equal(getUsers(db).length, 1);
@@ -253,7 +262,11 @@ describe('Auth Flow — Empty Database', () => {
   });
 
   it('no user table returns empty array from getUsers', () => {
-    const fakeDb = { exec: () => { throw new Error('no such table'); } };
+    const fakeDb = {
+      exec: () => {
+        throw new Error('no such table');
+      }
+    };
     const result = getUsers(fakeDb);
     assert.equal(Array.isArray(result), true);
     assert.equal(result.length, 0);
@@ -265,7 +278,9 @@ describe('Auth Flow — Empty Database', () => {
 describe('Auth Flow — Permissions & Roles', () => {
   let db;
 
-  before(async () => { db = await createDb(); });
+  before(async () => {
+    db = await createDb();
+  });
 
   it('default permissions exist for admin role', () => {
     const perms = query(db, 'SELECT permission FROM permissions WHERE role=? AND allowed=1', ['admin']);
@@ -293,8 +308,13 @@ describe('Auth Flow — Permissions & Roles', () => {
 
   it('user with active=0 is marked inactive', () => {
     const hash = hashBcrypt('inactiveuser');
-    mutate(db, 'INSERT INTO users (name, email, password_hash, role, active) VALUES (?, ?, ?, ?, ?)',
-      ['مستخدم غير نشط', 'inactive@test.com', hash, 'intern', 0]);
+    mutate(db, 'INSERT INTO users (name, email, password_hash, role, active) VALUES (?, ?, ?, ?, ?)', [
+      'مستخدم غير نشط',
+      'inactive@test.com',
+      hash,
+      'intern',
+      0
+    ]);
     const users = getUsers(db);
     const inactive = users.find(u => u.active === 0);
     assert.ok(inactive);

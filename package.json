@@ -2,19 +2,26 @@
   "name": "lawyer-manager",
   "version": "2.0.0",
   "main": "main.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win --x64",
-    "test": "node --test tests/unit/*.test.js",
-    "test:auth": "node --test tests/unit/auth.test.js",
-    "test:db": "node --test tests/unit/database.test.js",
-    "test:cases": "node --test tests/unit/cases.test.js",
-    "test:clients": "node --test tests/unit/clients.test.js",
-    "test:docs": "node --test tests/unit/documents.test.js",
-    "test:tasks": "node --test tests/unit/tasks.test.js",
-    "test:search": "node --test tests/unit/search.test.js",
-    "test:ipc": "node --test tests/unit/ipc-handlers.test.js",
-    "test:legacy": "node test/password.test.js"
+    "test": "mocha \"tests/unit/*.test.js\" --timeout 30000",
+    "test:auth": "mocha \"tests/unit/auth.test.js\"",
+    "test:db": "mocha \"tests/unit/database.test.js\"",
+    "test:cases": "mocha \"tests/unit/cases.test.js\"",
+    "test:clients": "mocha \"tests/unit/clients.test.js\"",
+    "test:docs": "mocha \"tests/unit/documents.test.js\"",
+    "test:tasks": "mocha \"tests/unit/tasks.test.js\"",
+    "test:search": "mocha \"tests/unit/search.test.js\"",
+    "test:ipc": "mocha \"tests/unit/ipc-handlers.test.js\"",
+    "test:e2e": "npx playwright test",
+    "test:legacy": "node test/password.test.js",
+    "lint": "eslint . --ext .js",
+    "format": "prettier --write \"**/*.js\"",
+    "format:check": "prettier --check \"**/*.js\""
   },
   "build": {
     "appId": "com.avocat.manager",
@@ -35,6 +42,9 @@
       ],
       "language": "1033"
     },
+    "files": [
+      "!modules_backup/**"
+    ],
     "asarUnpack": [
       "node_modules/sql.js/dist/*.wasm",
       "node_modules/tesseract.js-core/*.wasm"
@@ -43,13 +53,23 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "chart.js": "^4.5.1",
+    "dompurify": "^3.4.11",
     "dotenv": "^17.4.2",
     "sql.js": "^1.14.1",
     "tesseract.js": "^7.0.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "electron": "^42.4.1",
-    "electron-builder": "^24.0.0"
+    "electron-builder": "^24.0.0",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "mocha": "^11.7.6",
+    "prettier": "^3.9.4"
   },
-  "allowScripts": {}
+  "allowScripts": {},
+  "overrides": {
+    "serialize-javascript": "^7.0.7",
+    "diff": "^8.0.3"
+  }
 }

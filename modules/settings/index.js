@@ -1,66 +1,99 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
-A.loadSettingsUsers = async function() {
+A.loadSettingsUsers = async function () {
   if (!A.state.ipc) return;
   const users = await A.cachedInvoke('auth:getUsers');
   const body = document.getElementById('settingsUsersBody');
   if (!body) return;
-  A.safeSet(body, esc => users.map(u => `<tr>
+  A.safeSet(body, esc =>
+    users
+      .map(
+        u => `<tr>
     <td><strong>${esc(u.name)}</strong></td>
-    <td>${esc(u.email||'-')}</td>
+    <td>${esc(u.email || '-')}</td>
     <td><span class="badge ${u.role === 'admin' ? 'badge-active' : 'badge-gold'}">${esc(u.role)}</span></td>
     <td>${u.active ? '<span class="badge badge-active" style="background:var(--success);">' + _t('activeBadge') + '</span>' : '<span class="badge badge-closed">' + _t('inactiveBadge') + '</span>'}</td>
-    <td style="font-size:11px;color:var(--muted-foreground);">${u.last_login ? u.last_login.slice(0,16) : '—'}</td>
-    <td><button class="btn-icon" onclick="editSettingsUser(${u.id})"><i class="ri-pencil-line"></i></button>${u.id !== 1 ? `<button class="btn-icon" onclick="deleteSettingsUser(${u.id})"><i class="ri-delete-bin-line"></i></button>` : ''}</td>
-  </tr>`).join(''));
+    <td style="font-size:11px;color:var(--muted-foreground);">${u.last_login ? u.last_login.slice(0, 16) : '—'}</td>
+    <td><button class="btn-icon" data-click="settings:editUser:${u.id}"><i class="ri-pencil-line"></i></button>${u.id !== 1 ? `<button class="btn-icon" data-click="settings:deleteUser:${u.id}"><i class="ri-delete-bin-line"></i></button>` : ''}</td>
+  </tr>`
+      )
+      .join('')
+  );
 };
 
-window.editSettingsUser = async function(id) {
+window.editSettingsUser = async function (id) {
   if (!A.state.ipc) return;
   const users = await A.cachedInvoke('auth:getUsers');
   const u = users.find(x => x.id === id);
   if (!u) return;
   const esc = A.escapeHtml;
-  A.showModal(_t('editUserTitle'), `
+  A.showModal(
+    _t('editUserTitle'),
+    `
     <div class="input-group"><label class="input-label">${_t('userNameLabel')}</label><input type="text" id="fUserName" class="input" value="${esc(u.name)}"></div>
-    <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input" value="${esc(u.email||'')}"></div>
+    <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input" value="${esc(u.email || '')}"></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}" ${u.role===r?'selected':''}>${r}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">${_t('userActiveLabel')}</label><select id="fUserActive" class="input"><option value="1" ${u.active?'selected':''}>${_t('userYesLabel')}</option><option value="0" ${!u.active?'selected':''}>${_t('userNoLabel')}</option></select></div>
+      <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin', 'senior_lawyer', 'junior_lawyer', 'assistant', 'intern', 'external'].map(r => `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('userActiveLabel')}</label><select id="fUserActive" class="input"><option value="1" ${u.active ? 'selected' : ''}>${_t('userYesLabel')}</option><option value="0" ${!u.active ? 'selected' : ''}>${_t('userNoLabel')}</option></select></div>
     </div>
     <div class="input-group"><label class="input-label">${_t('userPwdPlaceholder')}</label><input type="password" id="fUserPwd" class="input"></div>
-  `, async () => {
-    const data = { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, active: parseInt(document.getElementById('fUserActive').value) };
-    const pwd = document.getElementById('fUserPwd').value;
-    if (pwd) data.password = pwd;
-    const r2 = await A.mutate('auth:updateUser', id, data);
-    if (r2 && !r2.ok) { A.showToast(r2.error || _t('userUpdateFailed'), 'error'); return; }
-    A.hideModal(); A.showToast(_t('userUpdated'), 'success'); A.loadSettingsUsers();
+  `,
+    async () => {
+      const data = {
+        name: document.getElementById('fUserName').value,
+        email: document.getElementById('fUserEmail').value,
+        role: document.getElementById('fUserRole').value,
+        active: parseInt(document.getElementById('fUserActive').value)
+      };
+      const pwd = document.getElementById('fUserPwd').value;
+      if (pwd) data.password = pwd;
+      const r2 = await A.mutate('auth:updateUser', id, data);
+      if (r2 && !r2.ok) {
+        A.showToast(r2.error || _t('userUpdateFailed'), 'error');
+        return;
+      }
+      A.hideModal();
+      A.showToast(_t('userUpdated'), 'success');
+      A.loadSettingsUsers();
+    }
+  );
+};
+
+window.deleteSettingsUser = async function (id) {
+  if (await A.showConfirm(_t('deleteUserConfirm'))) {
+    await A.mutate('auth:deleteUser', id);
+    A.loadSettingsUsers();
+  }
+};
+
+A.initSettings = function () {
+  document.getElementById('settingLang')?.addEventListener('change', function () {
+    A.setLanguage(this.value);
+    A.showToast(this.value === 'fr' ? 'Langue changée en français' : _t('langChangedToArabic'), 'success');
   });
-};
 
-window.deleteSettingsUser = async function(id) {
-  if (await A.showConfirm(_t('deleteUserConfirm'))) { await A.mutate('auth:deleteUser', id); A.loadSettingsUsers(); }
-};
-
-A.initSettings = function() {
-  document.getElementById('settingLang')?.addEventListener('change', function() {
-  A.setLanguage(this.value);
-  A.showToast(this.value === 'fr' ? 'Langue changée en français' : _t('langChangedToArabic'), 'success');
-});
-
-document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
-    A.showModal(_t('newUserTitle'), `
+  document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
+    A.showModal(
+      _t('newUserTitle'),
+      `
       <div class="input-group"><label class="input-label">${_t('userNameLabel')}</label><input type="text" id="fUserName" class="input"></div>
       <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input"></div>
       <div class="info-grid-2">
-        <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin','senior_lawyer','junior_lawyer','assistant','intern','external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
+        <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin', 'senior_lawyer', 'junior_lawyer', 'assistant', 'intern', 'external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
         <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" value="12345678"></div>
       </div>
-    `, async () => {
-      await A.mutate('auth:addUser', { name: document.getElementById('fUserName').value, email: document.getElementById('fUserEmail').value, role: document.getElementById('fUserRole').value, password: document.getElementById('fUserPwd').value });
-      A.hideModal(); A.loadSettingsUsers();
-    });
+    `,
+      async () => {
+        await A.mutate('auth:addUser', {
+          name: document.getElementById('fUserName').value,
+          email: document.getElementById('fUserEmail').value,
+          role: document.getElementById('fUserRole').value,
+          password: document.getElementById('fUserPwd').value
+        });
+        A.hideModal();
+        A.loadSettingsUsers();
+      }
+    );
   });
 
   document.querySelectorAll('.settings-nav-item').forEach(item => {
@@ -82,30 +115,66 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
     const newPwd = document.getElementById('settingsNewPwd').value;
     const confirmPwd = document.getElementById('settingsConfirmPwd').value;
     const msgEl = document.getElementById('settingsPwdMsg');
-    if (!currentPwd) { msgEl.textContent = _t('enterCurrentPwd'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
-    const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
-    if (loginResult.corrupt) { msgEl.textContent = loginResult.error; msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
-    if (!loginResult.ok) { msgEl.textContent = loginResult.error || _t('currentPwdWrong'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
-    if (!newPwd || newPwd.length < 8) { msgEl.textContent = _t('newPwdMinLength'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
-    if (newPwd !== confirmPwd) { msgEl.textContent = _t('pwdNotMatch'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block'; return; }
-    const result = await A.mutate('auth:setPassword', newPwd);
-    if (!result || !result.ok) {
-      msgEl.textContent = result?.error || _t('savePasswordFailed'); msgEl.style.color = 'var(--destructive)'; msgEl.style.display = 'block';
+    if (!currentPwd) {
+      msgEl.textContent = _t('enterCurrentPwd');
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
       return;
     }
-    msgEl.textContent = _t('pwdSaved'); msgEl.style.color = 'var(--success)'; msgEl.style.display = 'block';
+    const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
+    if (loginResult.corrupt) {
+      msgEl.textContent = loginResult.error;
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
+      return;
+    }
+    if (!loginResult.ok) {
+      msgEl.textContent = loginResult.error || _t('currentPwdWrong');
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
+      return;
+    }
+    if (!newPwd || newPwd.length < 8) {
+      msgEl.textContent = _t('newPwdMinLength');
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
+      return;
+    }
+    if (newPwd !== confirmPwd) {
+      msgEl.textContent = _t('pwdNotMatch');
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
+      return;
+    }
+    const result = await A.mutate('auth:setPassword', newPwd);
+    if (!result || !result.ok) {
+      msgEl.textContent = result?.error || _t('savePasswordFailed');
+      msgEl.style.color = 'var(--destructive)';
+      msgEl.style.display = 'block';
+      return;
+    }
+    msgEl.textContent = _t('pwdSaved');
+    msgEl.style.color = 'var(--success)';
+    msgEl.style.display = 'block';
     A.showToast(_t('pwdChanged'), 'success');
     document.getElementById('settingsCurrentPwd').value = '';
-    document.getElementById('settingsNewPwd').value = ''; document.getElementById('settingsConfirmPwd').value = '';
+    document.getElementById('settingsNewPwd').value = '';
+    document.getElementById('settingsConfirmPwd').value = '';
   });
 
   document.getElementById('settingSaveBackup')?.addEventListener('click', async () => {
     if (!A.state.ipc) return;
-    try { await A.mutate('db:updateBackupSettings', {
-      auto_enabled: document.getElementById('settingAutoBackup').checked ? 1 : 0,
-      frequency_hours: parseInt(document.getElementById('settingBackupFreq').value) || 24,
-      keep_count: parseInt(document.getElementById('settingBackupKeep').value) || 30
-    }); A.showToast(_t('settingsSaved'), 'success'); } catch (e) { A.logError('saveBackupSettings', e); A.showToast(_t('settingsSaveFailed'), 'error'); }
+    try {
+      await A.mutate('db:updateBackupSettings', {
+        auto_enabled: document.getElementById('settingAutoBackup').checked ? 1 : 0,
+        frequency_hours: parseInt(document.getElementById('settingBackupFreq').value) || 24,
+        keep_count: parseInt(document.getElementById('settingBackupKeep').value) || 30
+      });
+      A.showToast(_t('settingsSaved'), 'success');
+    } catch (e) {
+      A.logError('saveBackupSettings', e);
+      A.showToast(_t('settingsSaveFailed'), 'error');
+    }
   });
 
   document.getElementById('settingCleanOrphans')?.addEventListener('click', async () => {
@@ -121,13 +190,25 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
         if (status) status.textContent = msg;
         A.showToast(msg, 'success');
       }
-    } catch (e) { A.logError('cleanOrphans', e); A.showToast(_t('cleanFailed'), 'error'); if (status) status.textContent = ''; }
-    finally { if (btn) btn.disabled = false; }
+    } catch (e) {
+      A.logError('cleanOrphans', e);
+      A.showToast(_t('cleanFailed'), 'error');
+      if (status) status.textContent = '';
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   });
 
   document.getElementById('settingCreateBackup')?.addEventListener('click', async () => {
     if (!A.state.ipc) return;
-    try { const name = await A.mutate('db:createBackup'); document.getElementById('backupStatus').textContent = _t('backupCreated').replace('{n}', name); A.loadBackupsList(); } catch (e) { A.logError('createBackup', e); A.showToast(_t('backupCreateFailed'), 'error'); }
+    try {
+      const name = await A.mutate('db:createBackup');
+      document.getElementById('backupStatus').textContent = _t('backupCreated').replace('{n}', name);
+      A.loadBackupsList();
+    } catch (e) {
+      A.logError('createBackup', e);
+      A.showToast(_t('backupCreateFailed'), 'error');
+    }
   });
 
   document.getElementById('settingExportArchive')?.addEventListener('click', async () => {
@@ -137,11 +218,14 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       document.getElementById('backupStatus').textContent = _t('archiveExported').replace('{n}', result.filename);
       A.showToast(_t('archiveExportSuccess'), 'success');
       A.loadBackupsList();
-    } catch (e) { A.logError('exportArchive', e); A.showToast(_t('archiveExportFailed'), 'error'); }
+    } catch (e) {
+      A.logError('exportArchive', e);
+      A.showToast(_t('archiveExportFailed'), 'error');
+    }
   });
 
   // ─── Backup list management ───
-  A.loadBackupsList = async function() {
+  A.loadBackupsList = async function () {
     if (!A.state.ipc) return;
     const listEl = document.getElementById('backupList');
     const statusEl = document.getElementById('backupListStatus');
@@ -157,71 +241,129 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
       }
       if (badgeEl) badgeEl.textContent = `(${backups.length})`;
       if (statusEl) statusEl.textContent = '';
-      const formatSize = (bytes) => { if (bytes < 1024) return bytes + ' B'; if (bytes < 1048576) return (bytes/1024).toFixed(1) + ' KB'; return (bytes/1048576).toFixed(1) + ' MB'; };
-      const formatDate = (iso) => { if (!iso) return '—'; const d = new Date(iso); return d.toLocaleDateString(A.getLocale()) + ' ' + d.toLocaleTimeString(A.getLocale(), {hour:'2-digit',minute:'2-digit'}); };
-      const getType = (name) => name.includes('manual') ? _t('backupTypeManual') : name.includes('auto') ? _t('backupTypeAuto') : name.includes('archive') ? _t('backupTypeArchive') : '—';
-      const getValidationStatus = (name) => { const v = A.state._backupValidations || {}; return v[name]; };
-      A.safeSet(listEl, esc => `<table class="table" style="font-size:12px;"><thead><tr><th>${_t('backupFileHeader')}</th><th>${_t('backupDateHeader')}</th><th>${_t('backupSizeHeader')}</th><th>${_t('backupTypeHeader')}</th><th>${_t('backupStatusHeader')}</th><th>${_t('backupActionsHeader')}</th></tr></thead><tbody>${backups.map(b => {
-        const v = getValidationStatus(b.name);
-        const statusIcon = v ? (v.valid ? '<span style="color:var(--success);">' + _t('backupValid') + '</span>' : '<span style="color:var(--destructive);">' + _t('backupCorrupt') + '</span>') : '<span style="color:var(--muted-foreground);">—</span>';
-        return `<tr>
+      const formatSize = bytes => {
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1048576).toFixed(1) + ' MB';
+      };
+      const formatDate = iso => {
+        if (!iso) return '—';
+        const d = new Date(iso);
+        return d.toLocaleDateString(A.getLocale()) + ' ' + d.toLocaleTimeString(A.getLocale(), { hour: '2-digit', minute: '2-digit' });
+      };
+      const getType = name =>
+        name.includes('manual')
+          ? _t('backupTypeManual')
+          : name.includes('auto')
+            ? _t('backupTypeAuto')
+            : name.includes('archive')
+              ? _t('backupTypeArchive')
+              : '—';
+      const getValidationStatus = name => {
+        const v = A.state._backupValidations || {};
+        return v[name];
+      };
+      A.safeSet(
+        listEl,
+        esc =>
+          `<table class="table" style="font-size:12px;"><thead><tr><th>${_t('backupFileHeader')}</th><th>${_t('backupDateHeader')}</th><th>${_t('backupSizeHeader')}</th><th>${_t('backupTypeHeader')}</th><th>${_t('backupStatusHeader')}</th><th>${_t('backupActionsHeader')}</th></tr></thead><tbody>${backups
+            .map(b => {
+              const v = getValidationStatus(b.name);
+              const statusIcon = v
+                ? v.valid
+                  ? '<span style="color:var(--success);">' + _t('backupValid') + '</span>'
+                  : '<span style="color:var(--destructive);">' + _t('backupCorrupt') + '</span>'
+                : '<span style="color:var(--muted-foreground);">—</span>';
+              return `<tr>
           <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(b.name)}">${esc(b.name)}</td>
           <td style="white-space:nowrap;">${esc(formatDate(b.mtime))}</td>
           <td>${formatSize(b.size)}</td>
           <td>${getType(b.name)}</td>
-          <td id="bs_${b.name.replace(/[^a-zA-Z0-9]/g,'_')}">${statusIcon}</td>
+          <td id="bs_${b.name.replace(/[^a-zA-Z0-9]/g, '_')}">${statusIcon}</td>
           <td style="white-space:nowrap;">
             <button class="btn-icon backup-validate-btn" data-file="${esc(b.name)}" title="${_t('backupVerifyBtn')}"><i class="ri-check-double-line"></i></button>
             <button class="btn-icon backup-restore-btn" data-file="${esc(b.name)}" title="${_t('backupRestoreBtn')}" style="color:var(--gold);"><i class="ri-history-line"></i></button>
             <button class="btn-icon backup-delete-btn" data-file="${esc(b.name)}" title="${_t('backupDeleteBtn')}" style="color:var(--destructive);"><i class="ri-delete-bin-line"></i></button>
           </td>
         </tr>`;
-      }).join('')}</tbody></table>`);
-      listEl.querySelectorAll('.backup-validate-btn').forEach(b => b.addEventListener('click', async () => {
-        const file = b.dataset.file;
-        try {
-          const result = await A.state.ipc.invoke('db:validateBackup', file);
-          if (!A.state._backupValidations) A.state._backupValidations = {};
-          A.state._backupValidations[file] = result;
-          A.loadBackupsList();
-          A.showToast(result.valid ? _t('backupValidToast') : _t('backupCorruptToast'), result.valid ? 'success' : 'error');
-        } catch (e) { A.logError('validateBackup', e); A.showToast(_t('backupVerifyFailed'), 'error'); }
-      }));
-      listEl.querySelectorAll('.backup-restore-btn').forEach(b => b.addEventListener('click', () => {
-        const file = b.dataset.file;
-        document.getElementById('restoreConfirmInfo').textContent = _t('restoreFileInfo').replace('{n}', file);
-        document.getElementById('restoreConfirmOverlay').style.display = 'flex';
-        document.getElementById('restoreConfirmProceed').onclick = async () => {
-          document.getElementById('restoreConfirmOverlay').style.display = 'none';
+            })
+            .join('')}</tbody></table>`
+      );
+      listEl.querySelectorAll('.backup-validate-btn').forEach(b =>
+        b.addEventListener('click', async () => {
+          const file = b.dataset.file;
           try {
-            document.getElementById('backupStatus').textContent = _t('restoringLabel');
-            await A.state.ipc.invoke('db:restoreBackup', file);
-            A.showToast(_t('restoreSuccess'), 'success');
-            setTimeout(() => location.reload(), 1500);
-          } catch (e) { A.logError('restoreBackup', e); A.showToast(_t('restoreFailed').replace('{n}', e.message), 'error'); document.getElementById('backupStatus').textContent = ''; }
-        };
-      }));
-      listEl.querySelectorAll('.backup-delete-btn').forEach(b => b.addEventListener('click', async () => {
-        const file = b.dataset.file;
-        if (await A.showConfirm(_t('deleteBackupConfirm').replace('{n}', file), _t('backupDeleteBtn'), 'danger')) {
-          try { await A.state.ipc.invoke('db:deleteBackup', file); A.showToast(_t('backupDeleted'), 'success'); A.loadBackupsList(); }
-          catch (e) { A.logError('deleteBackup', e); A.showToast(_t('backupDeleteFailed'), 'error'); }
-        }
-      }));
-    } catch (e) { A.logError('listBackups', e); if (statusEl) statusEl.textContent = _t('failedLoadList'); }
+            const result = await A.state.ipc.invoke('db:validateBackup', file);
+            if (!A.state._backupValidations) A.state._backupValidations = {};
+            A.state._backupValidations[file] = result;
+            A.loadBackupsList();
+            A.showToast(result.valid ? _t('backupValidToast') : _t('backupCorruptToast'), result.valid ? 'success' : 'error');
+          } catch (e) {
+            A.logError('validateBackup', e);
+            A.showToast(_t('backupVerifyFailed'), 'error');
+          }
+        })
+      );
+      listEl.querySelectorAll('.backup-restore-btn').forEach(b =>
+        b.addEventListener('click', () => {
+          const file = b.dataset.file;
+          document.getElementById('restoreConfirmInfo').textContent = _t('restoreFileInfo').replace('{n}', file);
+          document.getElementById('restoreConfirmOverlay').style.display = 'flex';
+          document.getElementById('restoreConfirmProceed').onclick = async () => {
+            document.getElementById('restoreConfirmOverlay').style.display = 'none';
+            try {
+              document.getElementById('backupStatus').textContent = _t('restoringLabel');
+              await A.state.ipc.invoke('db:restoreBackup', file);
+              A.showToast(_t('restoreSuccess'), 'success');
+              setTimeout(() => location.reload(), 1500);
+            } catch (e) {
+              A.logError('restoreBackup', e);
+              A.showToast(_t('restoreFailed').replace('{n}', e.message), 'error');
+              document.getElementById('backupStatus').textContent = '';
+            }
+          };
+        })
+      );
+      listEl.querySelectorAll('.backup-delete-btn').forEach(b =>
+        b.addEventListener('click', async () => {
+          const file = b.dataset.file;
+          if (await A.showConfirm(_t('deleteBackupConfirm').replace('{n}', file), _t('backupDeleteBtn'), 'danger')) {
+            try {
+              await A.state.ipc.invoke('db:deleteBackup', file);
+              A.showToast(_t('backupDeleted'), 'success');
+              A.loadBackupsList();
+            } catch (e) {
+              A.logError('deleteBackup', e);
+              A.showToast(_t('backupDeleteFailed'), 'error');
+            }
+          }
+        })
+      );
+    } catch (e) {
+      A.logError('listBackups', e);
+      if (statusEl) statusEl.textContent = _t('failedLoadList');
+    }
   };
 
   // Close restore confirm overlay
-  document.getElementById('restoreConfirmCancel')?.addEventListener('click', () => { document.getElementById('restoreConfirmOverlay').style.display = 'none'; });
+  document.getElementById('restoreConfirmCancel')?.addEventListener('click', () => {
+    document.getElementById('restoreConfirmOverlay').style.display = 'none';
+  });
 
   document.getElementById('settingSaveAlerts')?.addEventListener('click', async () => {
     if (!A.state.ipc) return;
-    try { await A.mutate('db:updateAlertSettings', {
-      days_before_1: parseInt(document.getElementById('settingDays1').value) || 7,
-      days_before_2: parseInt(document.getElementById('settingDays2').value) || 3,
-      days_before_3: parseInt(document.getElementById('settingDays3').value) || 1,
-      enabled: document.getElementById('settingAlertEnabled').checked ? 1 : 0
-    }); A.showToast(_t('alertSettingsSaved'), 'success'); } catch (e) { A.logError('saveAlertSettings', e); A.showToast(_t('settingsSaveFailed'), 'error'); }
+    try {
+      await A.mutate('db:updateAlertSettings', {
+        days_before_1: parseInt(document.getElementById('settingDays1').value) || 7,
+        days_before_2: parseInt(document.getElementById('settingDays2').value) || 3,
+        days_before_3: parseInt(document.getElementById('settingDays3').value) || 1,
+        enabled: document.getElementById('settingAlertEnabled').checked ? 1 : 0
+      });
+      A.showToast(_t('alertSettingsSaved'), 'success');
+    } catch (e) {
+      A.logError('saveAlertSettings', e);
+      A.showToast(_t('settingsSaveFailed'), 'error');
+    }
   });
 
   // ─── Log viewer events ───
@@ -231,48 +373,65 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
   const logExport = document.getElementById('logExportBtn');
   const logClear = document.getElementById('logClearBtn');
 
-  if (logLevelSel) logLevelSel.addEventListener('change', () => {
-    logFilters2 = { level: logLevelSel.value || undefined, search: logSearch?.value || undefined };
-    A.loadSettingsLogs();
-  });
-
-  if (logSearch) logSearch.addEventListener('input', A.debounce(() => {
-    logFilters2 = { level: logLevelSel?.value || undefined, search: logSearch.value || undefined };
-    A.loadSettingsLogs();
-  }, 300));
-
-  if (logRefresh) logRefresh.addEventListener('click', () => {
-    logFilters2 = { level: logLevelSel?.value || undefined, search: logSearch?.value || undefined };
-    A.loadSettingsLogs();
-    if (A.Logger) A.Logger.getStats().then(s => {
-      const badge = document.getElementById('logStatsBadge');
-      if (badge) badge.textContent = _t('logStatsLabel').replace('{n}', s.totalEntries).replace('{s}', (s.fileSize / 1024).toFixed(0));
+  if (logLevelSel)
+    logLevelSel.addEventListener('change', () => {
+      logFilters2 = { level: logLevelSel.value || undefined, search: logSearch?.value || undefined };
+      A.loadSettingsLogs();
     });
-  });
 
-  if (logExport) logExport.addEventListener('click', async () => {
-    if (!A.state.ipc) return;
-    try {
-      const json = await A.Logger.exportLogs('json');
-      const blob = new Blob([json], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = `logs_${new Date().toISOString().slice(0,10)}.json`;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
-      A.showToast(_t('logsExported'), 'success');
-    } catch (e) {
-      A.showToast(_t('logsExportFailed'), 'error');
-    }
-  });
+  if (logSearch)
+    logSearch.addEventListener(
+      'input',
+      A.debounce(() => {
+        logFilters2 = { level: logLevelSel?.value || undefined, search: logSearch.value || undefined };
+        A.loadSettingsLogs();
+      }, 300)
+    );
 
-  if (logClear) logClear.addEventListener('click', async () => {
-    if (await A.showConfirm(_t('clearLogsConfirm'))) {
-      const ok = await A.Logger.clearLogs();
-      if (ok) { A.showToast(_t('logsCleared'), 'success'); A.loadSettingsLogs(); }
-      else A.showToast(_t('logsClearFailed'), 'error');
-    }
-  });
+  if (logRefresh)
+    logRefresh.addEventListener('click', () => {
+      logFilters2 = { level: logLevelSel?.value || undefined, search: logSearch?.value || undefined };
+      A.loadSettingsLogs();
+      if (A.Logger)
+        A.Logger.getStats().then(s => {
+          const badge = document.getElementById('logStatsBadge');
+          if (badge)
+            badge.textContent = _t('logStatsLabel')
+              .replace('{n}', s.totalEntries)
+              .replace('{s}', (s.fileSize / 1024).toFixed(0));
+        });
+    });
+
+  if (logExport)
+    logExport.addEventListener('click', async () => {
+      if (!A.state.ipc) return;
+      try {
+        const json = await A.Logger.exportLogs('json');
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `logs_${new Date().toISOString().slice(0, 10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        A.showToast(_t('logsExported'), 'success');
+      } catch (e) {
+        A.showToast(_t('logsExportFailed'), 'error');
+      }
+    });
+
+  if (logClear)
+    logClear.addEventListener('click', async () => {
+      if (await A.showConfirm(_t('clearLogsConfirm'))) {
+        const ok = await A.Logger.clearLogs();
+        if (ok) {
+          A.showToast(_t('logsCleared'), 'success');
+          A.loadSettingsLogs();
+        } else A.showToast(_t('logsClearFailed'), 'error');
+      }
+    });
 
   const logNavItem = document.querySelector('.settings-nav-item[data-setting="logs"]');
   if (logNavItem) {
@@ -282,34 +441,45 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
         if (logLevelSel) logLevelSel.value = '';
         if (logSearch) logSearch.value = '';
         A.loadSettingsLogs();
-        if (A.Logger) A.Logger.getStats().then(s => {
-          const badge = document.getElementById('logStatsBadge');
-          if (badge) badge.textContent = _t('logStatsLabel').replace('{n}', s.totalEntries).replace('{s}', (s.fileSize / 1024).toFixed(0));
-        });
+        if (A.Logger)
+          A.Logger.getStats().then(s => {
+            const badge = document.getElementById('logStatsBadge');
+            if (badge)
+              badge.textContent = _t('logStatsLabel')
+                .replace('{n}', s.totalEntries)
+                .replace('{s}', (s.fileSize / 1024).toFixed(0));
+          });
       }, 200);
     });
   }
 
   // ─── Auto-save settings drafts ───
   if (A.AutoSave) {
-    ['settingAutoBackup','settingBackupFreq','settingBackupKeep','settingAlertEnabled','settingDays1','settingDays2','settingDays3'].forEach(id => {
+    ['settingAutoBackup', 'settingBackupFreq', 'settingBackupKeep', 'settingAlertEnabled', 'settingDays1', 'settingDays2', 'settingDays3'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', () => A.AutoSave.markDirty('settings'));
     });
     A.AutoSave.register('settings', {
-      getValue: () => JSON.stringify({
-        autoBackup: document.getElementById('settingAutoBackup')?.checked ? 1 : 0,
-        backupFreq: document.getElementById('settingBackupFreq')?.value || 24,
-        backupKeep: document.getElementById('settingBackupKeep')?.value || 30,
-        alertEnabled: document.getElementById('settingAlertEnabled')?.checked ? 1 : 0,
-        days1: document.getElementById('settingDays1')?.value || 7,
-        days2: document.getElementById('settingDays2')?.value || 3,
-        days3: document.getElementById('settingDays3')?.value || 1
-      }),
-      setValue: (v) => {
+      getValue: () =>
+        JSON.stringify({
+          autoBackup: document.getElementById('settingAutoBackup')?.checked ? 1 : 0,
+          backupFreq: document.getElementById('settingBackupFreq')?.value || 24,
+          backupKeep: document.getElementById('settingBackupKeep')?.value || 30,
+          alertEnabled: document.getElementById('settingAlertEnabled')?.checked ? 1 : 0,
+          days1: document.getElementById('settingDays1')?.value || 7,
+          days2: document.getElementById('settingDays2')?.value || 3,
+          days3: document.getElementById('settingDays3')?.value || 1
+        }),
+      setValue: v => {
         try {
           const s = JSON.parse(v);
-          const setVal = (id, val) => { const el = document.getElementById(id); if (el) { if (el.type === 'checkbox') el.checked = val === 1 || val === true; else el.value = val; } };
+          const setVal = (id, val) => {
+            const el = document.getElementById(id);
+            if (el) {
+              if (el.type === 'checkbox') el.checked = val === 1 || val === true;
+              else el.value = val;
+            }
+          };
           setVal('settingAutoBackup', s.autoBackup);
           setVal('settingBackupFreq', s.backupFreq);
           setVal('settingBackupKeep', s.backupKeep);
@@ -327,19 +497,23 @@ document.getElementById('settingAddUserBtn')?.addEventListener('click', () => {
 let logPage = 0;
 const LOG_LIMIT = 100;
 
-A.loadSettingsActivity = async function(loadMore = false) {
+A.loadSettingsActivity = async function (loadMore = false) {
   if (!A.state.ipc) return;
   if (!loadMore) logPage = 0;
   const logs = await A.cachedInvoke('db:getLogs', { limit: LOG_LIMIT, offset: logPage * LOG_LIMIT });
   const body = document.getElementById('settingsActivityBody');
   if (!body) return;
 
-  const logHtml = logs.map(l => `<tr>
-    <td style="font-size:10px;color:var(--muted-foreground);">${A.escapeHtml(l.created_at||'')}</td>
-    <td style="font-size:11px;">${A.escapeHtml(l.user_name||'-')}</td>
-    <td><span class="badge badge-gold" style="font-size:9px;">${A.escapeHtml(l.action||'')}</span></td>
-    <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${A.escapeHtml(l.details||'')}</td>
-  </tr>`).join('');
+  const logHtml = logs
+    .map(
+      l => `<tr>
+    <td style="font-size:10px;color:var(--muted-foreground);">${A.escapeHtml(l.created_at || '')}</td>
+    <td style="font-size:11px;">${A.escapeHtml(l.user_name || '-')}</td>
+    <td><span class="badge badge-gold" style="font-size:9px;">${A.escapeHtml(l.action || '')}</span></td>
+    <td style="font-size:11px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${A.escapeHtml(l.details || '')}</td>
+  </tr>`
+    )
+    .join('');
 
   if (!loadMore) {
     A.safeSet(body, esc => logHtml);
@@ -353,19 +527,30 @@ A.loadSettingsActivity = async function(loadMore = false) {
   if (logs.length === LOG_LIMIT) {
     if (!loadMoreBtn && container) {
       const btn = document.createElement('button');
-      btn.id = 'settingsLogLoadMore'; btn.className = 'btn btn-outline btn-sm';
-      btn.textContent = _t('loadMoreBtn'); btn.style.margin = '12px auto'; btn.style.display = 'block';
-      btn.onclick = () => { logPage++; A.loadSettingsActivity(true); };
-      container.textContent = ''; container.appendChild(btn);
-    } else if (loadMoreBtn) { loadMoreBtn.style.display = 'block'; }
-  } else if (loadMoreBtn) { loadMoreBtn.style.display = 'none'; }
+      btn.id = 'settingsLogLoadMore';
+      btn.className = 'btn btn-outline btn-sm';
+      btn.textContent = _t('loadMoreBtn');
+      btn.style.margin = '12px auto';
+      btn.style.display = 'block';
+      btn.onclick = () => {
+        logPage++;
+        A.loadSettingsActivity(true);
+      };
+      container.textContent = '';
+      container.appendChild(btn);
+    } else if (loadMoreBtn) {
+      loadMoreBtn.style.display = 'block';
+    }
+  } else if (loadMoreBtn) {
+    loadMoreBtn.style.display = 'none';
+  }
 };
 
 let logPage2 = 0;
 const LOG_LIMIT2 = 200;
 let logFilters2 = {};
 
-A.loadSettingsLogs = async function(loadMore) {
+A.loadSettingsLogs = async function (loadMore) {
   if (!A.state.ipc) return;
   if (!loadMore) logPage2 = 0;
   logFilters2.limit = LOG_LIMIT2;
@@ -375,16 +560,18 @@ A.loadSettingsLogs = async function(loadMore) {
   if (!body) return;
 
   const levelColors = { INFO: 'badge-active', WARN: 'badge-gold', ERROR: 'badge-closed', CRITICAL: 'badge-closed' };
-  const logHtml = logs.map(l => {
-    const lvlBadge = levelColors[l.level] || 'badge-gold';
-    const extraClass = l.level === 'CRITICAL' ? ' style="background:var(--destructive) !important;"' : '';
-    return `<tr>
-      <td style="font-size:10px;color:var(--muted-foreground);white-space:nowrap;">${A.escapeHtml(l.timestamp||'')}</td>
-      <td><span class="badge ${lvlBadge}"${extraClass} style="font-size:9px;">${A.escapeHtml(l.level||'')}</span></td>
-      <td style="font-size:11px;">${A.escapeHtml(l.context||'')}</td>
-      <td style="font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${A.escapeHtml(l.message||'')}">${A.escapeHtml(l.message||'')}</td>
+  const logHtml = logs
+    .map(l => {
+      const lvlBadge = levelColors[l.level] || 'badge-gold';
+      const extraClass = l.level === 'CRITICAL' ? ' style="background:var(--destructive) !important;"' : '';
+      return `<tr>
+      <td style="font-size:10px;color:var(--muted-foreground);white-space:nowrap;">${A.escapeHtml(l.timestamp || '')}</td>
+      <td><span class="badge ${lvlBadge}"${extraClass} style="font-size:9px;">${A.escapeHtml(l.level || '')}</span></td>
+      <td style="font-size:11px;">${A.escapeHtml(l.context || '')}</td>
+      <td style="font-size:11px;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${A.escapeHtml(l.message || '')}">${A.escapeHtml(l.message || '')}</td>
     </tr>`;
-  }).join('');
+    })
+    .join('');
 
   if (!loadMore) {
     A.safeSet(body, esc => logHtml);
@@ -398,28 +585,39 @@ A.loadSettingsLogs = async function(loadMore) {
   if (logs.length === LOG_LIMIT2) {
     if (!loadMoreBtn && container) {
       const btn = document.createElement('button');
-      btn.id = 'settingsLogsLoadMore'; btn.className = 'btn btn-outline btn-sm';
-      btn.textContent = _t('loadMoreBtn'); btn.style.margin = '12px auto'; btn.style.display = 'block';
-      btn.onclick = () => { logPage2++; A.loadSettingsLogs(true); };
-      container.textContent = ''; container.appendChild(btn);
-    } else if (loadMoreBtn) { loadMoreBtn.style.display = 'block'; }
-  } else if (loadMoreBtn) { loadMoreBtn.style.display = 'none'; }
+      btn.id = 'settingsLogsLoadMore';
+      btn.className = 'btn btn-outline btn-sm';
+      btn.textContent = _t('loadMoreBtn');
+      btn.style.margin = '12px auto';
+      btn.style.display = 'block';
+      btn.onclick = () => {
+        logPage2++;
+        A.loadSettingsLogs(true);
+      };
+      container.textContent = '';
+      container.appendChild(btn);
+    } else if (loadMoreBtn) {
+      loadMoreBtn.style.display = 'block';
+    }
+  } else if (loadMoreBtn) {
+    loadMoreBtn.style.display = 'none';
+  }
 };
 
-A.initSettingsData = async function() {
+A.initSettingsData = async function () {
   if (!A.state.ipc) return;
   try {
     const s = await A.cachedInvoke('db:getBackupSettings');
     document.getElementById('settingAutoBackup').checked = s.auto_enabled === 1;
     if (s.frequency_hours) document.getElementById('settingBackupFreq').value = s.frequency_hours;
     if (s.keep_count) document.getElementById('settingBackupKeep').value = s.keep_count;
-  } catch(e) {}
+  } catch (e) {}
   try {
     const a = await A.cachedInvoke('db:getAlertSettings');
     document.getElementById('settingAlertEnabled').checked = a.enabled === 1;
     if (a.days_before_1) document.getElementById('settingDays1').value = a.days_before_1;
     if (a.days_before_2) document.getElementById('settingDays2').value = a.days_before_2;
     if (a.days_before_3) document.getElementById('settingDays3').value = a.days_before_3;
-  } catch(e) {}
+  } catch (e) {}
   if (typeof A.loadBackupsList === 'function') A.loadBackupsList();
 };

@@ -128,7 +128,7 @@ const LICENSE_PATH = path.join(app.getPath('userData'), 'storage', 'license.json
 const LICENSE_SERVER = process.env.LICENSE_SERVER || 'http://localhost:4000';
 
 if (LICENSE_SERVER.startsWith('http://') && !LICENSE_SERVER.includes('localhost') && !LICENSE_SERVER.includes('127.0.0.1')) {
-  console.warn('⚠ License server uses HTTP (insecure):', LICENSE_SERVER);
+  console.warn('License server uses HTTP (insecure):', LICENSE_SERVER);
 }
 
 function getLicense() {
@@ -348,9 +348,30 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
 
-  // Open target="_blank" links in the default system browser
+  // Open target="_blank" links: confirm external URLs with the user
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:\/\//i.test(url)) shell.openExternal(url);
+    if (/^https?:\/\//i.test(url)) {
+      const trustedDomains = ['localhost:4000', 'api.groq.com', 'api.openai.com', 'api.anthropic.com', 'generativelanguage.googleapis.com'];
+      try {
+        const parsed = new URL(url);
+        if (trustedDomains.includes(parsed.hostname + (parsed.port ? ':' + parsed.port : ''))) {
+          shell.openExternal(url);
+        } else {
+          dialog.showMessageBox(mainWindow, {
+            type: 'question',
+            buttons: ['فتح في المتصفح', 'إلغاء'],
+            defaultId: 1,
+            title: 'رابط خارجي',
+            message: 'فتح الرابط التالي في المتصفح؟',
+            detail: url
+          }).then(({ response }) => {
+            if (response === 0) shell.openExternal(url);
+          });
+        }
+      } catch (e) {
+        shell.openExternal(url);
+      }
+    }
     return { action: 'deny' };
   });
 
@@ -542,8 +563,8 @@ async function init() {
     db.deleteClient(id);
     db.addLog('delete_client', `Ø­Ø°Ù Ù…ÙˆÙƒÙ„ ${c ? c.name : '#' + id}`);
   })));
-  ipcMain.handle('db:getAllTasks', safeIpc('getAllTasks', (_e, includeArchived) => db.getAllTasks(includeArchived)));
-  ipcMain.handle('db:getTask', safeIpc('getTask', (_e, id) => db.getTask(id)));
+  ipcMain.handle('db:getAllTasks', safeIpc('getAllTasks', withPerm('manage_tasks')((_e, includeArchived) => db.getAllTasks(includeArchived))));
+  ipcMain.handle('db:getTask', safeIpc('getTask', withPerm('manage_tasks')((_e, id) => db.getTask(id))));
   ipcMain.handle('db:addTask', mutateIpc('addTask', withPerm('manage_tasks')(async (_e, data) => {
     data = nullGuard(data);
     if (data.case_id && !db.validateRef('cases', data.case_id)) return { error: 'Ø§Ù„Ù‚Ø¶ÙŠØ© ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯Ø©' };
@@ -552,20 +573,20 @@ async function init() {
   })));
   ipcMain.handle('db:updateTask', mutateIpc('updateTask', withPerm('manage_tasks')(async (_e, id, data) => db.updateTask(id, data))));
   ipcMain.handle('db:deleteTask', mutateIpc('deleteTask', withPerm('manage_tasks')(async (_e, id) => db.deleteTask(id))));
-  ipcMain.handle('db:getSubtasks', safeIpc('getSubtasks', (_e, taskId) => db.getSubtasks(taskId)));
+  ipcMain.handle('db:getSubtasks', safeIpc('getSubtasks', withPerm('manage_tasks')((_e, taskId) => db.getSubtasks(taskId))));
   ipcMain.handle('db:addSubtask', mutateIpc('addSubtask', withPerm('manage_tasks')(async (_e, data) => db.addSubtask(nullGuard(data)))));
   ipcMain.handle('db:toggleSubtask', mutateIpc('toggleSubtask', withPerm('manage_tasks')(async (_e, id) => db.toggleSubtask(id))));
   ipcMain.handle('db:deleteSubtask', mutateIpc('deleteSubtask', withPerm('manage_tasks')(async (_e, id) => db.deleteSubtask(id))));
-  ipcMain.handle('db:getComments', safeIpc('getComments', (_e, taskId) => db.getComments(taskId)));
+  ipcMain.handle('db:getComments', safeIpc('getComments', withPerm('manage_tasks')((_e, taskId) => db.getComments(taskId))));
   ipcMain.handle('db:addComment', mutateIpc('addComment', withPerm('manage_tasks')(async (_e, data) => db.addComment(nullGuard(data)))));
-  ipcMain.handle('db:getAllWorkflows', safeIpc('getAllWorkflows', () => db.getAllWorkflows()));
+  ipcMain.handle('db:getAllWorkflows', safeIpc('getAllWorkflows', withPerm('manage_tasks')(() => db.getAllWorkflows())));
   ipcMain.handle('db:addWorkflow', mutateIpc('addWorkflow', withPerm('manage_tasks')(async (_e, data) => db.addWorkflow(nullGuard(data)))));
   ipcMain.handle('db:applyWorkflow', mutateIpc('applyWorkflow', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, workflowId } = nullGuard(args);
     return db.applyWorkflow(caseId, workflowId);
   })));
   ipcMain.handle('db:deleteWorkflow', mutateIpc('deleteWorkflow', withPerm('manage_tasks')(async (_e, id) => db.deleteWorkflow(id))));
-  ipcMain.handle('db:getAllTemplates', safeIpc('getAllTemplates', () => db.getAllTemplates()));
+  ipcMain.handle('db:getAllTemplates', safeIpc('getAllTemplates', withPerm('manage_tasks')(() => db.getAllTemplates())));
   ipcMain.handle('db:addTemplate', mutateIpc('addTemplate', withPerm('manage_tasks')(async (_e, data) => db.addTemplate(nullGuard(data)))));
   ipcMain.handle('db:applyTemplate', mutateIpc('applyTemplate', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, templateId } = nullGuard(args);
@@ -577,11 +598,11 @@ async function init() {
     db.addLog('delete_template', `Ø­Ø°Ù Ù‚Ø§Ù„Ø¨ #${id}`);
     return { ok: true };
   })));
-  ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', () => db.getTaskAnalytics()));
-  ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', () => db.getDashboardStats()));
-  ipcMain.handle('db:getDashboardExtendedStats', safeIpc('getDashboardExtendedStats', () => db.getDashboardExtendedStats()));
-  ipcMain.handle('db:getDocuments', safeIpc('getDocuments', (_e, caseId) => db.getDocuments(caseId)));
-  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', () => db.getAllDocuments()));
+  ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', withPerm('manage_tasks')(() => db.getTaskAnalytics())));
+  ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', withPerm('view_case')(() => db.getDashboardStats())));
+  ipcMain.handle('db:getDashboardExtendedStats', safeIpc('getDashboardExtendedStats', withPerm('view_case')(() => db.getDashboardExtendedStats())));
+  ipcMain.handle('db:getDocuments', safeIpc('getDocuments', withPerm('view_case')((_e, caseId) => db.getDocuments(caseId))));
+  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', withPerm('view_case')(() => db.getAllDocuments())));
   ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'Ù…Ø³Ø§Ø± Ø§Ù„Ù…Ù„Ù Ù…Ø·Ù„ÙˆØ¨' };
@@ -650,6 +671,7 @@ async function init() {
     try {
       const doc = db.getDocument(docId);
       if (!doc || !doc.file_path || !fs.existsSync(doc.file_path)) return { error: 'Ø§Ù„Ù…Ù„Ù ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯' };
+      if (!isPathSafe(doc.file_path, db.STORAGE_DIR)) return { error: 'Ù…Ø³Ø§Ø± Ø§Ù„Ù…Ù„Ù ØºÙŠØ± ØµØ§Ù„Ø' };
       const result = await dialog.showSaveDialog(mainWindow, { defaultPath: doc.filename, filters: [{ name: 'All Files', extensions: ['*'] }] });
       if (!result.canceled && result.filePath) {
         await fsp.copyFile(doc.file_path, result.filePath);
@@ -721,13 +743,13 @@ async function init() {
     return id;
   })));
   ipcMain.handle('db:getClientCommunications', safeIpc('getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId))));
-  ipcMain.handle('db:getAllCommunications', safeIpc('getAllCommunications', () => db.getAllCommunications()));
+  ipcMain.handle('db:getAllCommunications', safeIpc('getAllCommunications', withPerm('view_case')(() => db.getAllCommunications())));
   ipcMain.handle('db:updateClientNotes', mutateIpc('updateClientNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateClient(data);
   })));
-  ipcMain.handle('db:getTodayProcedures', safeIpc('getTodayProcedures', () => db.getTodayProcedures()));
-  ipcMain.handle('db:getAlertSettings', safeIpc('getAlertSettings', () => db.getAlertSettings()));
+  ipcMain.handle('db:getTodayProcedures', safeIpc('getTodayProcedures', withPerm('view_case')(() => db.getTodayProcedures())));
+  ipcMain.handle('db:getAlertSettings', safeIpc('getAlertSettings', withPerm('manage_users')(() => db.getAlertSettings())));
   ipcMain.handle('db:updateAlertSettings', mutateIpc('updateAlertSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateAlertSettings(nullGuard(data));
     db.addLog('update_alert_settings', `ØªØ¹Ø¯ÙŠÙ„ Ø¥Ø¹Ø¯Ø§Ø¯Ø§Øª Ø§Ù„ØªÙ†Ø¨ÙŠÙ‡Ø§Øª`);
@@ -768,22 +790,22 @@ async function init() {
     return result;
   })));
   ipcMain.handle('db:getLogs', safeIpc('getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters))));
-  ipcMain.handle('db:addLog', mutateIpc('addLog', (_e, action, details) => { if (action) db.addLog(action, details || ''); }));
-  ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', () => db.integrityCheck()));
-  ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', () => db.repairOrphans()));
-  ipcMain.handle('db:cleanOrphanedFiles', safeIpc('cleanOrphanedFiles', () => {
+  ipcMain.handle('db:addLog', mutateIpc('addLog', withPerm('manage_users')((_e, action, details) => { if (action) db.addLog(action, details || ''); })));
+  ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', withPerm('manage_users')(() => db.integrityCheck())));
+  ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', withPerm('manage_users')(() => db.repairOrphans())));
+  ipcMain.handle('db:cleanOrphanedFiles', safeIpc('cleanOrphanedFiles', withPerm('manage_users')(() => {
     const result = db.cleanOrphanedFiles();
     db.addLog('clean_orphans', `ØªÙ†Ø¸ÙŠÙ ${result.deletedCount} Ù…Ù„ÙØ§Ù‹ ÙŠØªÙŠÙ…Ø§Ù‹ (${result.freedMB} MB)`);
     return result;
-  }));
+  })));
 
   // â”€â”€â”€ Logger IPC â”€â”€â”€
-  ipcMain.handle('logger:log', (_e, level, context, message) => {
+  ipcMain.handle('logger:log', mutateIpc('logger:log', withPerm('manage_users')((_e, level, context, message) => {
     if (!currentUser) return;
     const lvlMap = { INFO: 0, WARN: 1, ERROR: 2, CRITICAL: 3 };
     const lvl = lvlMap[level] !== undefined ? lvlMap[level] : 1;
     logToLogger(lvl, context || 'renderer', message || '');
-  });
+  })));
 
   ipcMain.handle('logger:getLogs', safeIpc('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters))));
   ipcMain.handle('logger:export', safeIpc('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json'))));
@@ -935,8 +957,8 @@ async function indexDocument(docId) {
 
 // â”€â”€â”€ Events System â”€â”€â”€
 
-ipcMain.handle('events:getAll', safeIpc('events:getAll', () => db.getAllEvents()));
-ipcMain.handle('events:get', safeIpc('events:get', (_e, id) => db.getEvent(id)));
+ipcMain.handle('events:getAll', safeIpc('events:getAll', withPerm('view_case')(() => db.getAllEvents())));
+ipcMain.handle('events:get', safeIpc('events:get', withPerm('view_case')((_e, id) => db.getEvent(id))));
 ipcMain.handle('events:add', mutateIpc('events:add', withPerm('edit_case')(async (_e, data) => {
   if (!data) return { error: 'Ø§Ù„Ø¨ÙŠØ§Ù†Ø§Øª Ù…Ø·Ù„ÙˆØ¨Ø©' };
   const id = db.addEvent(data);
@@ -1056,9 +1078,9 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     } else {
       user = users.find(u => u.active);
     }
-    if (!user) return { ok: false, error: 'Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù… ØºÙŠØ± Ù…ÙˆØ¬ÙˆØ¯ Ø£Ùˆ ØºÙŠØ± Ù†Ø´Ø·' };
+    if (!user) return { ok: false, error: 'Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„ ØºÙŠØ± ØµØ­ÙŠØ­Ø©' };
     const passwordHash = db.getPasswordHashForUser(user.id);
-    if (!passwordHash) return { ok: false, error: 'Ù„Ù… ÙŠØªÙ… ØªØ¹ÙŠÙŠÙ† ÙƒÙ„Ù…Ø© Ø³Ø± Ù„Ù‡Ø°Ø§ Ø§Ù„Ù…Ø³ØªØ®Ø¯Ù…' };
+    if (!passwordHash) return { ok: false, error: 'Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„ ØºÙŠØ± ØµØ­ÙŠØ­Ø©' };
     const loginKey = String(user.id);
     const prev = loginAttempts.get(loginKey);
     if (prev) {
@@ -1079,7 +1101,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
         rec.lockedUntil = now + lockSecs * 1000;
       }
       loginAttempts.set(loginKey, rec);
-      return { ok: false, error: 'ÙƒÙ„Ù…Ø© Ø§Ù„Ø³Ø± Ø®Ø·Ø£' };
+      return { ok: false, error: 'Ø¨ÙŠØ§Ù†Ø§Øª Ø§Ù„Ø¯Ø®ÙˆÙ„ ØºÙŠØ± ØµØ­ÙŠØ­Ø©' };
     }
     loginAttempts.delete(loginKey);
     const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };

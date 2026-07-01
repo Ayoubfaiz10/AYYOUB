@@ -1,4 +1,4 @@
-var A = window.App = window.App || {};
+var A = (window.App = window.App || {});
 
 A.state.aiMode = 'chat';
 A.state.aiConfigured = false;
@@ -8,10 +8,34 @@ A.state.aiProvider = 'groq';
 A.state.aiModel = '';
 
 const AI_PROVIDER_META = {
-  groq: { label: 'مفتاح API (Groq)', placeholder: 'gsk_...', hint: 'احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" style="color:var(--info);">Groq Console</a>', logoBg: '#1a1a2e', logoText: 'G' },
-  openai: { label: 'مفتاح API (OpenAI)', placeholder: 'sk-...', hint: 'احصل على مفتاح من <a href="https://platform.openai.com/api-keys" target="_blank" style="color:var(--info);">OpenAI Dashboard</a>', logoBg: '#10a37f', logoText: 'O' },
-  anthropic: { label: 'مفتاح API (Anthropic)', placeholder: 'sk-ant-...', hint: 'احصل على مفتاح من <a href="https://console.anthropic.com/" target="_blank" style="color:var(--info);">Anthropic Console</a>', logoBg: '#d97757', logoText: 'C' },
-  gemini: { label: 'مفتاح API (Gemini)', placeholder: 'AIza...', hint: 'احصل على مفتاح مجاني من <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--info);">Google AI Studio</a>', logoBg: '#4285f4', logoText: 'G+' }
+  groq: {
+    label: 'مفتاح API (Groq)',
+    placeholder: 'gsk_...',
+    hint: 'احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Groq Console</a>',
+    logoBg: '#1a1a2e',
+    logoText: 'G'
+  },
+  openai: {
+    label: 'مفتاح API (OpenAI)',
+    placeholder: 'sk-...',
+    hint: 'احصل على مفتاح من <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">OpenAI Dashboard</a>',
+    logoBg: '#10a37f',
+    logoText: 'O'
+  },
+  anthropic: {
+    label: 'مفتاح API (Anthropic)',
+    placeholder: 'sk-ant-...',
+    hint: 'احصل على مفتاح من <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Anthropic Console</a>',
+    logoBg: '#d97757',
+    logoText: 'C'
+  },
+  gemini: {
+    label: 'مفتاح API (Gemini)',
+    placeholder: 'AIza...',
+    hint: 'احصل على مفتاح مجاني من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Google AI Studio</a>',
+    logoBg: '#4285f4',
+    logoText: 'G+'
+  }
 };
 
 const AI_MODELS = {
@@ -28,7 +52,7 @@ function populateModels(provider, selectedModel) {
   sel.innerHTML = models.map(m => `<option value="${m}" ${m === selectedModel ? 'selected' : ''}>${m}</option>`).join('');
 }
 
-window.selectAiProvider = function(provider) {
+window.selectAiProvider = function (provider) {
   A.state.aiProvider = provider;
   document.querySelectorAll('.ai-provider-btn').forEach(b => b.classList.toggle('active', b.dataset.provider === provider));
   const el = document.getElementById('aiApiKey');
@@ -41,7 +65,7 @@ window.selectAiProvider = function(provider) {
   populateModels(provider, '');
 };
 
-A.initAI = function() {
+A.initAI = function () {
   const saveKeyBtn = document.getElementById('aiSaveKey');
   const sendBtn = document.getElementById('aiSendBtn');
   const aiInput = document.getElementById('aiInput');
@@ -75,7 +99,10 @@ A.initAI = function() {
     if (!A.state.ipc) return;
     const key = apiKeyEl.value.trim();
     const model = document.getElementById('aiModelSelect')?.value || '';
-    if (!key) { A.showToast('الرجاء إدخال مفتاح API', 'error'); return; }
+    if (!key) {
+      A.showToast('الرجاء إدخال مفتاح API', 'error');
+      return;
+    }
     A.state.aiModel = model;
     const result = await A.mutate('ai:saveConfig', { apiKey: key, provider: A.state.aiProvider, model: model });
     if (result && result.ok) {
@@ -118,7 +145,10 @@ A.initAI = function() {
 
   sendBtn.addEventListener('click', () => A.sendAiMessage());
   aiInput.addEventListener('keydown', e => {
-    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); A.sendAiMessage(); }
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      A.sendAiMessage();
+    }
   });
   aiInput.addEventListener('input', () => A.autoResizeInput(aiInput));
 
@@ -127,22 +157,31 @@ A.initAI = function() {
     floatBtn.className = 'ai-float-btn';
     A.safeSetStatic(floatBtn, '<i class="ri-robot-3-line"></i>');
     floatBtn.title = 'المساعد الذكي (Ctrl+K)';
-    floatBtn.addEventListener('click', () => { if (!floatBtn._dragging) A.navigateTo('ai'); });
+    floatBtn.addEventListener('click', () => {
+      if (!floatBtn._dragging) A.navigateTo('ai');
+    });
     // Restore saved position
     try {
       const pos = JSON.parse(localStorage.getItem('aiFloatPos'));
-      if (pos) { floatBtn.style.left = pos.x; floatBtn.style.bottom = pos.y; }
+      if (pos) {
+        floatBtn.style.left = pos.x;
+        floatBtn.style.bottom = pos.y;
+      }
     } catch {}
     // Dragging
     let startX, startY, origX, origY, moved;
-    floatBtn.addEventListener('mousedown', (e) => {
-      startX = e.clientX; startY = e.clientY;
-      origX = floatBtn.style.left; origY = floatBtn.style.bottom;
-      moved = false; floatBtn._dragging = false;
+    floatBtn.addEventListener('mousedown', e => {
+      startX = e.clientX;
+      startY = e.clientY;
+      origX = floatBtn.style.left;
+      origY = floatBtn.style.bottom;
+      moved = false;
+      floatBtn._dragging = false;
       floatBtn.style.cursor = 'grabbing';
       floatBtn.style.transition = 'none';
-      const onMove = (ev) => {
-        const dx = ev.clientX - startX, dy = ev.clientY - startY;
+      const onMove = ev => {
+        const dx = ev.clientX - startX,
+          dy = ev.clientY - startY;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
         floatBtn.style.left = (parseInt(origX) || 24) + dx + 'px';
         floatBtn.style.bottom = Math.max(10, (parseInt(origY) || 24) - dy) + 'px';
@@ -162,7 +201,7 @@ A.initAI = function() {
   }
 };
 
-A.updateModelBar = function() {
+A.updateModelBar = function () {
   const bar = document.getElementById('aiModelBar');
   const label = document.getElementById('aiModelLabel');
   if (!bar || !label) return;
@@ -173,7 +212,7 @@ A.updateModelBar = function() {
   bar.style.display = 'flex';
 };
 
-A.setAiContext = function(type, id, label) {
+A.setAiContext = function (type, id, label) {
   A.state.aiContext = { type, id, label };
   const bar = document.getElementById('aiContextBar');
   const labelEl = document.getElementById('aiContextLabel');
@@ -187,18 +226,21 @@ A.setAiContext = function(type, id, label) {
   if (input) input.placeholder = modeLabels[type] || 'اسأل المساعد الذكي...';
 };
 
-A.clearAiContext = function() {
+A.clearAiContext = function () {
   A.state.aiContext = null;
   const bar = document.getElementById('aiContextBar');
   if (bar) bar.style.display = 'none';
 };
 
-A.sendAiMessage = async function() {
+A.sendAiMessage = async function () {
   if (!A.state.ipc || !A.state.aiConfigured || A.state.isAISending) {
     if (A.state.isAISending) A.showToast('جاري معالجة رسالة أخرى...', 'info');
     return;
   }
-  if (!navigator.onLine) { A.showToast('يرجى التحقق من الاتصال بالإنترنت', 'warning'); return; }
+  if (!navigator.onLine) {
+    A.showToast('يرجى التحقق من الاتصال بالإنترنت', 'warning');
+    return;
+  }
   const input = document.getElementById('aiInput');
   if (!input) return;
   const msg = input.value.trim();
@@ -212,7 +254,12 @@ A.sendAiMessage = async function() {
     A.autoResizeInput(input);
     let res;
     if (A.state.aiContext) {
-      res = await A.state.ipc.invoke('ai:askContextual', { mode: A.state.aiMode, message: msg, contextType: A.state.aiContext.type, contextId: A.state.aiContext.id });
+      res = await A.state.ipc.invoke('ai:askContextual', {
+        mode: A.state.aiMode,
+        message: msg,
+        contextType: A.state.aiContext.type,
+        contextId: A.state.aiContext.id
+      });
     } else {
       res = await A.state.ipc.invoke('ai:ask', { mode: A.state.aiMode, message: msg });
     }
@@ -229,7 +276,7 @@ A.sendAiMessage = async function() {
   }
 };
 
-A.showTyping = function() {
+A.showTyping = function () {
   const container = document.getElementById('aiMessages');
   if (!container) return null;
   const div = document.createElement('div');
@@ -244,13 +291,13 @@ A.showTyping = function() {
   return div;
 };
 
-A.autoResizeInput = function(el) {
+A.autoResizeInput = function (el) {
   if (!el) return;
   el.style.height = 'auto';
   el.style.height = Math.min(el.scrollHeight, 120) + 'px';
 };
 
-A.addAiMessage = function(role, text) {
+A.addAiMessage = function (role, text) {
   const container = document.getElementById('aiMessages');
   if (!container) return;
   const div = document.createElement('div');
@@ -276,12 +323,18 @@ A.addAiMessage = function(role, text) {
   copyBtn.className = 'ai-msg-copy';
   copyBtn.innerHTML = '<i class="ri-file-copy-line"></i>';
   copyBtn.title = 'نسخ الرسالة';
-  copyBtn.addEventListener('click', function() {
-    navigator.clipboard.writeText(text).then(() => {
-      this.innerHTML = '<i class="ri-check-line"></i>';
-      this.classList.add('copied');
-      setTimeout(() => { this.innerHTML = '<i class="ri-file-copy-line"></i>'; this.classList.remove('copied'); }, 2000);
-    }).catch(() => {});
+  copyBtn.addEventListener('click', function () {
+    navigator.clipboard
+      .writeText(text)
+      .then(() => {
+        this.innerHTML = '<i class="ri-check-line"></i>';
+        this.classList.add('copied');
+        setTimeout(() => {
+          this.innerHTML = '<i class="ri-file-copy-line"></i>';
+          this.classList.remove('copied');
+        }, 2000);
+      })
+      .catch(() => {});
   });
   footer.appendChild(copyBtn);
   body.appendChild(footer);
@@ -290,20 +343,29 @@ A.addAiMessage = function(role, text) {
   container.scrollTop = container.scrollHeight;
 };
 
-A.loadSmartInsights = async function() {
+A.loadSmartInsights = async function () {
   const el = document.getElementById('dashAiInsight');
   if (!el || !A.state.ipc) return;
-  if (!navigator.onLine) { el.textContent = '—'; return; }
+  if (!navigator.onLine) {
+    el.textContent = '—';
+    return;
+  }
   try {
     const data = await A.state.ipc.invoke('ai:getSmartInsights');
     if (data) {
-      A.safeSet(el, esc => `<div style="margin-bottom:var(--spacing-1-5);font-size:var(--type-caption);color:var(--muted-foreground);line-height:1.6;">${esc(data.summary)}</div>
-        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--spacing-1-5);padding:6px 0;border-bottom:1px solid var(--muted);font-size:var(--type-caption);color:var(--foreground);"><i class="ri-information-line" style="color:var(--gold);font-size:14px;"></i>${esc(i)}</div>`).join('')}`);
+      A.safeSet(
+        el,
+        esc => `<div style="margin-bottom:var(--spacing-1-5);font-size:var(--type-caption);color:var(--muted-foreground);line-height:1.6;">${esc(data.summary)}</div>
+        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--spacing-1-5);padding:6px 0;border-bottom:1px solid var(--muted);font-size:var(--type-caption);color:var(--foreground);"><i class="ri-information-line" style="color:var(--gold);font-size:14px;"></i>${esc(i)}</div>`).join('')}`
+      );
     }
-  } catch (e) { A.logError('loadSmartInsights', e); el.textContent = '—'; }
+  } catch (e) {
+    A.logError('loadSmartInsights', e);
+    el.textContent = '—';
+  }
 };
 
-A.loadAI = async function() {
+A.loadAI = async function () {
   if (!A.state.ipc) return;
   if (A.state.aiConfigured) return;
   const setup = document.getElementById('aiSetup');
@@ -317,9 +379,14 @@ A.loadAI = async function() {
   }
 };
 
-A.analyzeDoc = async function(docId) {
+A.analyzeDoc = async function (docId) {
   if (!A.state.ipc) return;
-  A.showModal('تحليل الوثيقة بالذكاء الاصطناعي', '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>', null, 'إغلاق');
+  A.showModal(
+    'تحليل الوثيقة بالذكاء الاصطناعي',
+    '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>',
+    null,
+    'إغلاق'
+  );
   try {
     const result = await A.state.ipc.invoke('ai:analyzeDocument', { docId });
     const content = document.getElementById('docAnalysisContent');
@@ -330,16 +397,27 @@ A.analyzeDoc = async function(docId) {
     }
     const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">(من الذاكرة المخبأة)</span>' : '';
     const html = result.analysis
-      .replace(/=== الخلاصة ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>')
-      .replace(/=== النقاط الرئيسية ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>')
-      .replace(/=== التوصية القانونية ===/g, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>')
+      .replace(
+        /=== الخلاصة ===/g,
+        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>'
+      )
+      .replace(
+        /=== النقاط الرئيسية ===/g,
+        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>'
+      )
+      .replace(
+        /=== التوصية القانونية ===/g,
+        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>'
+      )
       .replace(/\*\*(.*?)\*\*/g, (_, m) => '<strong>' + A.escapeHtml(m) + '</strong>')
       .replace(/\n/g, '<br>');
-    content.innerHTML = `<div style="text-align:start;font-size:13px;line-height:1.8;color:var(--foreground);max-height:400px;overflow-y:auto;">${html}</div><div style="text-align:left;margin-top:8px;">${cachedLabel}</div>`;
+    const safeHtml = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['h4', 'strong', 'br', 'div', 'span', 'i'], ALLOWED_ATTR: ['style', 'class'] });
+    content.innerHTML = `<div style="text-align:start;font-size:13px;line-height:1.8;color:var(--foreground);max-height:400px;overflow-y:auto;">${safeHtml}</div><div style="text-align:left;margin-top:8px;">${cachedLabel}</div>`;
   } catch (e) {
     A.logError('analyzeDoc', e);
     const content = document.getElementById('docAnalysisContent');
-    if (content) content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:32px;"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
+    if (content)
+      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:32px;"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
   }
 };
 
