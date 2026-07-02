@@ -381,6 +381,10 @@ A.loadAI = async function () {
 
 A.analyzeDoc = async function (docId) {
   if (!A.state.ipc) return;
+  if (!A.state.aiConfigured) {
+    A.showToast('الرجاء إعداد الذكاء الاصطناعي أولاً من قسم "الذكاء الاصطناعي"', 'warning');
+    return;
+  }
   A.showModal(
     'تحليل الوثيقة بالذكاء الاصطناعي',
     '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>',

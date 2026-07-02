@@ -3,7 +3,7 @@ const isDev = process.env.NODE_ENV === 'development';
 
 const MAX_ARGS_SIZE = 3 * 1024 * 1024; // 3MB max per invocation (for avatar upload)
 
-const PUSH_CHANNELS = ['app:navigateToCase', 'app:notification', 'app:updateAvailable', 'license:invalidated'];
+const PUSH_CHANNELS = ['app:navigateToCase', 'app:notification', 'app:updateAvailable', 'license:invalidated', 'app:indexNotification'];
 
 const rateLimits = new Map();
 const RATE_LIMIT_WINDOW = 60000;

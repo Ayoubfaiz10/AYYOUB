@@ -28,8 +28,13 @@ A.loadArchive = async function () {
       .querySelectorAll('.case-archive-btn')
       .forEach(b =>
         b.addEventListener('click', async () => {
-          await A.mutate('db:unarchiveCase', parseInt(b.dataset.id));
-          A.loadArchive();
+          const result = await A.mutate('db:unarchiveCase', parseInt(b.dataset.id));
+          if (result && result.error) {
+            A.showToast(_t('archiveToggleFailed'), 'error');
+          } else {
+            A.showToast(_t('caseRestored'), 'success');
+            A.loadArchive();
+          }
         })
       );
   } catch (e) {

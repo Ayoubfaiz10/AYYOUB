@@ -83,8 +83,10 @@ A.navigateTo = function (sectionId) {
   document.querySelectorAll('.search-results').forEach(function (r) {
     r.style.display = 'none';
   });
-  if (!A.state.loadedSections.has(sectionId) && A.state.ipc) {
-    A.state.loadedSections.add(sectionId);
+  if (A.state.ipc) {
+    if (!A.state.loadedSections.has(sectionId)) {
+      A.state.loadedSections.add(sectionId);
+    }
     if (sectionId === 'dashboard' && typeof A.loadDashboard === 'function') A.loadDashboard();
     else if (sectionId === 'clients' && typeof A.loadClients === 'function') A.loadClients();
     else if (sectionId === 'cases' && typeof A.loadCases === 'function') A.loadCases();

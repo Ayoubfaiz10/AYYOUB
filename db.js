@@ -667,6 +667,10 @@ function unarchiveCase(id) {
   mutate('UPDATE cases SET archived = 0 WHERE id = ?', [id]);
 }
 
+function getArchivedCases() {
+  return query("SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id WHERE cases.archived = 1 ORDER BY cases.created_date DESC");
+}
+
 function autoArchive() {
   mutate("UPDATE cases SET archived = 1 WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days')");
   return db.getRowsModified();
@@ -2398,6 +2402,7 @@ module.exports = {
   archiveCase,
   unarchiveCase,
   autoArchive,
+  getArchivedCases,
   updateHonorairesTotaux,
   getUsers,
   getAllUsers,

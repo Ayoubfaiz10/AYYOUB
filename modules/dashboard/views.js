@@ -18,6 +18,7 @@ A.renderDashboard = function (data) {
   A.renderRevenueLine(safeExt);
   A.renderTomorrowHearings();
   A.initQuickActions();
+  A.initQuickActionsBar();
   A.initKpiCardClicks();
 };
 
@@ -25,9 +26,59 @@ A.renderWelcomeHeader = function (totalCases) {
   const userEl = document.getElementById('dashUserName');
   const dateEl = document.getElementById('dashDate');
   const avatarEl = document.getElementById('dashAvatar');
-  if (userEl) userEl.textContent = _t('defaultLawyer');
+  const welcomeRow = document.getElementById('dashWelcomeRow');
+
+  // Get actual user name from auth
+  var userName = _t('defaultLawyer');
+  if (A.state.ipc) {
+    A.state.ipc.invoke('auth:getCurrentUser').then(function (user) {
+      if (user && user.name) userName = user.name;
+      if (avatarEl) avatarEl.textContent = userName.charAt(0);
+      if (userEl) {
+        var greeting = 'السلام عليكم، ' + userName;
+        userEl.textContent = greeting;
+      }
+    }).catch(function () {
+      if (avatarEl) avatarEl.textContent = (_t('defaultLawyer') || 'محامي').charAt(0);
+      if (userEl) userEl.textContent = _t('defaultLawyer');
+    });
+  } else {
+    if (avatarEl) avatarEl.textContent = (_t('defaultLawyer') || 'محامي').charAt(0);
+    if (userEl) userEl.textContent = _t('defaultLawyer');
+  }
+
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString(A.getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-  if (avatarEl) avatarEl.textContent = (_t('defaultLawyer') || 'محامي').charAt(0);
+
+  // Add greeting subtitle with contextual info
+  var subEl = welcomeRow ? welcomeRow.querySelector('.dash-greeting-sub') : null;
+  if (!subEl && welcomeRow) {
+    subEl = document.createElement('div');
+    subEl.className = 'dash-greeting-sub';
+    welcomeRow.querySelector('.dash-welcome-text').appendChild(subEl);
+  }
+  if (subEl && A.state.ipc) {
+    Promise.all([
+      A.cachedInvoke('db:getUpcomingHearings'),
+      A.cachedInvoke('db:getUpcomingDeadlines')
+    ]).then(function (results) {
+      var hearings = results[0] || [];
+      var deadlines = results[1] || [];
+      var weekCount = hearings.filter(function (h) { return h.days_remaining <= 7; }).length;
+      var todayCount = deadlines.filter(function (d) { return d.days_remaining <= 1; }).length;
+      var parts = [];
+      if (weekCount > 0) {
+        var hText = weekCount === 1 ? 'لديك جلسة واحدة هذا الأسبوع' : 'لديك ' + weekCount + ' جلسات هذا الأسبوع';
+        parts.push(hText);
+      }
+      if (todayCount > 0) {
+        var dText = todayCount === 1 ? 'وقضية تحتاج متابعة اليوم' : 'وقضيتان تحتاجان متابعة اليوم';
+        parts.push(dText);
+      }
+      subEl.textContent = parts.length ? parts.join(' و') : 'مرحباً بك في لوحة التحكم';
+    }).catch(function () {
+      subEl.textContent = 'مرحباً بك في لوحة التحكم';
+    });
+  }
 };
 
 A.renderKpiCards = function (stats, ext, cases, clients, chartData) {
@@ -83,29 +134,55 @@ A.renderChartRow = function (chartData, ext) {
   }
 
   const gold = '#C6A15B';
+  const blue = '#4A8BC2';
+  const green = '#1A8A5C';
+  const purple = '#8B5CF6';
+  const red = '#D94A4A';
   const gray400 = '#8C8A84';
   const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
+  var chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  var darkMode = document.body.classList.contains('dark-mode');
+  var gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
+  var tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
+  var tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
+
   // Left: Cases by Month (bar)
-  const barCtx = document.getElementById('casesBarChart')?.getContext('2d');
+  var barCtx = document.getElementById('casesBarChart')?.getContext('2d');
   if (barCtx) {
-    const monthly = chartData.monthly || [];
-    const labels = monthly.map(m => monthNames[parseInt(m.month) - 1] || m.month);
-    const values = monthly.map(m => m.count);
+    var monthly = chartData.monthly || [];
+    var labels = monthly.map(function (m) { return monthNames[parseInt(m.month) - 1] || m.month; });
+    var values = monthly.map(function (m) { return m.count; });
     if (values.length) {
       A._casesBarChart = new Chart(barCtx, {
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ label: _t('casesCountLabel'), data: values, backgroundColor: gold, borderRadius: 4 }]
+          datasets: [{ label: _t('casesCountLabel'), data: values, backgroundColor: gold, borderRadius: 6, barPercentage: 0.6 }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
-          plugins: { legend: { display: false } },
+          animation: { duration: 800, easing: 'easeOutQuart' },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: tooltipBg,
+              titleColor: darkMode ? '#F9FAFB' : '#1F2937',
+              bodyColor: gray400,
+              borderColor: tooltipBorder,
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              boxPadding: 4,
+              usePointStyle: true,
+              titleFont: { family: chartFontFamily, size: 12, weight: '600' },
+              bodyFont: { family: chartFontFamily, size: 11 }
+            }
+          },
           scales: {
-            y: { beginAtZero: true, grid: { color: 'rgba(140,138,132,0.15)' }, ticks: { color: gray400 } },
-            x: { grid: { display: false }, ticks: { color: gray400 } }
+            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } }
           }
         }
       });
@@ -119,29 +196,63 @@ A.renderChartRow = function (chartData, ext) {
   }
 
   // Right: Cases by Type (doughnut)
-  const donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
+  var donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
   if (donutCtx) {
-    const tData = ext.casesByType || [];
-    const typeColors = ['#4A8BC2', '#C6A15B', '#1A8A5C', '#8B5CF6', '#FF8A65', '#D94A4A', '#6B7280'];
+    var tData = ext.casesByType || [];
+    var typeColors = { 'مدني': blue, 'تجاري': gold, 'أسرة': green, 'إداري': purple, 'جنائي': red };
+    var defaultColors = [blue, gold, green, purple, red, '#FF8A65', '#6B7280'];
+    var colors = tData.map(function (t) { return typeColors[t.case_type] || defaultColors[tData.indexOf(t) % defaultColors.length]; });
     if (tData.length) {
       A._typeDonut = new Chart(donutCtx, {
         type: 'doughnut',
         data: {
-          labels: tData.map(t => t.case_type),
+          labels: tData.map(function (t) { return t.case_type; }),
           datasets: [
             {
-              data: tData.map(t => t.count),
-              backgroundColor: tData.map((_, i) => typeColors[i % typeColors.length]),
-              borderWidth: 2,
-              borderColor: document.body.classList.contains('dark-mode') ? '#1F2937' : '#FFFFFF'
+              data: tData.map(function (t) { return t.count; }),
+              backgroundColor: colors,
+              borderWidth: 3,
+              borderColor: darkMode ? '#1F2937' : '#FFFFFF',
+              hoverOffset: 8
             }
           ]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          cutout: '65%',
+          animation: { animateRotate: true, duration: 800, easing: 'easeOutQuart' },
           plugins: {
-            legend: { position: 'bottom', labels: { font: { family: 'Inter' }, color: '#8C8A84', padding: 12 } }
+            legend: {
+              position: 'bottom',
+              labels: {
+                font: { family: chartFontFamily, size: 11, weight: '500' },
+                color: gray400,
+                padding: 14,
+                usePointStyle: true,
+                pointStyle: 'circle'
+              }
+            },
+            tooltip: {
+              backgroundColor: tooltipBg,
+              titleColor: darkMode ? '#F9FAFB' : '#1F2937',
+              bodyColor: darkMode ? '#E5E7EB' : '#1F2937',
+              borderColor: tooltipBorder,
+              borderWidth: 1,
+              cornerRadius: 8,
+              padding: 10,
+              boxPadding: 6,
+              usePointStyle: true,
+              titleFont: { family: chartFontFamily, size: 12, weight: '600' },
+              bodyFont: { family: chartFontFamily, size: 11 },
+              callbacks: {
+                label: function (context) {
+                  var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  var pct = Math.round((context.parsed / total) * 100);
+                  return context.label + ': ' + context.parsed + ' (' + pct + '%)';
+                }
+              }
+            }
           }
         }
       });
@@ -290,14 +401,19 @@ A.renderRevenueLine = function (ext) {
     A._revenueLine.destroy();
     A._revenueLine = null;
   }
-  const ctx = document.getElementById('revenueLineChart')?.getContext('2d');
+  var ctx = document.getElementById('revenueLineChart')?.getContext('2d');
   if (!ctx) return;
-  const gold = '#C6A15B';
-  const gray400 = '#8C8A84';
-  const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
-  const revData = ext.monthlyRevenue || [];
-  const labels = revData.map(m => monthNames[parseInt(m.month) - 1] || m.month);
-  const values = revData.map(m => parseFloat(m.total) || 0);
+  var gold = '#C6A15B';
+  var gray400 = '#8C8A84';
+  var monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
+  var revData = ext.monthlyRevenue || [];
+  var labels = revData.map(function (m) { return monthNames[parseInt(m.month) - 1] || m.month; });
+  var values = revData.map(function (m) { return parseFloat(m.total) || 0; });
+  var darkMode = document.body.classList.contains('dark-mode');
+  var tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
+  var tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
+  var gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
+  var chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
   if (values.length) {
     A._revenueLine = new Chart(ctx, {
       type: 'line',
@@ -308,30 +424,64 @@ A.renderRevenueLine = function (ext) {
             label: _t('revenueLabel'),
             data: values,
             borderColor: gold,
-            backgroundColor: gold + '20',
+            backgroundColor: function (context) {
+              var chart = context.chart;
+              var ctx2 = chart.ctx;
+              var gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
+              gradient.addColorStop(0, gold + '40');
+              gradient.addColorStop(1, gold + '02');
+              return gradient;
+            },
             fill: true,
-            tension: 0.35,
+            tension: 0.4,
             pointBackgroundColor: gold,
-            pointRadius: 4
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointHoverBackgroundColor: gold,
+            pointHoverBorderColor: '#FFFFFF',
+            pointHoverBorderWidth: 2,
+            borderWidth: 2.5
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
+        animation: { duration: 1000, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: tooltipBg,
+            titleColor: darkMode ? '#F9FAFB' : '#1F2937',
+            bodyColor: darkMode ? '#E5E7EB' : '#1F2937',
+            borderColor: tooltipBorder,
+            borderWidth: 1,
+            cornerRadius: 8,
+            padding: 10,
+            boxPadding: 4,
+            usePointStyle: true,
+            titleFont: { family: chartFontFamily, size: 12, weight: '600' },
+            bodyFont: { family: chartFontFamily, size: 11 },
+            callbacks: {
+              label: function (context) {
+                return context.parsed.y.toLocaleString() + ' درهم';
+              }
+            }
+          }
+        },
         scales: {
           y: {
             beginAtZero: true,
-            grid: { color: 'rgba(140,138,132,0.15)' },
+            grid: { color: gridColor },
             ticks: {
               color: gray400,
+              font: { family: chartFontFamily, size: 10 },
               callback: function (v) {
                 return v.toLocaleString();
               }
             }
           },
-          x: { grid: { display: false }, ticks: { color: gray400 } }
+          x: { grid: { display: false }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } }
         }
       }
     });
@@ -384,6 +534,29 @@ A.initQuickActions = function () {
         A.navigateTo('tasks');
       } else if (action === 'report') A.navigateTo('reports');
       else if (action === 'ai') A.navigateTo('ai');
+    });
+  });
+};
+
+A.initQuickActionsBar = function () {
+  document.querySelectorAll('.qa-btn').forEach(function (btn) {
+    btn.addEventListener('click', function (e) {
+      var action = btn.dataset.action;
+      if (action === 'client') {
+        A.navigateTo('clients');
+        var addBtn = document.getElementById('addClientBtn');
+        if (addBtn) addBtn.click();
+      } else if (action === 'case') {
+        A.navigateTo('cases');
+        var addBtn = document.getElementById('addCaseBtn');
+        if (addBtn) addBtn.click();
+      } else if (action === 'hearing') {
+        A.navigateTo('hearings');
+        var addBtn = document.getElementById('addHearingBtn');
+        if (addBtn) addBtn.click();
+      } else if (action === 'document') {
+        A.navigateTo('documents');
+      }
     });
   });
 };

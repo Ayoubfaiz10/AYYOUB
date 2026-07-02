@@ -296,3 +296,9 @@ document.addEventListener('click', function (e) {
     if (target) target.click();
   }
 });
+
+A.state.ipc.on('app:indexNotification', function (data) {
+  var typeMap = { indexSuccess: 'success', indexWarning: 'warning', indexError: 'error' };
+  var toastType = typeMap[data.type] || 'info';
+  A.showToast(data.message, toastType);
+});

@@ -46,13 +46,17 @@ const cacheDeps = {
   'db:getBackupSettings': ['db:updateBackupSettings'],
   'db:getAlertSettings': ['db:updateAlertSettings'],
   'events:getAll': ['events:add', 'events:update', 'events:delete'],
-  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser', 'auth:updateProfile']
+  'auth:getUsers': ['auth:addUser', 'auth:updateUser', 'auth:deleteUser', 'auth:updateProfile'],
+  'db:getArchivedCases': ['db:archiveCase', 'db:unarchiveCase']
 };
 
 function invalidateCache(mutationChannel) {
   for (const [key, deps] of Object.entries(cacheDeps)) {
     if (deps.includes(mutationChannel)) {
-      readCache.delete(key);
+      const prefix = key + '-';
+      Array.from(readCache.keys()).forEach(cacheKey => {
+        if (cacheKey.startsWith(prefix)) readCache.delete(cacheKey);
+      });
     }
   }
 }
@@ -88,10 +92,10 @@ A.cachedInvoke = async function (channel, ...args) {
 
 A.mutate = async function (channel, ...args) {
   if (!A.state?.ipc) return null;
-  invalidateCache(channel);
   try {
     const result = await A.state.ipc.invoke(channel, ...args);
     if (result && typeof result === 'object' && result.error) return result;
+    invalidateCache(channel);
     return result;
   } catch (err) {
     A.logError('mutate:' + channel, err);
