@@ -7,6 +7,7 @@ const cacheDeps = {
   'db:getAllCases': [
     'db:addCase',
     'db:deleteCase',
+    'db:updateCase',
     'db:updateCaseStatus',
     'db:updateCaseNotes',
     'db:archiveCase',
@@ -16,7 +17,7 @@ const cacheDeps = {
   ],
   'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClientNotes'],
   'db:getAllTasks': ['db:addTask', 'db:deleteTask', 'db:updateTask', 'db:toggleSubtask', 'db:deleteSubtask', 'db:addSubtask'],
-  'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:addPaiement'],
+  'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:deleteTask', 'db:updateTask', 'db:addPaiement'],
   'db:getDashboardExtendedStats': [
     'db:addCase',
     'db:deleteCase',
@@ -35,6 +36,7 @@ const cacheDeps = {
   'db:getChartData': ['db:addPaiement', 'db:addCase', 'db:deleteCase'],
   'db:getUpcomingDeadlines': ['db:addCase', 'db:addTask', 'db:updateTask'],
   'db:getUpcomingHearings': ['events:add', 'events:update', 'events:delete'],
+  'db:getTodayProcedures': ['db:addProcedure', 'db:deleteProcedure', 'db:updateProcedure'],
   'db:getLogs': ['db:addLog'],
   'logger:getLogs': ['logger:log', 'logger:clear'],
   'db:getTodayProcedures': ['db:addProcedure'],

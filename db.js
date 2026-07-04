@@ -18,10 +18,8 @@ if (!fs.existsSync(BACKUP_DIR)) {
 
 let db = null;
 let SQL = null;
-let _saveTimer = null;
 let _lastAutoBackup = 0;
 let _encryptionKey = null;
-const SAVE_DEBOUNCE_MS = 500;
 const BACKUP_INTERVAL_MS = 5 * 60 * 1000;
 const DB_ENC_MAGIC = Buffer.from('LAWYER_DB_ENC', 'utf8');
 const DB_ENC_ALGO = 'aes-256-gcm';
@@ -56,6 +54,15 @@ function decryptDbBuffer(buffer) {
   const decipher = crypto.createDecipheriv(DB_ENC_ALGO, key, iv);
   decipher.setAuthTag(authTag);
   return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+}
+
+function safeAlter(sql) {
+  try { db.run(sql); }
+  catch (e) {
+    if (!/duplicate column name/i.test(e.message)) {
+      console.error('Migration error:', sql, e.message);
+    }
+  }
 }
 
 async function initDb() {
@@ -96,43 +103,22 @@ async function initDb() {
   db.run(
     "CREATE TABLE IF NOT EXISTS clients (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT, email TEXT, address TEXT, notes TEXT, national_id TEXT, tags TEXT, status TEXT DEFAULT 'active')"
   );
-  try {
-    db.run('ALTER TABLE clients ADD COLUMN national_id TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE clients ADD COLUMN tags TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE clients ADD COLUMN created_at TEXT');
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE clients ADD COLUMN status TEXT DEFAULT 'active'");
-  } catch (e) {}
+  safeAlter('ALTER TABLE clients ADD COLUMN national_id TEXT');
+  safeAlter('ALTER TABLE clients ADD COLUMN tags TEXT');
+  safeAlter('ALTER TABLE clients ADD COLUMN created_at TEXT');
+  safeAlter("ALTER TABLE clients ADD COLUMN status TEXT DEFAULT 'active'");
+  safeAlter("ALTER TABLE clients ADD COLUMN archived INTEGER DEFAULT 0");
   db.run(
     "CREATE TABLE IF NOT EXISTS cases (id INTEGER PRIMARY KEY AUTOINCREMENT, case_number TEXT NOT NULL, title TEXT NOT NULL, client_name TEXT, client_id INTEGER, court TEXT, status TEXT DEFAULT 'active', description TEXT, created_date TEXT DEFAULT (date('now')), next_hearing TEXT, deadline_date TEXT, total_fees REAL DEFAULT 0, paid_fees REAL DEFAULT 0, expenses REAL DEFAULT 0, priority TEXT DEFAULT 'medium', case_type TEXT DEFAULT 'مدني', notes TEXT, archived INTEGER DEFAULT 0, honoraires_totaux REAL DEFAULT 0, access_level TEXT DEFAULT 'team', FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE SET NULL)"
   );
 
-  try {
-    db.run("ALTER TABLE cases ADD COLUMN priority TEXT DEFAULT 'medium'");
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE cases ADD COLUMN case_type TEXT DEFAULT 'مدني'");
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE cases ADD COLUMN notes TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE cases ADD COLUMN archived INTEGER DEFAULT 0');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE cases ADD COLUMN honoraires_totaux REAL DEFAULT 0');
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE cases ADD COLUMN access_level TEXT DEFAULT 'team'");
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE cases ADD COLUMN deadline_date TEXT');
-  } catch (e) {}
+  safeAlter("ALTER TABLE cases ADD COLUMN priority TEXT DEFAULT 'medium'");
+  safeAlter("ALTER TABLE cases ADD COLUMN case_type TEXT DEFAULT 'مدني'");
+  safeAlter('ALTER TABLE cases ADD COLUMN notes TEXT');
+  safeAlter('ALTER TABLE cases ADD COLUMN archived INTEGER DEFAULT 0');
+  safeAlter('ALTER TABLE cases ADD COLUMN honoraires_totaux REAL DEFAULT 0');
+  safeAlter("ALTER TABLE cases ADD COLUMN access_level TEXT DEFAULT 'team'");
+  safeAlter('ALTER TABLE cases ADD COLUMN deadline_date TEXT');
   db.run(`CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
     description TEXT DEFAULT '', priority TEXT DEFAULT 'medium',
@@ -183,21 +169,11 @@ async function initDb() {
   db.run(
     "CREATE TABLE IF NOT EXISTS documents (id INTEGER PRIMARY KEY AUTOINCREMENT, case_id INTEGER NOT NULL, filename TEXT NOT NULL, file_path TEXT NOT NULL, doc_type TEXT NOT NULL, tags TEXT DEFAULT '', notes TEXT DEFAULT '', file_size TEXT DEFAULT '', upload_date TEXT DEFAULT (datetime('now', 'localtime')), visibility TEXT DEFAULT 'case', FOREIGN KEY (case_id) REFERENCES cases(id) ON DELETE CASCADE)"
   );
-  try {
-    db.run("ALTER TABLE documents ADD COLUMN tags TEXT DEFAULT ''");
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE documents ADD COLUMN notes TEXT DEFAULT ''");
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE documents ADD COLUMN file_size TEXT DEFAULT ''");
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'case'");
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE documents ADD COLUMN ai_analysis TEXT DEFAULT ''");
-  } catch (e) {}
+  safeAlter("ALTER TABLE documents ADD COLUMN tags TEXT DEFAULT ''");
+  safeAlter("ALTER TABLE documents ADD COLUMN notes TEXT DEFAULT ''");
+  safeAlter("ALTER TABLE documents ADD COLUMN file_size TEXT DEFAULT ''");
+  safeAlter("ALTER TABLE documents ADD COLUMN visibility TEXT DEFAULT 'case'");
+  safeAlter("ALTER TABLE documents ADD COLUMN ai_analysis TEXT DEFAULT ''");
   db.run(
     "CREATE TABLE IF NOT EXISTS procedures (id INTEGER PRIMARY KEY AUTOINCREMENT, affaire_id INTEGER NOT NULL, date TEXT NOT NULL, type TEXT NOT NULL, description TEXT, created_at TEXT DEFAULT (datetime('now', 'localtime')), FOREIGN KEY (affaire_id) REFERENCES cases(id) ON DELETE CASCADE)"
   );
@@ -228,24 +204,12 @@ async function initDb() {
   db.run(
     `INSERT OR IGNORE INTO users (id, name, email, password_hash, role, active) VALUES (1, 'المحامي المدير', 'admin@cabinet.ma', '!disabled-' || hex(randomblob(16)), 'admin', 1)`
   );
-  try {
-    db.run('ALTER TABLE users ADD COLUMN last_login TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE users ADD COLUMN phone TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE users ADD COLUMN bar_number TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE users ADD COLUMN city TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE users ADD COLUMN specialties TEXT');
-  } catch (e) {}
-  try {
-    db.run('ALTER TABLE users ADD COLUMN experience_years INTEGER DEFAULT 0');
-  } catch (e) {}
+  safeAlter('ALTER TABLE users ADD COLUMN last_login TEXT');
+  safeAlter('ALTER TABLE users ADD COLUMN phone TEXT');
+  safeAlter('ALTER TABLE users ADD COLUMN bar_number TEXT');
+  safeAlter('ALTER TABLE users ADD COLUMN city TEXT');
+  safeAlter('ALTER TABLE users ADD COLUMN specialties TEXT');
+  safeAlter('ALTER TABLE users ADD COLUMN experience_years INTEGER DEFAULT 0');
   db.run('CREATE TABLE IF NOT EXISTS office_settings (key TEXT PRIMARY KEY, value TEXT)');
   db.run(`CREATE TABLE IF NOT EXISTS security_questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -298,12 +262,8 @@ async function initDb() {
   db.run(
     "CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, user_name TEXT DEFAULT '', action TEXT NOT NULL, details TEXT, created_at TEXT DEFAULT (datetime('now', 'localtime')))"
   );
-  try {
-    db.run('ALTER TABLE activity_log ADD COLUMN user_id INTEGER DEFAULT 0');
-  } catch (e) {}
-  try {
-    db.run("ALTER TABLE activity_log ADD COLUMN user_name TEXT DEFAULT ''");
-  } catch (e) {}
+  safeAlter('ALTER TABLE activity_log ADD COLUMN user_id INTEGER DEFAULT 0');
+  safeAlter("ALTER TABLE activity_log ADD COLUMN user_name TEXT DEFAULT ''");
   db.run(`CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     case_id INTEGER, client_id INTEGER,
@@ -329,6 +289,8 @@ async function initDb() {
   db.run(
     "CREATE TABLE IF NOT EXISTS sent_notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, key TEXT UNIQUE NOT NULL, sent_at TEXT DEFAULT (datetime('now', 'localtime')))"
   );
+  db.run("CREATE TABLE IF NOT EXISTS revoked_tokens (jti TEXT PRIMARY KEY, expiry INTEGER NOT NULL)");
+  db.run('CREATE INDEX IF NOT EXISTS idx_revoked_tokens_expiry ON revoked_tokens(expiry)');
   db.run('INSERT OR IGNORE INTO alert_settings (id, days_before_1, days_before_2, days_before_3, enabled) VALUES (1, 7, 3, 1, 1)');
   db.run('INSERT OR IGNORE INTO backup_settings (id, auto_enabled, frequency_hours, keep_count, last_backup_at) VALUES (1, 1, 24, 36, NULL)');
 
@@ -410,7 +372,7 @@ let _dbWriteQueue = Promise.resolve();
 let _savePending = false;
 
 function queueSave() {
-  if (_savePending) return;
+  if (_savePending) return _dbWriteQueue;
   _savePending = true;
   _dbWriteQueue = _dbWriteQueue.then(
     () => {
@@ -422,6 +384,11 @@ function queueSave() {
       _savePending = false;
     }
   );
+  return _dbWriteQueue;
+}
+
+function flushWrites() {
+  return _dbWriteQueue;
 }
 
 /* ─── Synchronous save: guarantees durability after every mutation ─── */
@@ -497,14 +464,6 @@ async function saveDb() {
   }
 }
 
-function scheduleSave() {
-  if (_saveTimer) clearTimeout(_saveTimer);
-  _saveTimer = setTimeout(() => {
-    _saveTimer = null;
-    saveDb().catch(e => console.error('DB save error:', e));
-  }, SAVE_DEBOUNCE_MS);
-}
-
 function query(sql, params) {
   try {
     if (params) {
@@ -539,7 +498,7 @@ let _txCounter = 0;
 
 function mutate(sql, params) {
   db.run(sql, params ? params.map(v => (v === undefined ? null : v)) : []);
-  if (!_txCounter) queueSave();
+  if (!_txCounter) return queueSave();
 }
 
 function transaction(fn) {
@@ -550,7 +509,7 @@ function transaction(fn) {
     _txCounter--;
     if (!_txCounter) {
       db.run('COMMIT');
-      queueSave();
+      return queueSave();
     }
     return result;
   } catch (err) {
@@ -666,6 +625,12 @@ function archiveCase(id) {
 function unarchiveCase(id) {
   mutate('UPDATE cases SET archived = 0 WHERE id = ?', [id]);
 }
+function archiveClient(id) {
+  mutate('UPDATE clients SET archived = 1 WHERE id = ?', [id]);
+}
+function unarchiveClient(id) {
+  mutate('UPDATE clients SET archived = 0 WHERE id = ?', [id]);
+}
 
 function getArchivedCases() {
   return query("SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id WHERE cases.archived = 1 ORDER BY cases.created_date DESC");
@@ -710,10 +675,19 @@ function getAllClients() {
   });
 }
 
+function normalizePhone(phone) {
+  if (!phone) return '';
+  return phone.replace(/[\s\-\+\(\)\.]/g, '');
+}
+
 function findDuplicateClient(data) {
+  const nName = (data.name || '').trim();
+  const nPhone = normalizePhone(data.phone);
+  const nEmail = (data.email || '').trim();
+  const nNid = (data.national_id || '').trim();
   const rows = query(
-    `SELECT id, name, phone FROM clients WHERE (name = ? AND ? != '') OR (phone = ? AND ? != '') OR (email = ? AND ? != '') OR (national_id = ? AND ? != '')`,
-    [data.name, data.name || '', data.phone, data.phone || '', data.email, data.email || '', data.national_id || '', data.national_id || '']
+    `SELECT id, name, phone FROM clients WHERE (LOWER(TRIM(name)) = LOWER(TRIM(?)) AND ? != '') OR (REPLACE(REPLACE(REPLACE(REPLACE(phone, ' ', ''), '+', ''), '-', ''), '(', '') = ? AND ? != '') OR (LOWER(TRIM(email)) = LOWER(TRIM(?)) AND ? != '') OR (TRIM(national_id) = ? AND ? != '')`,
+    [nName, nName, nPhone, nPhone, nEmail, nEmail, nNid, nNid]
   );
   if (rows.length) return { duplicate: true, existing: rows };
   return { duplicate: false };
@@ -781,7 +755,8 @@ function deleteClient(id) {
 }
 
 function findDuplicateCase(caseNumber) {
-  const rows = query('SELECT id, case_number, title FROM cases WHERE case_number = ?', [caseNumber]);
+  const nCaseNumber = (caseNumber || '').trim();
+  const rows = query('SELECT id, case_number, title FROM cases WHERE LOWER(TRIM(case_number)) = LOWER(TRIM(?))', [nCaseNumber]);
   if (rows.length) return { duplicate: true, existing: rows[0] };
   return { duplicate: false };
 }
@@ -892,6 +867,33 @@ function repairOrphans() {
               break;
             case 'doctext_no_doc':
               mutate('DELETE FROM document_text WHERE id = ?', [o.id]);
+              repaired++;
+              break;
+            case 'doc_no_case':
+              const docRow = query('SELECT file_path FROM documents WHERE id = ?', [o.id]);
+              if (docRow.length && docRow[0].file_path) {
+                const fp = path.resolve(docRow[0].file_path);
+                if (fp.startsWith(path.resolve(STORAGE_DIR))) {
+                  try { fs.unlinkSync(fp); } catch (e) { /* best effort */ }
+                }
+              }
+              mutate('DELETE FROM documents WHERE id = ?', [o.id]);
+              repaired++;
+              break;
+            case 'procedure_no_case':
+              mutate('DELETE FROM procedures WHERE id = ?', [o.id]);
+              repaired++;
+              break;
+            case 'paiement_no_case':
+              mutate('DELETE FROM paiements WHERE id = ?', [o.id]);
+              repaired++;
+              break;
+            case 'comm_no_case':
+              mutate('UPDATE communications SET case_id = NULL WHERE id = ?', [o.id]);
+              repaired++;
+              break;
+            case 'comm_no_client':
+              mutate('UPDATE communications SET client_id = NULL WHERE id = ?', [o.id]);
               repaired++;
               break;
             default:
@@ -1202,7 +1204,7 @@ function deleteAppointment(id) {
 
 function getDashboardStats() {
   const res = query(
-    "SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM events WHERE type='hearing' AND status != 'cancelled' AND date >= date('now') AND date <= date('now','+7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status = 'todo') as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients"
+    "SELECT (SELECT COUNT(*) FROM cases WHERE status = 'active') as activeCases, (SELECT COUNT(*) FROM events WHERE type='hearing' AND status != 'cancelled' AND date >= date('now') AND date <= date('now','+7 days')) as thisWeekAppointments, (SELECT COUNT(*) FROM tasks WHERE status IN ('todo','in_progress')) as pendingTasks, (SELECT COUNT(*) FROM clients) as totalClients"
   );
   const base = res.length ? res[0] : { activeCases: 0, thisWeekAppointments: 0, pendingTasks: 0, totalClients: 0 };
   const casesByStatus = query('SELECT status, COUNT(*) as count FROM cases GROUP BY status');
@@ -1612,11 +1614,12 @@ function getTomorrowHearings() {
   return [...fromProcedures, ...fromEvents];
 }
 
-function globalSearch(queryTerm) {
+function globalSearch(queryTerm, userId, userRole) {
   const q = queryTerm ? queryTerm.trim() : '';
   const empty = { cases: [], clients: [], hearings: [], documents: [], tasks: [], expenses: [] };
   if (!q) return empty;
   const like = '%' + q + '%';
+  const restrictCases = userId && userRole && !['admin', 'senior_lawyer'].includes(userRole);
 
   const ftsQuery = q
     .replace(/[*"()+\-^]/g, ' ')
@@ -1652,10 +1655,13 @@ function globalSearch(queryTerm) {
     if (safeIds.length) {
       const placeholders = safeIds.map(() => '?').join(',');
       const orderCases = safeIds.map((_, i) => `WHEN ? THEN ${i}`).join(' ');
-      cases = query(
-        `SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${placeholders}) ORDER BY CASE id ${orderCases} END`,
-        [...safeIds, ...safeIds]
-      );
+      let casesSql = `SELECT id, case_number, title, COALESCE(client_name, '') as client_name, status FROM cases WHERE id IN (${placeholders})`;
+      const casesParams = [...safeIds, ...safeIds];
+      if (restrictCases) {
+        casesSql += ` AND (access_level = 'team' OR id IN (SELECT case_id FROM case_permissions WHERE user_id = ?))`;
+        casesParams.push(userId);
+      }
+      cases = query(casesSql + ` ORDER BY CASE id ${orderCases} END`, casesParams);
     }
   }
 
@@ -1683,8 +1689,8 @@ function globalSearch(queryTerm) {
   return { cases, clients, hearings, documents: documents.slice(0, 6), tasks, expenses };
 }
 
-function getSearchIndex() {
-  const cases = getAllCases().map(c => ({
+function getSearchIndex(userId, userRole) {
+  const cases = getAllCases(false, userId, userRole).map(c => ({
     id: c.id,
     type: 'case',
     label: c.case_number + ' — ' + c.title,
@@ -1711,7 +1717,7 @@ function getSearchIndex() {
       nav: 'calendar',
       text: (e.title || '') + ' ' + (e.case_number || '') + ' ' + (e.court || '') + ' ' + (e.notes || '') + ' ' + (e.type || '')
     }));
-  const allCases = getAllCases();
+  const allCases = getAllCases(false, userId, userRole);
   let docs = [];
   for (const c of allCases) {
     const d = getDocuments(c.id);
@@ -2149,13 +2155,13 @@ function createBackup(reason) {
   mutate('UPDATE backup_settings SET last_backup_at = ? WHERE id = 1', [now.toISOString()]);
   const settings = getBackupSettings();
   const maxKeep = settings.keep_count || 30;
-  const allFiles = fs
+  const allAutoFiles = fs
     .readdirSync(BACKUP_DIR)
-    .filter(f => f.endsWith('.db') && (isAutoBackup(f) || isManualBackup(f)))
+    .filter(f => f.endsWith('.db') && isAutoBackup(f))
     .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
     .sort((a, b) => b.mtime - a.mtime);
-  if (allFiles.length > maxKeep) {
-    allFiles.slice(maxKeep).forEach(f => {
+  if (allAutoFiles.length > maxKeep) {
+    allAutoFiles.slice(maxKeep).forEach(f => {
       try {
         fs.unlinkSync(path.join(BACKUP_DIR, f.name));
       } catch (e) {
@@ -2316,6 +2322,34 @@ function getClientById(id) {
   return rows.length ? rows[0] : null;
 }
 
+function revokeToken(jti, expiry) {
+  if (!jti || typeof jti !== 'string') return;
+  try {
+    query('INSERT OR IGNORE INTO revoked_tokens (jti, expiry) VALUES (?, ?)', [jti, expiry]);
+    queueSave();
+  } catch (e) {
+    console.error('revokeToken error:', e);
+  }
+}
+
+function isTokenRevoked(jti) {
+  if (!jti || typeof jti !== 'string') return true;
+  try {
+    const rows = query('SELECT 1 FROM revoked_tokens WHERE jti = ?', [jti]);
+    return rows.length > 0;
+  } catch (e) {
+    return true;
+  }
+}
+
+function cleanExpiredRevokedTokens() {
+  try {
+    query('DELETE FROM revoked_tokens WHERE expiry < ?', [Date.now()]);
+  } catch (e) {
+    console.error('cleanExpiredRevokedTokens error:', e);
+  }
+}
+
 module.exports = {
   initDb,
   saveDb,
@@ -2401,6 +2435,8 @@ module.exports = {
   updateCaseNotes,
   archiveCase,
   unarchiveCase,
+  archiveClient,
+  unarchiveClient,
   autoArchive,
   getArchivedCases,
   updateHonorairesTotaux,
@@ -2430,5 +2466,9 @@ module.exports = {
   cleanOrphanedFiles,
   getClientsWithUnpaidBalance,
   getCaseById,
-  getClientById
+  getClientById,
+  revokeToken,
+  isTokenRevoked,
+  cleanExpiredRevokedTokens,
+  flushWrites
 };

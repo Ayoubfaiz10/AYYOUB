@@ -24,10 +24,13 @@ A.loadExpenses = async function () {
     document.getElementById('expTotalRemaining').textContent = (totalHonoraires - totalPaid).toFixed(2);
     document.getElementById('expTotalExpenses').textContent = totalExpenses.toFixed(2);
     allPaiements.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    const EXP_PAGE_SIZE = 50;
+    if (!A.state.expPage) A.state.expPage = 0;
+    const expStart = A.state.expPage * EXP_PAGE_SIZE;
+    const expSlice = allPaiements.slice(expStart, expStart + EXP_PAGE_SIZE);
     A.safeSet(document.getElementById('expPaymentsBody'), esc =>
-      allPaiements.slice(0, 20).length
-        ? allPaiements
-            .slice(0, 20)
+      expSlice.length
+        ? expSlice
             .map(
               p =>
                 `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '-')}</td><td><strong>${parseFloat(p.montant).toFixed(2)}</strong></td><td>${esc(p.mode_paiement)}</td><td>${esc(p.remarque || '-')}</td></tr>`
@@ -35,6 +38,20 @@ A.loadExpenses = async function () {
             .join('')
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted-foreground);padding:24px;">' + _t('noPayments') + '</td></tr>'
     );
+    // Pagination controls
+    const paginationId = 'expPaginationControls';
+    let pag = document.getElementById(paginationId);
+    if (!pag) {
+      pag = document.createElement('div');
+      pag.id = paginationId;
+      pag.style.cssText = 'display:flex;gap:8px;justify-content:center;align-items:center;padding:12px;';
+      document.getElementById('expPaymentsBody').closest('table').after(pag);
+    }
+    const totalPages = Math.ceil(allPaiements.length / EXP_PAGE_SIZE);
+    pag.innerHTML = totalPages <= 1 ? '' :
+      `<button onclick="A.state.expPage=Math.max(0,A.state.expPage-1);A.loadExpenses()" ${A.state.expPage===0?'disabled':''} style="padding:4px 12px">&#8249;</button>
+       <span>${A.state.expPage + 1} / ${totalPages}</span>
+       <button onclick="A.state.expPage=Math.min(${totalPages-1},A.state.expPage+1);A.loadExpenses()" ${A.state.expPage>=totalPages-1?'disabled':''} style="padding:4px 12px">&#8250;</button>`;
   } catch (e) {
     A.logError('loadExpenses', e);
     A.showError('expPaymentsBody', _t('failedLoadExpenses'), () => A.loadExpenses());

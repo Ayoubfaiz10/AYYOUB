@@ -106,11 +106,17 @@ A.showEventForm = async function (editData) {
             return;
           }
           if (data.recurring_type !== 'none') {
-            const numRecur = 4;
-            const interval = { daily: 1, weekly: 7, monthly: 30, yearly: 365 }[data.recurring_type] || 7;
+            const numRecur = { daily: 30, weekly: 12, monthly: 12, yearly: 3 }[data.recurring_type] || 12;
             for (let i = 1; i <= numRecur; i++) {
               const nextDate = new Date(data.date + 'T12:00:00');
-              nextDate.setDate(nextDate.getDate() + interval * i);
+              if (data.recurring_type === 'monthly') {
+                nextDate.setMonth(nextDate.getMonth() + i);
+              } else if (data.recurring_type === 'yearly') {
+                nextDate.setFullYear(nextDate.getFullYear() + i);
+              } else {
+                const interval = { daily: 1, weekly: 7 }[data.recurring_type] || 7;
+                nextDate.setDate(nextDate.getDate() + interval * i);
+              }
               await A.mutate('events:add', { ...data, date: nextDate.toISOString().slice(0, 10), recurring_type: 'none' });
             }
           }

@@ -29,6 +29,26 @@ function isPathSafe(targetPath, allowedBase) {
   } catch (e) { return false; }
 }
 
+/* ─── Upload source path validation ─── */
+const SENSITIVE_DIRS = [
+  path.resolve(__dirname),
+  app.getPath('userData'),
+  app.getPath('exe') ? path.dirname(app.getPath('exe')) : null,
+].filter(Boolean);
+
+function isAllowedUploadSource(sourcePath) {
+  if (!sourcePath || typeof sourcePath !== 'string') return false;
+  try {
+    const resolved = fs.realpathSync(path.resolve(sourcePath));
+    for (const dir of SENSITIVE_DIRS) {
+      if (resolved === dir || resolved.startsWith(dir + path.sep)) return false;
+    }
+    const stat = fs.statSync(resolved);
+    if (!stat.isFile()) return false;
+    return true;
+  } catch (e) { return false; }
+}
+
 // Export saveDb so we can save on quit
 async function getUniqueFilePath(dir, filename) {
   let finalPath = path.join(dir, filename);
@@ -125,10 +145,21 @@ let mainWindow = null;
 /* ─── License Client ─── */
 
 const LICENSE_PATH = path.join(app.getPath('userData'), 'storage', 'license.json');
-const LICENSE_SERVER = process.env.LICENSE_SERVER || 'http://localhost:4000';
+const LICENSE_SERVER = process.env.LICENSE_SERVER || '';
+const isDev = process.env.NODE_ENV !== 'production';
 
-if (LICENSE_SERVER.startsWith('http://') && !LICENSE_SERVER.includes('localhost') && !LICENSE_SERVER.includes('127.0.0.1')) {
-  console.warn('License server uses HTTP (insecure):', LICENSE_SERVER);
+if (LICENSE_SERVER && LICENSE_SERVER.startsWith('http://') && !LICENSE_SERVER.includes('localhost') && !LICENSE_SERVER.includes('127.0.0.1')) {
+  if (isDev) {
+    console.warn('License server uses HTTP (insecure):', LICENSE_SERVER);
+  } else {
+    console.error('');
+    console.error('═══════════════════════════════════════════════════');
+    console.error('  FATAL: License server must use HTTPS in production');
+    console.error('  Set LICENSE_SERVER to an HTTPS URL in your .env');
+    console.error('═══════════════════════════════════════════════════');
+    console.error('');
+    process.exit(1);
+  }
 }
 
 function getLicense() {
@@ -337,11 +368,13 @@ function createWindow() {
   });
 
   // Content-Security-Policy: prevent XSS
+  const connectSrc = ["'self'", 'https://api.groq.com', 'https://api.openai.com', 'https://api.anthropic.com', 'https://generativelanguage.googleapis.com'];
+  if (isDev) connectSrc.push('http://localhost:4000');
   session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self'; connect-src 'self' http://localhost:4000 https://api.groq.com https://api.openai.com https://api.anthropic.com https://generativelanguage.googleapis.com; base-uri 'none'; form-action 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'"]
+        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self'; connect-src " + connectSrc.join(' ') + "; base-uri 'none'; form-action 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'"]
       }
     });
   });
@@ -487,37 +520,14 @@ async function init() {
     return obj;
   }
 
-  // ─── MASTER_KEY check at startup ───
-  if (!process.env.MASTER_KEY) {
-    logToLogger(2, 'app', 'MASTER_KEY environment variable is not set — AI API keys cannot be saved');
-    setTimeout(() => {
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        dialog.showMessageBox(mainWindow, {
-          type: 'warning',
-          title: 'تحذير أمني',
-          message: 'MASTER_KEY غير مضبوط',
-          detail: 'لحماية مفاتيح API، الرجاء إنشاء ملف .env في مجلد البرنامج وإضافة:\n\nMASTER_KEY=your-strong-random-key-here\n\nبدون هذا المفتاح، لا يمكن حفظ مفتاح AI API بشكل آمن.',
-          buttons: ['فهمت']
-        });
-      } else {
-        dialog.showMessageBox({
-          type: 'warning',
-          title: 'تحذير أمني',
-          message: 'MASTER_KEY غير مضبوط',
-          detail: 'لحماية مفاتيح API، الرجاء إنشاء ملف .env في مجلد البرنامج وإضافة:\n\nMASTER_KEY=your-strong-random-key-here\n\nبدون هذا المفتاح، لا يمكن حفظ مفتاح AI API بشكل آمن.',
-          buttons: ['فهمت']
-        });
-      }
-    }, 3000);
-  }
-
   // ─── DB IPC Handlers ───
 
-  ipcMain.handle('db:getAllCases', safeIpc('getAllCases', withPerm('view_case')(() => db.getAllCases())));
+  ipcMain.handle('db:getAllCases', safeIpc('getAllCases', withPerm('view_case')(() => db.getAllCases(false, currentUser?.id, currentUser?.role))));
   ipcMain.handle('db:addCase', mutateIpc('addCase', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addCase(data);
     if (result && result.id) db.addLog('add_case', `إضافة قضية ${data.case_number || ''} - ${data.title || ''}`);
+    await db.flushWrites();
     return result;
   })));
   ipcMain.handle('db:deleteCase', mutateIpc('deleteCase', withPerm('delete_case')(async (_e, id) => {
@@ -531,7 +541,7 @@ async function init() {
     const c = allCases.find(x => x.id === id);
 
     // 2. Delete case from database (ON DELETE CASCADE handles related records in DB)
-    db.deleteCase(id);
+    await db.deleteCase(id);
 
     // 3. Delete storage folder from disk (safety-checked)
     const caseDir = path.join(db.STORAGE_DIR, String(id));
@@ -554,14 +564,16 @@ async function init() {
     data = nullGuard(data);
     const result = db.addClient(data);
     if (result && result.id) db.addLog('add_client', `إضافة موكل ${data.name || ''}`);
+    await db.flushWrites();
     return result;
   })));
   ipcMain.handle('db:deleteClient', mutateIpc('deleteClient', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
     db.createBackup('before_delete_client');
     const c = db.getAllClients().find(x => x.id === id);
-    db.deleteClient(id);
+    await db.deleteClient(id);
     db.addLog('delete_client', `حذف موكل ${c ? c.name : '#' + id}`);
+    await db.flushWrites();
   })));
   ipcMain.handle('db:getAllTasks', safeIpc('getAllTasks', withPerm('manage_tasks')((_e, includeArchived) => db.getAllTasks(includeArchived))));
   ipcMain.handle('db:getTask', safeIpc('getTask', withPerm('manage_tasks')((_e, id) => db.getTask(id))));
@@ -569,6 +581,7 @@ async function init() {
     data = nullGuard(data);
     if (data.case_id && !db.validateRef('cases', data.case_id)) return { error: 'القضية غير موجودة' };
     const id = db.addTask(data);
+    await db.flushWrites();
     return { id };
   })));
   ipcMain.handle('db:updateTask', mutateIpc('updateTask', withPerm('manage_tasks')(async (_e, id, data) => db.updateTask(id, data))));
@@ -606,6 +619,7 @@ async function init() {
   ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'مسار الملف مطلوب' };
+    if (!isAllowedUploadSource(sourcePath)) return { error: 'مسار الملف غير مصرح به' };
     if (!db.validateRef('cases', caseId)) return { error: 'القضية غير موجودة' };
     const extCheck = path.extname(sourcePath).toLowerCase();
     if (!validateFileMagic(sourcePath, extCheck)) return { error: 'نوع الملف غير صالح (فحص التوقيع)' };
@@ -613,7 +627,8 @@ async function init() {
     if (stats.size > 50 * 1024 * 1024) return { error: 'الملف كبير جداً (الحد 50MB)' };
     const caseDir = path.join(db.STORAGE_DIR, String(caseId));
     try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
-    const filename = path.basename(sourcePath).normalize('NFKC').replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
+    let filename = path.basename(sourcePath).normalize('NFKC').replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
+    if (!filename || filename === '.' || filename === '..') return { error: 'اسم ملف غير صالح' };
     const finalPath = await getUniqueFilePath(caseDir, filename);
     await fsp.copyFile(sourcePath, finalPath);
     const docId = db.addDocument({ case_id: caseId, filename: path.basename(finalPath), file_path: finalPath, doc_type: docType, file_size: formatFileSize(stats.size) });
@@ -656,8 +671,8 @@ async function init() {
     }
     return uploaded.length ? uploaded : null;
   })));
-  ipcMain.handle('db:globalSearch', safeIpc('globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : ''))));
-  ipcMain.handle('db:getSearchIndex', safeIpc('getSearchIndex', withPerm('view_case')(() => db.getSearchIndex())));
+  ipcMain.handle('db:globalSearch', safeIpc('globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : '', currentUser?.id, currentUser?.role))));
+  ipcMain.handle('db:getSearchIndex', safeIpc('getSearchIndex', withPerm('view_case')(() => db.getSearchIndex(currentUser?.id, currentUser?.role))));
   ipcMain.handle('db:rebuildSearchIndex', mutateIpc('rebuildSearchIndex', withPerm('manage_users')(async () => { db.rebuildSearchIndex(); db.addLog('rebuild_search', 'إعادة بناء فهرس البحث'); })));
   ipcMain.handle('db:openDocument', safeIpc('openDocument', withPerm('view_case')(async (_e, docId) => {
     if (docId == null) return;
@@ -671,8 +686,9 @@ async function init() {
     try {
       const doc = db.getDocument(docId);
       if (!doc || !doc.file_path || !fs.existsSync(doc.file_path)) return { error: 'الملف غير موجود' };
-      if (!isPathSafe(doc.file_path, db.STORAGE_DIR)) return { error: 'مسار الملف غير صالØ' };
-      const result = await dialog.showSaveDialog(mainWindow, { defaultPath: doc.filename, filters: [{ name: 'All Files', extensions: ['*'] }] });
+      if (!isPathSafe(doc.file_path, db.STORAGE_DIR)) return { error: 'مسار الملف غير صالح' };
+      const safeFilename = path.basename(doc.filename || 'document').replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
+      const result = await dialog.showSaveDialog(mainWindow, { defaultPath: safeFilename, filters: [{ name: 'All Files', extensions: ['*'] }] });
       if (!result.canceled && result.filePath) {
         await fsp.copyFile(doc.file_path, result.filePath);
         return { ok: true };
@@ -727,15 +743,27 @@ async function init() {
     db.archiveCase(id);
   })));
   ipcMain.handle('db:unarchiveCase', mutateIpc('unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); })));
+  ipcMain.handle('db:archiveClient', mutateIpc('archiveClient', withPerm('edit_case')(async (_e, id) => {
+    if (id == null) return;
+    db.createBackup('before_archive_client');
+    db.archiveClient(id);
+  })));
+  ipcMain.handle('db:unarchiveClient', mutateIpc('unarchiveClient', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveClient(id); })));
   ipcMain.handle('db:updateCaseStatus', mutateIpc('updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
-    if (data.id != null && data.status) db.updateCaseStatus(data.id, data.status);
+    if (data.id != null && data.status) {
+      db.updateCaseStatus(data.id, data.status);
+      await db.flushWrites();
+    }
   })));
   ipcMain.handle('db:updateCaseNotes', mutateIpc('updateCaseNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
-    if (data.id != null) db.updateCaseNotes(data.id, data.notes || '');
+    if (data.id != null) {
+      db.updateCaseNotes(data.id, data.notes || '');
+      await db.flushWrites();
+    }
   })));
-  ipcMain.handle('db:getArchivedCases', safeIpc('getArchivedCases', withPerm('view_case')(() => db.getAllCases(true).filter(c => c.archived === 1))));
+  ipcMain.handle('db:getArchivedCases', safeIpc('getArchivedCases', withPerm('view_case')(() => db.getAllCases(true, currentUser?.id, currentUser?.role).filter(c => c.archived === 1))));
   ipcMain.handle('db:addCommunication', mutateIpc('addCommunication', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const id = db.addCommunication(data);
@@ -812,9 +840,6 @@ async function init() {
   ipcMain.handle('logger:clear', safeIpc('logger:clear', withPerm('manage_users')(() => logger.clearLogs())));
   ipcMain.handle('logger:stats', safeIpc('logger:stats', withPerm('view_audit')(() => logger.getStats())));
 
-  if (!app.requestSingleInstanceLock()) { app.quit(); return; }
-  createWindow();
-
   ipcMain.handle('notif:getCacheStats', () => {
     if (!currentUser) return {};
     return {
@@ -830,11 +855,16 @@ async function init() {
     return { hasMasterKey: !!process.env.MASTER_KEY };
   });
 
-  ipcMain.handle('app:navigateToCase', (_e, caseId) => {
-    if (!currentUser) return;
+  ipcMain.handle('app:navigateToCase', safeIpc('app:navigateToCase', withPerm('view_case')((_e, caseId) => {
     if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
     if (caseId) mainWindow?.webContents.send('app:navigateToCase', caseId);
-  });
+  })));
+}
+
+async function runApp() {
+  await init();
+  if (!app.requestSingleInstanceLock()) { app.quit(); return; }
+  createWindow();
 
   mainWindow.webContents.once('did-finish-load', () => {
     checkAndNotify();
@@ -842,6 +872,8 @@ async function init() {
     setInterval(checkAndNotify, 3600000);
     setInterval(checkUpcomingEvents, 21600000);
     setInterval(() => { try { db.cleanOldSentNotifications(); } catch (e) { /* ignore */ } }, 86400000);
+    try { db.cleanExpiredRevokedTokens(); } catch (e) { /* ignore */ }
+    setInterval(() => { try { db.cleanExpiredRevokedTokens(); } catch (e) { /* ignore */ } }, 3600000);
 
     setTimeout(() => {
       setInterval(() => {
@@ -861,6 +893,8 @@ async function init() {
 
   startLicenseRevalidation();
 }
+
+app.whenReady().then(runApp);
 
 function checkAndNotify() {
   try {
@@ -1049,10 +1083,14 @@ const AI_CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'ai_config.
 
 // Login rate limiting (per userId)
 const loginAttempts = new Map();
+const securityAnswerAttempts = new Map();
 setInterval(() => {
   const cutoff = Date.now() - LOGIN_LOCKOUT_WINDOW;
   for (const [key, data] of loginAttempts) {
     if (data.lastAttempt < cutoff) loginAttempts.delete(key);
+  }
+  for (const [key, data] of securityAnswerAttempts) {
+    if (data.lastAttempt < cutoff) securityAnswerAttempts.delete(key);
   }
 }, 60000);
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -1069,7 +1107,8 @@ function verifyPassword(pwd, passwordHash) {
 }
 
 function signToken(userId, expiryMs) {
-  const payload = `${userId}:${expiryMs}`;
+  const jti = crypto.randomBytes(8).toString('hex');
+  const payload = `${jti}:${userId}:${expiryMs}`;
   const hmac = crypto.createHmac('sha256', HMAC_KEY).update(payload).digest('hex');
   return `${payload}:${hmac}`;
 }
@@ -1077,16 +1116,18 @@ function signToken(userId, expiryMs) {
 function verifyToken(token) {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split(':');
-  if (parts.length < 3) return null;
+  if (parts.length < 4) return null;
+  const jti = parts[0];
   const payload = parts.slice(0, -1).join(':');
   const sig = parts[parts.length - 1];
   const expected = crypto.createHmac('sha256', HMAC_KEY).update(payload).digest('hex');
   const sigBuf = Buffer.from(sig, 'hex');
   const expectedBuf = Buffer.from(expected, 'hex');
   if (sigBuf.length !== expectedBuf.length || !crypto.timingSafeEqual(sigBuf, expectedBuf)) return null;
-  const userId = parseInt(parts[0], 10);
-  const expiry = parseInt(parts[1], 10);
+  const userId = parseInt(parts[1], 10);
+  const expiry = parseInt(parts[2], 10);
   if (isNaN(userId) || isNaN(expiry) || Date.now() > expiry) return null;
+  if (db.isTokenRevoked(jti)) return null;
   return userId;
 }
 
@@ -1175,7 +1216,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     currentUser = sessionUser;
     db.updateUser(user.id, { last_login: new Date().toISOString() });
     db.addLog('login', `تسجيل دخول: ${user.name}`, user.id, user.name);
-    var sessionToken = remember ? signToken(user.id, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+    var sessionToken = remember ? signToken(user.id, Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
     return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('login', e);
@@ -1183,7 +1224,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
   }
 });
 
-ipcMain.handle('auth:setup', (_e, { officeName, adminName, password, openAtLogin, securityQ1, securityA1 }) => {
+ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openAtLogin, securityQ1, securityA1 }) => {
   try {
     const existing = db.getAllUsers() || [];
     const hasPassword = existing.some(u => u.password_hash && u.password_hash !== '');
@@ -1214,7 +1255,8 @@ ipcMain.handle('auth:setup', (_e, { officeName, adminName, password, openAtLogin
     if (openAtLogin && app.setLoginItemSettings) {
       try { app.setLoginItemSettings({ openAtLogin: true }); } catch (e) { /* best effort */ }
     }
-    var sessionToken = signToken(id, Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await db.flushWrites();
+    var sessionToken = signToken(id, Date.now() + 7 * 24 * 60 * 60 * 1000);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('setup', e);
@@ -1236,14 +1278,38 @@ ipcMain.handle('auth:getSecurityQuestion', (_e, userId) => {
 });
 
 ipcMain.handle('auth:checkSecurityAnswer', (_e, { userId, questionIndex, answer }) => {
+  const now = Date.now();
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!questionIndex || questionIndex < 1 || questionIndex > 3) return { ok: false, error: 'رقم السؤال غير صالح' };
     if (!answer || typeof answer !== 'string') return { ok: false, error: 'الإجابة مطلوبة' };
+    const secKey = String(userId);
+    const prev = securityAnswerAttempts.get(secKey);
+    if (prev) {
+      if (prev.lockedUntil && now < prev.lockedUntil) {
+        const secs = Math.ceil((prev.lockedUntil - now) / 1000);
+        return { ok: false, error: `محاولات كثيرة جداً. انتظر ${secs} ثوانٍ` };
+      }
+      if (now - prev.firstAttempt > LOGIN_LOCKOUT_WINDOW) {
+        securityAnswerAttempts.delete(secKey);
+      }
+    }
     const storedHash = db.getSecurityAnswer(userId, questionIndex);
     if (!storedHash) return { ok: false, error: 'لم يتم العثور على السؤال' };
     const ok = bcrypt.compareSync(answer, storedHash);
-    if (!ok) return { ok: false, error: 'الإجابة غير صحيحة' };
+    if (!ok) {
+      const rec = securityAnswerAttempts.get(secKey) || { count: 0, firstAttempt: now };
+      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 100);
+      if (!rec.firstAttempt) rec.firstAttempt = now;
+      rec.lastAttempt = now;
+      if (rec.count >= MAX_LOGIN_ATTEMPTS) {
+        const lockSecs = Math.min(MAX_LOCKOUT_SECS, Math.pow(2, rec.count - MAX_LOGIN_ATTEMPTS));
+        rec.lockedUntil = now + lockSecs * 1000;
+      }
+      securityAnswerAttempts.set(secKey, rec);
+      return { ok: false, error: 'الإجابة غير صحيحة' };
+    }
+    securityAnswerAttempts.delete(secKey);
     return { ok: true };
   } catch (e) {
     handleError('checkSecurityAnswer', e);
@@ -1251,7 +1317,7 @@ ipcMain.handle('auth:checkSecurityAnswer', (_e, { userId, questionIndex, answer 
   }
 });
 
-ipcMain.handle('auth:resetPassword', (_e, { userId, newPassword, remember }) => {
+ipcMain.handle('auth:resetPassword', safeIpc('resetPassword', withPerm('manage_users')(async (_e, { userId, newPassword, remember }) => {
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
@@ -1261,49 +1327,37 @@ ipcMain.handle('auth:resetPassword', (_e, { userId, newPassword, remember }) => 
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر للمستخدم ${user.name}`, user.id, user.name);
-    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+    await db.flushWrites();
+    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetPassword', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
-});
+})));
 
-ipcMain.handle('auth:resetWithMasterKey', (_e, { userId, newPassword, masterKey }) => {
+ipcMain.handle('auth:resetWithMasterKey', safeIpc('resetWithMasterKey', withPerm('manage_users')(async (_e, { userId, newPassword, masterKey }) => {
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
     if (!masterKey || typeof masterKey !== 'string') return { ok: false, error: 'مفتاح الاستعادة مطلوب' };
     const mkBuf = Buffer.from(process.env.MASTER_KEY);
-const inBuf = Buffer.from(masterKey);
-if (mkBuf.length !== inBuf.length || !crypto.timingSafeEqual(mkBuf, inBuf)) return { ok: false, error: 'مفتاح الاستعادة غير صحيح' };
+    const inBuf = Buffer.from(masterKey);
+    if (mkBuf.length !== inBuf.length || !crypto.timingSafeEqual(mkBuf, inBuf)) return { ok: false, error: 'مفتاح الاستعادة غير صحيح' };
     const hash = hashBcrypt(newPassword);
     db.updateUser(userId, { password_hash: hash });
     const user = db.getUserById(userId);
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر (مفتاح الاستعادة) للمستخدم ${user.name}`, user.id, user.name);
-    var sessionToken = signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await db.flushWrites();
+    var sessionToken = signToken(userId, Date.now() + 7 * 24 * 60 * 60 * 1000);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetWithMasterKey', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
-});
-
-ipcMain.handle('auth:checkSession', (_e, userId) => {
-  try {
-    if (!userId || typeof userId !== 'number') return null;
-    const user = db.getUserById(userId);
-    if (!user || !user.active) return null;
-    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
-    currentUser = sessionUser;
-    return sessionUser;
-  } catch (e) {
-    handleError('checkSession', e);
-    return null;
-  }
-});
+})));
 
 ipcMain.handle('auth:checkRemembered', (_e, token) => {
   try {
@@ -1320,13 +1374,27 @@ ipcMain.handle('auth:checkRemembered', (_e, token) => {
   }
 });
 
-ipcMain.handle('auth:logout', (_e, reason) => {
+ipcMain.handle('auth:logout', (_e, args) => {
   currentUser = null;
+  const reason = typeof args === 'string' ? args : args?.reason;
+  const token = args?.token;
+  if (token) {
+    try {
+      const parts = token.split(':');
+      if (parts.length >= 4) {
+        const jti = parts[0];
+        const expiry = parseInt(parts[2], 10);
+        if (jti && expiry) db.revokeToken(jti, expiry);
+      }
+    } catch (e) {
+      handleError('logout-revoke', e);
+    }
+  }
   logToLogger(0, 'auth', reason || 'User logged out');
   return { ok: true };
 });
 
-ipcMain.handle('auth:hashPassword', (_e, pwd) => {
+ipcMain.handle('auth:hashPassword', safeIpc('auth:hashPassword', withPerm('manage_users')((_e, pwd) => {
   try {
     if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
     if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
@@ -1335,7 +1403,7 @@ ipcMain.handle('auth:hashPassword', (_e, pwd) => {
     handleError('hashPassword', e);
     return { ok: false, error: 'خطأ في تشفير كلمة السر' };
   }
-});
+})));
 
 ipcMain.handle('auth:updateProfile', async (_e, data) => {
   if (!currentUser) return { ok: false, error: 'لا يوجد مستخدم حالي' };
@@ -1362,6 +1430,7 @@ ipcMain.handle('auth:changePassword', async (_e, data) => {
     if (!storedHash || !bcrypt.compareSync(oldPassword, storedHash)) return { ok: false, error: 'كلمة السر الحالية غير صحيحة' };
     const newHash = hashBcrypt(newPassword);
     db.updateUser(currentUser.id, { password_hash: newHash });
+    await db.flushWrites();
     logToLogger(0, 'profile', 'تغيير كلمة السر للمستخدم ' + currentUser.name);
     return { ok: true };
   } catch (e) { handleError('changePassword', e); return { ok: false, error: 'خطأ في تغيير كلمة السر' }; }
@@ -1986,8 +2055,6 @@ ipcMain.handle('ai:saveConfig', safeIpc('ai:saveConfig', withPerm('use_ai')(asyn
     return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
   }
 })));
-
-app.whenReady().then(init);
 
 app.on('window-all-closed', async () => {
   await saveDbOnQuit();

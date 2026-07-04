@@ -1063,7 +1063,42 @@ A.i18n = {
   licenseValidStatus: { ar: 'الترخيص مفعل', fr: 'Licence activée' },
   licenseKeyLabel: { ar: 'المفتاح:', fr: 'Clé:' },
   licenseDeviceLabel: { ar: 'الجهاز:', fr: 'Appareil:' },
-  licenseGraceLabel: { ar: 'فترة السماح:', fr: 'Période de grâce:' }
+  licenseGraceLabel: { ar: 'فترة السماح:', fr: 'Période de grâce:' },
+  caseDuplicateNumberArchived: { ar: 'رقم القضية "{n}" موجود في الأرشيف. هل تريد استخدام رقم مختلف؟', fr: 'Le numéro « {n} » existe dans les archives. Souhaitez-vous utiliser un numéro différent ?' },
+  newCaseTitle: { ar: 'إضافة قضية جديدة', fr: 'Ajouter un dossier' },
+  caseNumberLabel: { ar: 'رقم القضية', fr: "N° d'affaire" },
+  caseTypeLabel: { ar: 'نوع القضية', fr: 'Type de dossier' },
+  clientSelectLabel: { ar: 'اختر الموكل', fr: 'Sélectionner le client' },
+  courtSelectLabel: { ar: 'اختر المحكمة', fr: 'Sélectionner le tribunal' },
+  court1stInstance: { ar: 'محكمة الدرجة الأولى', fr: 'Tribunal de première instance' },
+  courtAppeal: { ar: 'محكمة الاستئناف', fr: "Cour d'appel" },
+  courtCassation: { ar: 'محكمة النقض', fr: 'Cour de cassation' },
+  courtCommercial: { ar: 'المحكمة التجارية', fr: 'Tribunal de commerce' },
+  courtAdmin: { ar: 'المحكمة الإدارية', fr: 'Tribunal administratif' },
+  courtSupreme: { ar: 'المجلس الأعلى', fr: 'Conseil suprême' },
+  deadlineDateLabel: { ar: 'تاريخ الأجل', fr: "Date d'échéance" },
+  openDateLabel: { ar: 'تاريخ الفتح', fr: "Date d'ouverture" },
+  feesLabelCase: { ar: 'الأتعاب', fr: 'Honoraires' },
+  notesLabelCase: { ar: 'ملاحظات', fr: 'Notes' },
+  subjectLabel: { ar: 'الموضوع', fr: 'Objet' },
+  caseCreated: { ar: 'تمت إضافة القضية بنجاح', fr: 'Dossier ajouté avec succès' },
+  caseCreateFailed: { ar: 'فشل إنشاء القضية', fr: 'Échec de la création du dossier' },
+  caseFieldsRequired: { ar: 'رقم القضية والعنوان مطلوبان', fr: 'Le numéro et le titre sont requis' },
+  archiveCaseConfirm: { ar: 'هل تريد أرشفة هذه القضية؟', fr: 'Voulez-vous archiver ce dossier ?' },
+  caseArchivedSuccess: { ar: 'تمت الأرشفة بنجاح', fr: 'Dossier archivé avec succès' },
+  archiveFailed: { ar: 'فشل الأرشفة', fr: "Échec de l'archivage" },
+  editCaseComing: { ar: 'تعديل القضية قيد التطوير', fr: 'Modification du dossier en développement' },
+  failedLoad: { ar: 'تعذر التحميل', fr: 'Échec du chargement' },
+  failedLoadCases: { ar: 'تعذر تحميل القضايا.', fr: 'Échec du chargement des dossiers' },
+  noUrgentTasks: { ar: 'لا توجد مهام عاجلة', fr: 'Aucune tâche urgente' },
+  noUpcomingLabel: { ar: 'لا توجد مواعيد قادمة', fr: 'Aucun rendez-vous à venir' },
+  noTomorrowHearings: { ar: 'لا توجد جلسات غداً', fr: "Aucune audience demain" },
+  revenueLabel: { ar: 'الإيرادات', fr: 'Revenus' },
+  assignedToLabel: { ar: 'مسند إلى', fr: 'Assigné à' },
+  taskDescLabel: { ar: 'الوصف', fr: 'Description' },
+  editTask: { ar: 'تعديل المهمة', fr: 'Modifier la tâche' },
+  priority_high: { ar: 'مرتفع', fr: 'Haute' },
+  priority_critical: { ar: 'حرج', fr: 'Critique' }
 };
 
 function _t(key) {
@@ -1144,8 +1179,7 @@ A.updateUI = function () {
     var entry = A.i18n[key];
     if (!entry) return;
     var html = entry[lang] || entry.en || entry.ar || key;
-    html = html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
-    html = html.replace(/\bon\w+\s*=\s*['"][^'"]*['"]/gi, '');
+    html = window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
     el.innerHTML = html;
   });
 };
