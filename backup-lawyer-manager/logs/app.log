@@ -1,0 +1,557 @@
+2026-06-21T16:40:15.153Z [INFO] [app] Application started
+2026-06-21T16:42:21.709Z [INFO] [app] Application started
+2026-06-21T16:44:36.429Z [INFO] [app] Application started
+2026-06-21T16:53:45.639Z [INFO] [app] Application started
+2026-06-21T19:38:15.793Z [INFO] [app] Application started
+2026-06-21T19:47:23.752Z [INFO] [app] Application started
+2026-06-21T19:47:30.456Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-21T19:47:33.491Z [ERROR] [console] [loadSearchIndex] Error invoking remote method 'db:getSearchIndex': TypeError: getAllCases is not a function Error: Error invoking remote method 'db:getSearchIndex': TypeError: getAllCases is not a function
+2026-06-21T19:48:06.522Z [INFO] [app] Application started
+2026-06-21T19:48:07.478Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-21T19:48:47.690Z [INFO] [app] Application started
+2026-06-21T19:48:48.507Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-21T19:49:18.505Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:49:48.510Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:50:18.511Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:50:48.506Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:51:18.504Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:51:48.515Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T19:52:04.032Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-21T23:06:28.143Z [INFO] [app] Application started
+2026-06-21T23:06:29.742Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-21T23:06:29.954Z [ERROR] [console] [loadSmartInsights] Cannot read properties of undefined (reading 'map') TypeError: Cannot read properties of undefined (reading 'map')
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/ai/index.js:168:25
+    at A.safeSet (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:19:18)
+    at A.loadSmartInsights (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/ai/index.js:167:9)
+2026-06-21T23:06:59.754Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T23:07:29.759Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-21T23:07:39.856Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:15:34.783Z [INFO] [app] Application started
+2026-06-22T09:15:35.489Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T09:15:35.493Z [ERROR] [window.onerror] Uncaught TypeError: A.checkAuth is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5) | stack: TypeError: A.checkAuth is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5)
+2026-06-22T09:15:56.302Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:16:05.725Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:16:35.793Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:17:05.735Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:17:35.731Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:18:05.741Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:18:35.747Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:19:05.749Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:19:37.742Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:19:42.953Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56
+2026-06-22T09:19:42.984Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:19:51.735Z [INFO] [app] Application started
+2026-06-22T09:19:52.365Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T09:19:52.369Z [ERROR] [window.onerror] Uncaught TypeError: A.checkAuth is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5) | stack: TypeError: A.checkAuth is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5)
+2026-06-22T09:20:02.846Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:20:22.740Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:20:52.745Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:21:22.738Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:21:52.757Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:22:22.742Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:22:52.750Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:23:22.754Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:24:23.788Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:25:24.798Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:26:22.489Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:26:24.500Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56
+2026-06-22T09:26:24.507Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:28:17.775Z [INFO] [app] Application started
+2026-06-22T09:28:18.368Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T09:28:18.372Z [ERROR] [window.onerror] Uncaught TypeError: A.checkAuth is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5) | stack: TypeError: A.checkAuth is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5)
+2026-06-22T09:28:38.275Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:28:48.845Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:29:18.857Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:29:48.394Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:30:02.007Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:30:18.849Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:30:48.863Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:31:18.875Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:31:48.453Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:31:52.709Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56
+2026-06-22T09:31:52.725Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:32:02.302Z [INFO] [app] Application started
+2026-06-22T09:32:02.919Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T09:32:02.924Z [ERROR] [window.onerror] Uncaught TypeError: A.checkAuth is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5) | stack: TypeError: A.checkAuth is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/renderer.js:79:5)
+2026-06-22T09:32:10.833Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:32:33.898Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:33:03.907Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:33:33.891Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:34:03.903Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:34:33.977Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:34:37.655Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:34:39.323Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:35:03.915Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:35:33.936Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:36:12.641Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:36:13.697Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56
+2026-06-22T09:36:13.710Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:36:33.911Z [INFO] [app] Application started
+2026-06-22T09:40:33.956Z [INFO] [app] Application started
+2026-06-22T09:40:34.612Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T09:41:04.618Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:41:34.633Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:41:58.034Z [CRITICAL] [uncaughtException] Error: Error attempting to read image. {"stack":"Error: Error: Error attempting to read image.\n    at Worker.<anonymous> (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\tesseract.js\\src\\createWorker.js:217:15)\n    at Worker.emit (node:events:509:28)\n    at MessagePort.<anonymous> (node:internal/worker:350:14)\n    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)\n    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)"}
+2026-06-22T09:41:59.884Z [ERROR] [unhandledRejection] Cannot set properties of null (setting 'textContent') | stack: TypeError: Cannot set properties of null (setting 'textContent')
+    at A.openDocViewer (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:54:54)
+2026-06-22T09:42:04.636Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:42:04.889Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T09:42:35.037Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:43:05.026Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:43:35.014Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T09:44:05.040Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:05:36.294Z [INFO] [app] Application started
+2026-06-22T10:05:36.971Z [ERROR] [console] Init error: this._updateGlobalIndicator is not a function
+2026-06-22T10:06:06.989Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:06:34.371Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T10:06:37.223Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:07:07.228Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:07:37.223Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:08:07.225Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:08:37.224Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:09:07.236Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:09:38.235Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:10:38.241Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:11:23.113Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:150:28
+2026-06-22T10:11:23.123Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T10:11:35.524Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56) | stack: TypeError: this.saveAll is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:151:56
+2026-06-22T10:11:35.543Z [ERROR] [window.onerror] Uncaught TypeError: this.saveAll is not a function (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85) | stack: TypeError: this.saveAll is not a function
+    at HTMLDocument.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/autosave.js:152:85)
+2026-06-22T11:30:34.893Z [INFO] [app] Application started
+2026-06-22T11:30:58.419Z [INFO] [app] Application started
+2026-06-22T12:47:49.792Z [INFO] [app] Application started
+2026-06-22T13:01:17.471Z [INFO] [app] Application started
+2026-06-22T13:08:36.795Z [INFO] [app] Application started
+2026-06-22T13:09:34.699Z [INFO] [app] Application started
+2026-06-22T13:14:25.529Z [INFO] [app] Application started
+2026-06-22T13:20:54.239Z [INFO] [app] Application started
+2026-06-22T13:20:55.048Z [ERROR] [ipc:ai:getSmartInsights] Unauthorized {"stack":"Error: Unauthorized\n    at C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:203:15\n    at Session.<anonymous> (node:electron/js2c/browser_init:2:114084)\n    at Session.emit (node:events:509:28)","args":"[]"}
+2026-06-22T13:27:12.213Z [INFO] [app] Application started
+2026-06-22T13:27:13.119Z [ERROR] [ipc:ai:getSmartInsights] Unauthorized {"stack":"Error: Unauthorized\n    at C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:203:15\n    at Session.<anonymous> (node:electron/js2c/browser_init:2:114084)\n    at Session.emit (node:events:509:28)","args":"[]"}
+2026-06-22T13:32:07.865Z [INFO] [app] Application started
+2026-06-22T13:32:08.668Z [ERROR] [ipc:ai:getSmartInsights] Unauthorized {"stack":"Error: Unauthorized\n    at C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:203:15\n    at Session.<anonymous> (node:electron/js2c/browser_init:2:114084)\n    at Session.emit (node:events:509:28)","args":"[]"}
+2026-06-22T14:04:28.909Z [INFO] [app] Application started
+2026-06-22T14:09:54.878Z [INFO] [app] Application started
+2026-06-22T14:09:55.997Z [ERROR] [ipc:ai:getSmartInsights] Unauthorized {"stack":"Error: Unauthorized\n    at C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:203:15\n    at Session.<anonymous> (node:electron/js2c/browser_init:2:114084)\n    at Session.emit (node:events:509:28)","args":"[]"}
+2026-06-22T14:21:36.554Z [INFO] [app] Application started
+2026-06-22T14:27:27.560Z [INFO] [app] Application started
+2026-06-22T14:40:06.928Z [INFO] [app] Application started
+2026-06-22T16:27:02.629Z [INFO] [app] Application started
+2026-06-22T16:40:21.534Z [INFO] [app] Application started
+2026-06-23T10:02:52.007Z [INFO] [app] Application started
+2026-06-23T10:03:02.033Z [ERROR] [ipc:ai:getSmartInsights] Unauthorized {"stack":"Error: Unauthorized\n    at C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:151:15\n    at Session.<anonymous> (node:electron/js2c/browser_init:2:114084)\n    at Session.emit (node:events:509:28)","args":"[]"}
+2026-06-23T10:03:02.075Z [ERROR] [console] [loadSmartInsights] Error invoking remote method 'ai:getSmartInsights': Error: Unauthorized Error: Error invoking remote method 'ai:getSmartInsights': Error: Unauthorized
+2026-06-23T11:58:45.114Z [INFO] [app] Application started
+2026-06-23T11:58:45.124Z [ERROR] [app] MASTER_KEY environment variable is not set — AI API keys cannot be saved
+2026-06-23T12:02:05.916Z [INFO] [app] Application started
+2026-06-23T12:03:09.274Z [INFO] [app] Application started
+2026-06-23T12:03:16.615Z [ERROR] [console] [loadSmartInsights] Cannot read properties of undefined (reading 'map') TypeError: Cannot read properties of undefined (reading 'map')
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/ai/index.js:219:25
+    at A.safeSet (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:18:18)
+    at A.loadSmartInsights (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/ai/index.js:218:9)
+2026-06-23T12:09:04.058Z [INFO] [app] Application started
+2026-06-23T12:19:34.836Z [INFO] [app] Application started
+2026-06-23T12:25:06.795Z [INFO] [app] Application started
+2026-06-23T12:42:24.562Z [INFO] [app] Application started
+2026-06-23T12:56:34.952Z [INFO] [app] Application started
+2026-06-23T13:11:39.166Z [INFO] [app] Application started
+2026-06-23T13:27:55.287Z [INFO] [app] Application started
+2026-06-23T20:25:15.568Z [INFO] [app] Application started
+2026-06-23T20:25:58.357Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-23T20:26:02.167Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-23T23:15:25.877Z [INFO] [app] Application started
+2026-06-23T23:16:03.745Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-23T23:16:26.876Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-23T23:16:28.522Z [CRITICAL] [uncaughtException] Error: Error attempting to read image. {"stack":"Error: Error: Error attempting to read image.\n    at Worker.<anonymous> (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\tesseract.js\\src\\createWorker.js:217:15)\n    at Worker.emit (node:events:509:28)\n    at MessagePort.<anonymous> (node:internal/worker:350:14)\n    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)\n    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)"}
+2026-06-23T23:16:31.088Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-23T23:16:57.239Z [ERROR] [console] [loadCases] A.renderTableView is not a function TypeError: A.renderTableView is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:91
+    at renderPage (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:132:7)
+    at Object.init (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:156:5)
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:43)
+2026-06-23T23:17:00.666Z [ERROR] [console] [loadCases] A.renderCardView is not a function TypeError: A.renderCardView is not a function
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:20:7)
+2026-06-23T23:17:22.511Z [ERROR] [console] [loadCases] A.renderCardView is not a function TypeError: A.renderCardView is not a function
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:20:7)
+2026-06-23T23:17:25.431Z [ERROR] [console] [loadCases] A.renderCardView is not a function TypeError: A.renderCardView is not a function
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:20:7)
+2026-06-23T23:17:38.257Z [ERROR] [console] [loadCases] A.renderCardView is not a function TypeError: A.renderCardView is not a function
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:20:7)
+2026-06-24T11:22:37.491Z [INFO] [app] Application started
+2026-06-24T11:22:57.706Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T11:22:59.230Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T11:23:20.558Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T11:23:21.658Z [CRITICAL] [uncaughtException] Error: Error attempting to read image. {"stack":"Error: Error: Error attempting to read image.\n    at Worker.<anonymous> (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\tesseract.js\\src\\createWorker.js:217:15)\n    at Worker.emit (node:events:509:28)\n    at MessagePort.<anonymous> (node:internal/worker:350:14)\n    at [nodejs.internal.kHybridDispatch] (node:internal/event_target:843:20)\n    at MessagePort.<anonymous> (node:internal/per_context/messageport:23:28)"}
+2026-06-24T14:36:39.439Z [INFO] [app] Application started
+2026-06-24T14:36:56.090Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:05.140Z [INFO] [app] Application started
+2026-06-24T17:52:28.088Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:29.468Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:30.248Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:30.487Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:30.652Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:30.843Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:31.017Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T17:52:52.674Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:21:7)
+2026-06-24T18:01:47.602Z [INFO] [app] Application started
+2026-06-24T18:02:01.131Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-24T18:02:06.088Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-24T18:02:06.900Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-24T18:37:52.672Z [ERROR] [console] logout error: Invalid channel
+2026-06-27T11:05:46.796Z [INFO] [app] Application started
+2026-06-27T11:06:35.705Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:06:37.014Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:06:37.660Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:07:03.675Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:11:57.063Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:11:58.734Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:00.093Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:00.606Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:00.766Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:00.936Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.102Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.269Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.435Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.598Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.758Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:01.952Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:02.179Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:02.570Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:02.736Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:02.900Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.065Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.229Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.404Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.566Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.756Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:03.917Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:04.081Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:04.249Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:04.417Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:04.586Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:04.809Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:23.125Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:43.633Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:44.243Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:45.124Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:12:45.152Z [ERROR] [console] [loadDocuments] A.renderDocGrid is not a function TypeError: A.renderDocGrid is not a function
+    at A.loadDocuments (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/documents/index.js:12:7)
+2026-06-27T11:27:13.924Z [ERROR] [window.onerror] Uncaught TypeError: Cannot read properties of null (reading 'classList') (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125) | stack: TypeError: Cannot read properties of null (reading 'classList')
+    at HTMLButtonElement.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125)
+2026-06-27T11:27:18.092Z [ERROR] [window.onerror] Uncaught TypeError: Cannot read properties of null (reading 'classList') (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125) | stack: TypeError: Cannot read properties of null (reading 'classList')
+    at HTMLButtonElement.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125)
+2026-06-27T11:57:18.299Z [ERROR] [console] logout error: Invalid channel
+2026-06-27T12:06:18.058Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T12:06:18.076Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T12:06:44.626Z [ERROR] [console] [loadCases] A.renderTableView is not a function TypeError: A.renderTableView is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:91
+    at renderPage (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:132:7)
+    at Object.init (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:156:5)
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:43)
+2026-06-27T12:06:46.825Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T12:06:46.842Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T12:13:52.632Z [INFO] [app] Application started
+2026-06-27T12:25:23.236Z [INFO] [app] Application started
+2026-06-27T12:44:42.502Z [INFO] [app] Application started
+2026-06-27T16:07:12.723Z [ERROR] [console] logout error: Invalid channel
+2026-06-27T16:17:50.720Z [INFO] [app] Application started
+2026-06-27T16:25:25.573Z [INFO] [app] Application started
+2026-06-27T16:30:35.277Z [INFO] [app] Application started
+2026-06-27T16:36:17.996Z [INFO] [app] Application started
+2026-06-27T16:37:55.688Z [INFO] [app] Application started
+2026-06-27T16:41:07.416Z [INFO] [app] Application started
+2026-06-27T16:42:01.864Z [INFO] [app] Application started
+2026-06-27T16:45:24.588Z [INFO] [app] Application started
+2026-06-27T16:51:44.294Z [INFO] [app] Application started
+2026-06-27T16:56:49.478Z [INFO] [app] Application started
+2026-06-27T17:00:53.284Z [INFO] [app] Application started
+2026-06-27T17:04:51.797Z [INFO] [app] Application started
+2026-06-27T17:20:24.239Z [INFO] [app] Application started
+2026-06-27T17:22:05.902Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T17:22:05.917Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T17:22:18.238Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T17:22:18.256Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-27T20:44:12.617Z [ERROR] [console] logout error: Invalid channel
+2026-06-27T21:36:41.582Z [ERROR] [console] logout error: Invalid channel
+2026-06-27T22:03:24.288Z [ERROR] [window.onerror] Uncaught TypeError: Cannot read properties of null (reading 'classList') (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125) | stack: TypeError: Cannot read properties of null (reading 'classList')
+    at HTMLButtonElement.<anonymous> (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:120:125)
+2026-06-27T22:03:45.506Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:48.989Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:49.807Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:50.381Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:50.786Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:51.103Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:03:51.343Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:04:09.184Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-27T22:04:09.196Z [ERROR] [console] [loadCalendar] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadCalendar (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/calendar/index.js:13:7)
+2026-06-27T23:10:34.966Z [ERROR] [console] logout error: Invalid channel
+2026-06-28T09:50:46.935Z [CRITICAL] [uncaughtException] Attempted to register a second handler for 'auth:logout' {"stack":"Error: Attempted to register a second handler for 'auth:logout'\n    at IpcMainImpl.handle (node:electron/js2c/browser_init:2:116336)\n    at Object.<anonymous> (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\main.js:952:9)\n    at Module._compile (node:internal/modules/cjs/loader:1862:14)\n    at Object..js (node:internal/modules/cjs/loader:1995:10)\n    at Module.load (node:internal/modules/cjs/loader:1584:32)\n    at node:internal/modules/cjs/loader:1386:12\n    at Module._load (node:electron/js2c/node_init:2:1"}
+2026-06-28T09:52:55.330Z [INFO] [app] Application started
+2026-06-28T10:04:28.029Z [INFO] [app] Application started
+2026-06-28T10:05:40.488Z [INFO] [app] Application started
+2026-06-28T10:09:20.986Z [INFO] [app] Application started
+2026-06-28T10:13:44.230Z [INFO] [app] Application started
+2026-06-28T10:26:20.809Z [INFO] [app] Application started
+2026-06-28T10:32:22.629Z [INFO] [app] Application started
+2026-06-28T10:40:38.070Z [INFO] [app] Application started
+2026-06-28T10:55:04.668Z [INFO] [app] Application started
+2026-06-28T10:57:49.291Z [ERROR] [console] [loadCases] A.renderTableView is not a function TypeError: A.renderTableView is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:91
+    at renderPage (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:132:7)
+    at Object.init (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:156:5)
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:43)
+2026-06-28T10:57:52.643Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T10:57:58.950Z [ERROR] [console] [loadCalendar] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadCalendar (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/calendar/index.js:13:7)
+2026-06-28T10:58:02.869Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-28T10:58:02.890Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/tasks/views.js:101:30)
+2026-06-28T11:51:44.708Z [INFO] [app] Application started
+2026-06-28T11:52:00.269Z [INFO] [auth] User logged out
+2026-06-28T11:53:13.226Z [INFO] [app] Application started
+2026-06-28T11:54:07.980Z [INFO] [auth] User logged out
+2026-06-28T11:55:32.151Z [INFO] [app] Application started
+2026-06-28T11:59:15.300Z [INFO] [app] Application started
+2026-06-28T11:59:36.775Z [INFO] [app] Application started
+2026-06-28T12:08:20.835Z [INFO] [app] Application started
+2026-06-28T12:08:34.167Z [INFO] [auth] User logged out
+2026-06-28T12:09:39.798Z [INFO] [app] Application started
+2026-06-28T12:10:47.078Z [ERROR] [console] [loadCases] A.renderTableView is not a function TypeError: A.renderTableView is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:91
+    at renderPage (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:132:7)
+    at Object.init (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:156:5)
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:43)
+2026-06-28T12:11:28.680Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T12:11:48.574Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T12:14:46.586Z [INFO] [app] Application started
+2026-06-28T12:32:26.560Z [INFO] [app] Application started
+2026-06-28T12:33:16.084Z [INFO] [auth] User logged out
+2026-06-28T12:33:29.913Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:40:34.515Z [INFO] [app] Application started
+2026-06-28T12:40:47.879Z [ERROR] [console] [loadCases] A.renderTableView is not a function TypeError: A.renderTableView is not a function
+    at file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:91
+    at renderPage (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:132:7)
+    at Object.init (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/shared.js:156:5)
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:19:43)
+2026-06-28T12:41:01.714Z [ERROR] [console] [loadCases] A.renderCardView is not a function TypeError: A.renderCardView is not a function
+    at A.loadCases (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/cases/index.js:20:7)
+2026-06-28T12:41:03.287Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:41:04.473Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:41:04.939Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:49:49.565Z [INFO] [app] Application started
+2026-06-28T12:49:56.220Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:50:37.876Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:50:42.364Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:50:43.002Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:50:43.451Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:50:44.076Z [ERROR] [console] [loadHearings] A.renderMiniCalendar is not a function TypeError: A.renderMiniCalendar is not a function
+    at A.loadHearings (file:///C:/Users/FAIZ/Dropbox/OPEN%20CODE/B6/modules/hearings/index.js:12:7)
+2026-06-28T12:51:24.425Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T12:53:41.068Z [INFO] [app] Application started
+2026-06-28T12:53:57.514Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T12:54:07.262Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T12:54:53.132Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T14:04:04.568Z [INFO] [auth] User logged out
+2026-06-28T14:08:38.341Z [INFO] [app] Application started
+2026-06-28T14:08:47.863Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T14:09:37.445Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T14:33:06.273Z [INFO] [app] Application started
+2026-06-28T14:33:21.653Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T14:34:18.730Z [ERROR] [ipc:addClient] cannot commit - no transaction is active {"stack":"Error: cannot commit - no transaction is active\n    at e.handleError (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:90:192)\n    at e.run (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\node_modules\\sql.js\\dist\\sql-wasm.js:87:256)\n    at transaction (C:\\Users\\FAIZ\\Dropbox\\OPEN CODE\\B6\\d"}
+2026-06-28T14:54:35.448Z [INFO] [app] Application started
+2026-06-28T14:59:08.979Z [INFO] [app] Application started
+2026-06-29T00:10:44.738Z [INFO] [app] Application started
+2026-06-29T00:13:58.042Z [INFO] [app] Application started
+2026-06-29T00:16:44.477Z [INFO] [app] Application started
+2026-06-29T00:33:58.375Z [INFO] [app] Application started
+2026-06-29T00:36:40.008Z [INFO] [app] Application started
+2026-06-29T00:38:38.737Z [INFO] [app] Application started
+2026-06-29T00:42:40.202Z [INFO] [app] Application started
+2026-06-29T11:19:26.681Z [INFO] [app] Application started
+2026-06-29T11:25:51.964Z [INFO] [app] Application started
+2026-06-29T12:03:58.262Z [INFO] [app] Application started
+2026-06-29T12:34:12.889Z [INFO] [auth] User logged out
+2026-06-29T15:14:21.529Z [INFO] [app] Application started
+2026-06-29T15:15:07.731Z [INFO] [app] Application started
+2026-06-29T15:16:40.936Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-29T15:16:40.961Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-30T12:12:10.851Z [INFO] [app] Application started
+2026-06-30T12:14:14.787Z [INFO] [app] Application started
+2026-06-30T12:14:31.005Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-30T12:14:31.037Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-30T12:14:42.075Z [INFO] [auth] User logged out
+2026-06-30T12:15:21.017Z [ERROR] [console] [unhandledRejection] esc is not defined ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-30T12:15:21.034Z [ERROR] [unhandledRejection] esc is not defined | stack: ReferenceError: esc is not defined
+    at A.renderTaskAnalytics (file:///C:/Intel/B6/modules/tasks/views.js:101:30)
+2026-06-30T16:07:05.873Z [INFO] [app] Application started
