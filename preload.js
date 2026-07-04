@@ -24,7 +24,6 @@ const VALID_CHANNELS = [
   'auth:updateProfile',
   'auth:changePassword',
   'auth:setup',
-  'auth:checkSession',
   'auth:checkRemembered',
   'auth:logout',
   'auth:getSecurityQuestion',
@@ -189,9 +188,16 @@ const IPC_SCHEMAS = {
     ],
     strict: true
   },
-  'auth:checkSession': { args: [s_opt(s_integer({ nullable: true }))], strict: true },
   'auth:checkRemembered': { args: [s_string({ minLength: 1 })], strict: true },
-  'auth:logout': { args: [], strict: true },
+  'auth:logout': {
+    args: [
+      s_opt(s_object({
+        token: s_opt(s_string()),
+        reason: s_opt(s_string())
+      }))
+    ],
+    strict: true
+  },
   'auth:getSecurityQuestion': { args: [s_integer({ positive: true })], strict: true },
   'auth:checkSecurityAnswer': {
     args: [

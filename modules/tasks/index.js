@@ -40,8 +40,8 @@ A.showTaskForm = async function (editData) {
       <div class="input-group"><label class="input-label">مسؤول</label><input type="text" id="fTaskAssigned" class="input" value="${esc(editData ? editData.assigned_to || '' : '')}" placeholder="${_t('assignedToLabel') || _t('add')}"></div>
     </div>
     <div class="info-grid-3">
-      <div class="input-group"><label class="input-label">الحالة</label><select id="fTaskStatus" class="input">${['backlog', 'todo', 'in_progress', 'waiting', 'review', 'done'].map(s => `<option value="${s}" ${editData?.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">الأولوية</label><select id="fTaskPriority" class="input">${['critical', 'high', 'medium', 'low'].map(p => `<option value="${p}" ${editData?.priority === p ? 'selected' : ''}>${p}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">الحالة</label><select id="fTaskStatus" class="input">${[['backlog','متراكم'],['todo','قيد الانتظار'],['in_progress','قيد التنفيذ'],['waiting','معلق'],['review','مراجعة'],['done','منجز']].map(([v,l]) => `<option value="${v}" ${editData?.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">الأولوية</label><select id="fTaskPriority" class="input">${[['critical','حرج'],['high','عالي'],['medium','متوسط'],['low','منخفض']].map(([v,l]) => `<option value="${v}" ${editData?.priority === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
       <div class="input-group"><label class="input-label">تاريخ الاستحقاق</label><input type="date" id="fTaskDue" class="input" value="${esc(editData ? editData.due_date || '' : '')}"></div>
     </div>
     <div class="input-group"><label class="input-label">الوسوم (مفصولة بفواصل)</label><input type="text" id="fTaskTags" class="input" value="${esc(editData ? editData.tags || '' : '')}" placeholder="${_t('priority_high')}، ${_t('priority_critical')}"></div>
@@ -80,11 +80,18 @@ A.showTaskForm = async function (editData) {
 
 A.openTaskDetail = async function (taskId) {
   if (!A.state.ipc) return;
-  const t = await A.cachedInvoke('db:getTask', taskId);
-  if (!t) return;
-  A.state.currentTaskId = taskId;
-  const subtasks = await A.cachedInvoke('db:getSubtasks', taskId);
-  const comments = await A.cachedInvoke('db:getComments', taskId);
+  let t, subtasks, comments;
+  try {
+    t = await A.cachedInvoke('db:getTask', taskId);
+    if (!t) return;
+    A.state.currentTaskId = taskId;
+    subtasks = (await A.cachedInvoke('db:getSubtasks', taskId)) || [];
+    comments = (await A.cachedInvoke('db:getComments', taskId)) || [];
+  } catch (e) {
+    A.logError('openTaskDetail', e);
+    A.showToast('فشل تحميل تفاصيل المهمة', 'error');
+    return;
+  }
 
   document.getElementById('taskDetailTitle').textContent = t.title;
   const priorityLabels = { critical: 'حرج', high: 'عالي', medium: 'متوسط', low: 'منخفض' };
@@ -97,8 +104,8 @@ A.openTaskDetail = async function (taskId) {
       <div>
         <div class="task-detail-section">
           <h4>معلومات</h4>
-          <div class="ws-info-row"><span class="ws-info-label">الحالة</span><span class="ws-info-value">${esc(t.status)}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc(t.priority)}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label">الحالة</span><span class="ws-info-value">${esc({backlog:'متراكم',todo:'قيد الانتظار',in_progress:'قيد التنفيذ',waiting:'معلق',review:'مراجعة',done:'منجز'}[t.status] || t.status)}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc({critical:'حرج',high:'عالي',medium:'متوسط',low:'منخفض'}[t.priority] || t.priority)}</span></div>
           <div class="ws-info-row"><span class="ws-info-label">القضية</span><span class="ws-info-value">${esc(t.case_number || '—')}</span></div>
           <div class="ws-info-row"><span class="ws-info-label">تاريخ الاستحقاق</span><span class="ws-info-value">${esc(t.due_date || '—')}</span></div>
           <div class="ws-info-row"><span class="ws-info-label">مسؤول</span><span class="ws-info-value">${esc(t.assigned_to || '—')}</span></div>

@@ -36,7 +36,8 @@ A.initSessionTimeout = function () {
     sessionTimer = setTimeout(
       () => {
         if (A.state.ipc) {
-          A.state.ipc.invoke('auth:logout').catch(function (e) {
+          var token = localStorage.getItem('session_token');
+          A.state.ipc.invoke('auth:logout', { token: token, reason: 'timeout' }).catch(function (e) {
             console.error('logout error:', e);
           });
         }

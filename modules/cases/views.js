@@ -76,7 +76,6 @@ A.renderKanbanView = function (list) {
           .join('')
       );
   });
-  A.initKanbanDragDrop();
 };
 
 A.attachCaseActions = function () {
@@ -165,9 +164,10 @@ A.loadWsOverview = function (c) {
   el.querySelector('.ws-add-expense')?.addEventListener('click', () => A.wsAddExpense());
 };
 
-A.loadWsOverviewDocs = async function () {
+A.loadWsOverviewDocs = async function (_token) {
   if (!A.state.ipc) return;
   const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
+  if (_token !== undefined && _token !== A.state._caseDetailToken) return;
   const el = document.getElementById('wsOverviewDocs');
   A.safeSet(
     el,
@@ -184,11 +184,12 @@ A.loadWsOverviewDocs = async function () {
   );
 };
 
-A.loadWsTimeline = async function () {
+A.loadWsTimeline = async function (_token) {
   const el = document.getElementById('wsTimeline');
   if (!A.state.ipc) return;
   try {
     const logs = await A.cachedInvoke('db:getLogs', {});
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const caseLogs = (logs || []).filter(l => l.details && l.details.includes('#' + A.state.currentCaseId)).slice(0, 30);
     A.safeSet(el, esc =>
       caseLogs.length
@@ -209,11 +210,12 @@ A.loadWsTimeline = async function () {
   }
 };
 
-A.loadWsDocuments = async function () {
+A.loadWsDocuments = async function (_token) {
   const el = document.getElementById('wsDocuments');
   if (!A.state.ipc) return;
   try {
     const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     A.safeSet(
       el,
       esc => `<div class="ws-docs-header">
@@ -268,11 +270,12 @@ A.loadWsDocuments = async function () {
   }
 };
 
-A.loadWsHearings = async function () {
+A.loadWsHearings = async function (_token) {
   const el = document.getElementById('wsHearings');
   if (!A.state.ipc) return;
   try {
     const procs = await A.cachedInvoke('db:getProcedures', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const hearings = (procs || []).filter(p => p.type === 'Audience').sort((a, b) => b.date?.localeCompare(a.date));
     const today = new Date().toISOString().slice(0, 10);
     A.safeSet(
@@ -327,11 +330,12 @@ A.wsAddHearing = function () {
   );
 };
 
-A.loadWsTasks = async function () {
+A.loadWsTasks = async function (_token) {
   const el = document.getElementById('wsTasks');
   if (!A.state.ipc) return;
   try {
     const all = await A.cachedInvoke('db:getAllTasks');
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const tasks = all.filter(t => t.case_id === A.state.currentCaseId || (t.notes && t.notes.includes('#' + A.state.currentCaseId)));
     const todo = tasks.filter(t => t.status === 'todo'),
       inprog = tasks.filter(t => t.status === 'in_progress' || t.status === 'pending'),
@@ -388,11 +392,12 @@ A.wsAddTask = function () {
   );
 };
 
-A.loadWsNotes = async function () {
+A.loadWsNotes = async function (_token) {
   const el = document.getElementById('wsNotes');
   if (!A.state.ipc) return;
   try {
     const all = (await A.cachedInvoke('db:getAllCases')) || [];
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const c = all.find(x => x.id === A.state.currentCaseId) || { notes: '', description: '' };
     A.safeSet(
       el,
@@ -450,11 +455,12 @@ A.loadWsNotes = async function () {
   }
 };
 
-A.loadWsExpenses = async function (c) {
+A.loadWsExpenses = async function (c, _token) {
   const el = document.getElementById('wsExpenses');
   if (!A.state.ipc) return;
   try {
     const paiements = await A.cachedInvoke('db:getPaiements', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const total = parseFloat(c.total_fees) || 0;
     const paid = paiements.reduce((s, p) => s + parseFloat(p.montant || 0), 0);
     const expenses = parseFloat(c.expenses) || 0;
@@ -512,12 +518,15 @@ A.wsAddExpense = function () {
   );
 };
 
-A.loadWsContacts = async function () {
+A.loadWsContacts = async function (_token) {
   const el = document.getElementById('wsContacts');
   if (!A.state.ipc) return;
   try {
-    const c = (await A.cachedInvoke('db:getAllCases')).find(x => x.id === A.state.currentCaseId);
+    const allCases = await A.cachedInvoke('db:getAllCases');
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
+    const c = allCases.find(x => x.id === A.state.currentCaseId);
     const clients = await A.cachedInvoke('db:getAllClients');
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const client = clients.find(x => x.id === c?.client_id);
     A.safeSet(
       el,
@@ -534,14 +543,18 @@ A.loadWsContacts = async function () {
   }
 };
 
-A.loadWsAnalytics = async function (c) {
+A.loadWsAnalytics = async function (c, _token) {
   const el = document.getElementById('wsAnalytics');
   if (!A.state.ipc) return;
   try {
     const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const procs = await A.cachedInvoke('db:getProcedures', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const paiements = await A.cachedInvoke('db:getPaiements', A.state.currentCaseId);
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const allTasks = await A.cachedInvoke('db:getAllTasks');
+    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const tasks = allTasks.filter(t => t.case_id === A.state.currentCaseId || (t.notes && t.notes.includes('#' + A.state.currentCaseId)));
     const doneTasks = tasks.filter(t => t.status === 'done').length;
     const taskRate = tasks.length ? Math.round((doneTasks / tasks.length) * 100) : 0;

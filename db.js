@@ -297,6 +297,11 @@ async function initDb() {
   db.run('CREATE INDEX IF NOT EXISTS idx_cases_status ON cases(status)');
   db.run('CREATE INDEX IF NOT EXISTS idx_cases_created_date ON cases(created_date)');
   db.run('CREATE INDEX IF NOT EXISTS idx_cases_client ON cases(client_id)');
+  try {
+    db.run('CREATE UNIQUE INDEX IF NOT EXISTS idx_cases_case_number_unique ON cases(case_number)');
+  } catch (e) {
+    console.warn('تعذر إنشاء الفهرس الفريد لرقم القضية:', e.message);
+  }
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_case ON tasks(case_id)');
   db.run('CREATE INDEX IF NOT EXISTS idx_tasks_due ON tasks(due_date)');
@@ -578,7 +583,7 @@ function addCase(data) {
   if (!data.case_number) return { error: 'رقم القضية مطلوب' };
   if (!data.title) return { error: 'عنوان القضية مطلوب' };
   const dup = findDuplicateCase(data.case_number);
-  if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
+  if (dup.duplicate) return { duplicate: true, archived: dup.archived, existing: dup.existing, id: null };
   if (data.client_id && !validateRef('clients', data.client_id)) return { error: 'الموكل غير موجود' };
   mutate(
     'INSERT INTO cases (case_number, title, client_id, client_name, court, status, description, next_hearing, total_fees, paid_fees, expenses, deadline_date, honoraires_totaux, priority, case_type, created_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -730,7 +735,7 @@ function addClient(data) {
   data.phone = data.phone ? String(data.phone).trim() : '';
   data.email = data.email ? String(data.email).trim() : '';
   const dup = findDuplicateClient(data);
-  if (dup.duplicate) return { duplicate: true, existing: dup.existing, id: null };
+  if (dup.duplicate) return { duplicate: true, archived: dup.archived, existing: dup.existing, id: null };
   return transaction(() => {
     mutate(
       "INSERT INTO clients (name, phone, email, address, notes, national_id, tags, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))",
@@ -754,10 +759,22 @@ function deleteClient(id) {
   });
 }
 
-function findDuplicateCase(caseNumber) {
+function findDuplicateCase(caseNumber, excludeId) {
   const nCaseNumber = (caseNumber || '').trim();
-  const rows = query('SELECT id, case_number, title FROM cases WHERE LOWER(TRIM(case_number)) = LOWER(TRIM(?))', [nCaseNumber]);
-  if (rows.length) return { duplicate: true, existing: rows[0] };
+  const excludeSql = excludeId ? ' AND id != ?' : '';
+  const params = excludeId ? [nCaseNumber, excludeId] : [nCaseNumber];
+  // فحص القضايا النشطة أولاً
+  const activeRows = query(
+    `SELECT id, case_number, title FROM cases WHERE LOWER(TRIM(case_number)) = LOWER(TRIM(?)) AND (archived = 0 OR archived IS NULL)${excludeSql}`,
+    params
+  );
+  if (activeRows.length) return { duplicate: true, archived: false, existing: activeRows[0] };
+  // فحص القضايا المؤرشفة
+  const archivedRows = query(
+    `SELECT id, case_number, title FROM cases WHERE LOWER(TRIM(case_number)) = LOWER(TRIM(?)) AND archived = 1${excludeSql}`,
+    params
+  );
+  if (archivedRows.length) return { duplicate: true, archived: true, existing: archivedRows[0] };
   return { duplicate: false };
 }
 
@@ -1508,9 +1525,9 @@ function getAlertsNeeded() {
     OR (julianday(e.date) - julianday(?) = 3 AND e.alert_sent_3d = 0)
     OR (julianday(e.date) - julianday(?) = 1 AND e.alert_sent_1d = 0)
     OR (julianday(e.date) - julianday(?) = 0 AND (e.alert_sent_1d = 0 OR e.alert_sent_3d = 0 OR e.alert_sent_7d = 0))
-    OR (julianday(e.date) - julianday(?) < 0 AND e.status = 'scheduled'))
+    OR (julianday(e.date) - julianday(?) < 0 AND julianday(?) - julianday(e.date) <= 1 AND e.status = 'scheduled'))
     ORDER BY e.date ASC`,
-    [today, today, today, today, today]
+    [today, today, today, today, today, today]
   );
 }
 function detectConflicts(eventId, date, time, endTime) {
@@ -1832,7 +1849,7 @@ function updateHonorairesTotaux(caseId, montant) {
 
 function getWeekDeadlines() {
   return query(
-    `SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days') ORDER BY days_remaining ASC`
+    `SELECT c.id, c.case_number, c.title, c.deadline_date, c.client_name, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL) AND julianday(c.deadline_date) BETWEEN julianday('now') AND julianday('now', '+7 days') ORDER BY days_remaining ASC`
   );
 }
 function getUnpaidFees() {
@@ -2090,15 +2107,15 @@ function updateAlertSettings(data) {
 }
 function getUpcomingDeadlines() {
   return query(
-    `SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND julianday(c.deadline_date) - julianday('now') > -1 ORDER BY days_remaining ASC`
+    `SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL) AND julianday(c.deadline_date) - julianday('now') > -1 ORDER BY days_remaining ASC`
   );
 }
 function getUpcomingHearings() {
   const fromProcedures = query(
-    `SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed'`
+    `SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
   );
   const fromEvents = query(
-    `SELECT e.id, e.date as hearing_date, e.type, e.notes as description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(e.date) - julianday('now')) AS INTEGER) as days_remaining FROM events e JOIN cases c ON e.case_id = c.id WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date >= date('now') AND c.status != 'closed'`
+    `SELECT e.id, e.date as hearing_date, e.type, e.notes as description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(e.date) - julianday('now')) AS INTEGER) as days_remaining FROM events e JOIN cases c ON e.case_id = c.id WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date >= date('now') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
   );
   const merged = [...fromProcedures, ...fromEvents];
   merged.sort((a, b) => (a.days_remaining || 0) - (b.days_remaining || 0));

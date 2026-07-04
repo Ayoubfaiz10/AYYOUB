@@ -664,8 +664,9 @@ A.initAuth = function () {
       var errorEl = document.getElementById('loginError');
       if (errorEl) errorEl.style.display = 'none';
       A._selectedUserId = null;
+      var token = localStorage.getItem('session_token');
       localStorage.removeItem('session_token');
-      A.state.ipc.invoke('auth:logout').catch(function () {});
+      A.state.ipc.invoke('auth:logout', { token: token, reason: 'lock' }).catch(function () {});
       A.state.currentUser = null;
       A._dashboardLoaded = false;
       A.state.ipc

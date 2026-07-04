@@ -13,10 +13,10 @@ A.getCalEvents = function () {
 };
 
 A.renderCalendar = function () {
-  A.renderMonthView();
-  A.renderWeekView();
-  A.renderDayView();
-  A.renderAgendaView();
+  if (A.state.calView === 'month') A.renderMonthView();
+  else if (A.state.calView === 'week') A.renderWeekView();
+  else if (A.state.calView === 'day') A.renderDayView();
+  else A.renderAgendaView();
 };
 
 A.renderMonthView = function () {
@@ -25,13 +25,17 @@ A.renderMonthView = function () {
   document.getElementById('calTitle').textContent = new Intl.DateTimeFormat(A.getLocale(), { month: 'long', year: 'numeric' }).format(A.state.calDate);
   const weekdays = A.getDayNames('long');
   const today = new Date().toISOString().slice(0, 10);
+  const eventsByDate = {};
+  A.state.allEvents.forEach(e => {
+    if (e.status !== 'cancelled') (eventsByDate[e.date] || (eventsByDate[e.date] = [])).push(e);
+  });
   let html = weekdays.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
     const dateStr = d.toISOString().slice(0, 10);
     const isOther = d.getMonth() !== month;
     const isToday = dateStr === today;
-    const dayEvents = A.state.allEvents.filter(e => e.date === dateStr && e.status !== 'cancelled');
+    const dayEvents = eventsByDate[dateStr] || [];
     const visible = dayEvents.slice(0, 3);
     const more = dayEvents.length - 3;
     html += `<div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
@@ -57,6 +61,10 @@ A.renderWeekView = function () {
   const startOfWeek = new Date(A.state.calDate);
   startOfWeek.setDate(A.state.calDate.getDate() - A.state.calDate.getDay());
   const hours = Array.from({ length: 12 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`);
+  const eventsByDate = {};
+  A.state.allEvents.forEach(e => {
+    if (e.status !== 'cancelled') (eventsByDate[e.date] || (eventsByDate[e.date] = [])).push(e);
+  });
   var shortDays = A.getShortDayNames();
   let html =
     '<div class="cal-week-header" data-i18n="calendarTimeHeader">الوقت</div>' +
@@ -71,7 +79,7 @@ A.renderWeekView = function () {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
       const dateStr = d.toISOString().slice(0, 10);
-      const events = A.state.allEvents.filter(e => e.date === dateStr && e.time && e.time.startsWith(h.slice(0, 2)) && e.status !== 'cancelled');
+      const events = (eventsByDate[dateStr] || []).filter(e => e.time && e.time.startsWith(h.slice(0, 2)));
       html += `<div class="cal-week-cell" data-date="${dateStr}">
         ${events.map(e => `<div class="cal-week-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 15)}</div>`).join('')}
       </div>`;
@@ -92,13 +100,14 @@ A.renderDayView = function () {
   const dateStr = A.state.calDate.toISOString().slice(0, 10);
   const today = new Date().toISOString().slice(0, 10);
   const hours = Array.from({ length: 14 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`);
+  const dayEvents = (A.state.allEvents || []).filter(e => e.date === dateStr && e.status !== 'cancelled');
   A.safeSet(grid, esc => {
     let h = `<div class="cal-week-header" style="grid-column:span 2;text-align:right;padding:var(--spacing-2);font-size:var(--type-body);">
       ${new Intl.DateTimeFormat(A.getLocale(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(A.state.calDate)}
       ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;" data-i18n="statusToday">اليوم</span>' : ''}
     </div>`;
     hours.forEach(hour => {
-      const evts = A.state.allEvents.filter(e => e.date === dateStr && e.time && e.time.startsWith(hour.slice(0, 2)) && e.status !== 'cancelled');
+      const evts = dayEvents.filter(e => e.time && e.time.startsWith(hour.slice(0, 2)));
       h += `<div class="cal-day-time">${hour}</div>
         <div class="cal-day-cell" data-hour="${hour}">
           ${evts.map(e => `<div class="cal-day-event-lg event-${e.type}" data-click="event:open:${e.id}">${esc(e.title)}</div>`).join('')}
@@ -163,6 +172,7 @@ A.switchCalView = function (view) {
   document.querySelectorAll('#section-calendar .cal-view').forEach(v => v.classList.remove('active'));
   document.getElementById(`cal${view.charAt(0).toUpperCase() + view.slice(1)}View`).classList.add('active');
   A.state.calView = view;
+  A.renderCalendar();
 };
 
 A.goToDate = function (dateStr) {

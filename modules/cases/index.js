@@ -5,6 +5,7 @@ A.state.currentCaseId = null;
 A.state.caseViewMode = 'table';
 A.state.showArchived = false;
 A.state.currentTaskId = null;
+A.state._caseDetailToken = 0;
 
 A.loadCases = async function (filter) {
   if (!A.state.ipc) return;
@@ -43,21 +44,22 @@ A.openCaseDetail = async function (caseId) {
   if (!c) return;
   if (A.addRecentItem) A.addRecentItem('case', c.id, (c.case_number || '') + ' — ' + (c.title || ''), c.client_name || '', 'cases');
   A.state.currentCaseId = caseId;
+  const _token = ++A.state._caseDetailToken;
 
   document.getElementById('cdTitle').textContent = `${c.case_number} — ${c.title}`;
   document.getElementById('cdStatusBadge').textContent = A.state.statusLabels[c.status] || c.status;
   document.getElementById('cdStatusBadge').className = 'ws-badge badge-' + c.status;
 
-  A.loadWsOverview(c);
-  A.loadWsTimeline();
-  A.loadWsDocuments();
-  A.loadWsHearings();
-  A.loadWsTasks();
-  A.loadWsNotes();
-  A.loadWsExpenses(c);
-  A.loadWsContacts();
-  A.loadWsAnalytics(c);
-  A.loadWsAI();
+  A.loadWsOverview(c, _token);
+  A.loadWsTimeline(_token);
+  A.loadWsDocuments(_token);
+  A.loadWsHearings(_token);
+  A.loadWsTasks(_token);
+  A.loadWsNotes(_token);
+  A.loadWsExpenses(c, _token);
+  A.loadWsContacts(_token);
+  A.loadWsAnalytics(c, _token);
+  A.loadWsAI(_token);
 
   document.getElementById('caseDetailOverlay').style.display = 'flex';
 };
@@ -203,7 +205,11 @@ A.initCases = function () {
             return;
           }
           if (res && res.duplicate) {
-            A.showToast(_t('caseDuplicateNumber').replace('{n}', res.existing?.case_number || ''), 'error');
+            if (res.archived) {
+              A.showToast(_t('caseDuplicateNumberArchived').replace('{n}', res.existing?.case_number || ''), 'warning');
+            } else {
+              A.showToast(_t('caseDuplicateNumber').replace('{n}', res.existing?.case_number || ''), 'error');
+            }
             return;
           }
           A.hideModal();
@@ -256,5 +262,40 @@ A.initCases = function () {
       const label = document.getElementById('cdTitle')?.textContent || _t('caseLabel');
       window.setAiContext('case', A.state.currentCaseId, label);
     }, 200);
+  });
+
+  document.querySelector('#casesKanbanView .kanban-board-full')?.addEventListener('dragover', e => {
+    const col = e.target.closest('.kanban-col-body');
+    if (!col) return;
+    e.preventDefault();
+    col.parentElement.classList.add('drag-over');
+  });
+  document.querySelector('#casesKanbanView .kanban-board-full')?.addEventListener('dragleave', e => {
+    const col = e.target.closest('.kanban-col-body');
+    if (!col) return;
+    col.parentElement.classList.remove('drag-over');
+  });
+  document.querySelector('#casesKanbanView .kanban-board-full')?.addEventListener('drop', async e => {
+    e.preventDefault();
+    const col = e.target.closest('.kanban-col-body');
+    if (!col) return;
+    col.parentElement.classList.remove('drag-over');
+    const dragging = document.querySelector('.dragging');
+    if (!dragging) return;
+    const id = parseInt(dragging.dataset?.id);
+    if (!id) return;
+    const newStatus = col.parentElement.dataset.status;
+    try {
+      if (newStatus === 'archived') await A.mutate('db:archiveCase', id);
+      else if (newStatus) {
+        const statusMap = { new: 'active', appeal: 'pending' };
+        await A.mutate('db:updateCaseStatus', { id, status: statusMap[newStatus] || newStatus });
+      }
+      A.showToast(_t('caseStatusChanged'), 'success');
+    } catch (e) {
+      A.logError('kanbanDrop', e);
+      A.showToast(_t('failedStatusChange'), 'error');
+    }
+    A.loadCases();
   });
 };

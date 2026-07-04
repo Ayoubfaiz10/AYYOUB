@@ -28,7 +28,8 @@ function verifyPassword(pwd, storedHash) {
 }
 
 function signToken(userId, expiryMs) {
-  const payload = userId + ':' + expiryMs;
+  const jti = crypto.randomBytes(8).toString('hex');
+  const payload = jti + ':' + userId + ':' + expiryMs;
   const hmac = crypto.createHmac('sha256', MASTER_KEY).update(payload).digest('hex');
   return payload + ':' + hmac;
 }
@@ -36,13 +37,13 @@ function signToken(userId, expiryMs) {
 function verifyToken(token) {
   if (!token || typeof token !== 'string') return null;
   const parts = token.split(':');
-  if (parts.length < 3) return null;
+  if (parts.length < 4) return null;
   const payload = parts.slice(0, -1).join(':');
   const sig = parts[parts.length - 1];
   const expected = crypto.createHmac('sha256', MASTER_KEY).update(payload).digest('hex');
   if (sig !== expected) return null;
-  const userId = parseInt(parts[0], 10);
-  const expiry = parseInt(parts[1], 10);
+  const userId = parseInt(parts[1], 10);
+  const expiry = parseInt(parts[2], 10);
   if (isNaN(userId) || isNaN(expiry) || Date.now() > expiry) return null;
   return userId;
 }

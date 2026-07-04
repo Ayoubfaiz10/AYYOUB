@@ -2,6 +2,7 @@ var A = (window.App = window.App || {});
 
 A.state.allClients = [];
 A.state.currentClientId = null;
+A.state._clientDetailToken = 0;
 
 A.loadClients = async function (filter) {
   if (!A.state.ipc) return;
@@ -37,19 +38,20 @@ A.openClientDetail = async function (id) {
   if (!c) return;
   if (A.addRecentItem) A.addRecentItem('client', c.id, c.name, c.phone || c.email || '', 'clients');
   A.state.currentClientId = id;
+  const _token = ++A.state._clientDetailToken;
 
   document.getElementById('clTitle').textContent = c.name;
   document.getElementById('clAvatarSm').textContent = (c.name || '?').charAt(0);
   document.getElementById('clStatusBadge').textContent = _t('activeBadge');
 
-  A.loadWsClOverview(c);
-  A.loadWsClCases(c);
-  A.loadWsClDocs(c);
-  A.loadWsClComms(c);
-  A.loadWsClPayments(c);
-  A.loadWsClTimeline(c);
-  A.loadWsClNotes(c);
-  A.loadWsClAnalytics(c);
+  A.loadWsClOverview(c, _token);
+  A.loadWsClCases(c, _token);
+  A.loadWsClDocs(c, _token);
+  A.loadWsClComms(c, _token);
+  A.loadWsClPayments(c, _token);
+  A.loadWsClTimeline(c, _token);
+  A.loadWsClNotes(c, _token);
+  A.loadWsClAnalytics(c, _token);
 
   document.getElementById('clientDetailOverlay').style.display = 'flex';
 };
@@ -145,7 +147,15 @@ A.initClients = function () {
   document.getElementById('clArchiveBtn')?.addEventListener('click', async () => {
     if (!A.state.currentClientId) return;
     if (await A.showConfirm(_t('archiveClientConfirm'), _t('archiveBtn'), 'warning')) {
-      A.showToast(_t('clientArchived'), 'success');
+      try {
+        await A.mutate('db:archiveClient', A.state.currentClientId);
+        A.showToast(_t('clientArchived'), 'success');
+        A.loadClients();
+        document.getElementById('clientDetailOverlay').style.display = 'none';
+      } catch (e) {
+        A.logError('archiveClient', e);
+        A.showToast(_t('archiveFailed'), 'error');
+      }
     }
   });
   document.getElementById('clAiBtn')?.addEventListener('click', () => {

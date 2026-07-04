@@ -402,7 +402,7 @@ function createWindow() {
           });
         }
       } catch (e) {
-        shell.openExternal(url);
+        console.warn('Blocked malformed external URL:', url);
       }
     }
     return { action: 'deny' };
@@ -1451,6 +1451,7 @@ ipcMain.handle('auth:getPermissions', () => {
 
 ipcMain.handle('auth:getUsers', () => {
   try {
+    if (!currentUser) return [];
     return db.getUsers() || [];
   } catch (e) {
     handleError('getUsers', e);

@@ -39,7 +39,6 @@ const cacheDeps = {
   'db:getTodayProcedures': ['db:addProcedure', 'db:deleteProcedure', 'db:updateProcedure'],
   'db:getLogs': ['db:addLog'],
   'logger:getLogs': ['logger:log', 'logger:clear'],
-  'db:getTodayProcedures': ['db:addProcedure'],
   'db:getAllCommunications': ['db:addCommunication'],
   'db:getDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes'],
   'db:getAllDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes', 'db:selectAndUpload', 'db:addDocument', 'db:getDocuments'],
@@ -98,6 +97,11 @@ A.mutate = async function (channel, ...args) {
     const result = await A.state.ipc.invoke(channel, ...args);
     if (result && typeof result === 'object' && result.error) return result;
     invalidateCache(channel);
+    const searchInvalidators = ['db:addCase','db:deleteCase','db:updateCase','db:addClient','db:deleteClient','db:archiveCase','db:unarchiveCase'];
+    if (searchInvalidators.includes(channel)) {
+      A._searchIndexLoaded = false;
+      if (typeof A.loadSearchIndex === 'function') setTimeout(() => A.loadSearchIndex(), 300);
+    }
     return result;
   } catch (err) {
     A.logError('mutate:' + channel, err);

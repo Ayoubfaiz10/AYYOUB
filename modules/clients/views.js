@@ -97,10 +97,12 @@ A.renderClientSegments = function (list) {
   );
 };
 
-A.loadWsClOverview = async function (c) {
+A.loadWsClOverview = async function (c, _token) {
   const el = document.getElementById('wsClOverview');
   const cases = (await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId)) || [];
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const comms = (await A.cachedInvoke('db:getClientCommunications', A.state.currentClientId)) || [];
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const activeCases = cases.filter(ca => ca.status === 'active').length;
   const totalPaid = cases.reduce((s, ca) => s + parseFloat(ca.paid_fees || 0), 0);
   const totalFees = cases.reduce((s, ca) => s + parseFloat(ca.total_fees || 0), 0);
@@ -141,6 +143,7 @@ A.loadWsClOverview = async function (c) {
   </div>`
   );
   const logs = await A.cachedInvoke('db:getLogs', {});
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const clLogs = (logs || []).filter(l => l.details && l.details.includes('@' + A.state.currentClientId)).slice(0, 4);
   A.safeSet(document.getElementById('clOverviewActivity'), esc =>
     clLogs.length
@@ -161,9 +164,10 @@ A.loadWsClOverview = async function (c) {
   });
 };
 
-A.loadWsClCases = async function (c) {
+A.loadWsClCases = async function (c, _token) {
   const el = document.getElementById('wsClCases');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   A.safeSet(
     el,
     esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" data-click="click:#addCaseBtn"><i class="ri-add-line"></i> ${_t('newCaseBtn')}</button></div>
@@ -184,9 +188,10 @@ A.loadWsClCases = async function (c) {
   );
 };
 
-A.loadWsClDocs = async function (c) {
+A.loadWsClDocs = async function (c, _token) {
   const el = document.getElementById('wsClDocs');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   let allDocs = [];
   for (const ca of cases) {
     const docs = await A.cachedInvoke('db:getDocuments', ca.id);
@@ -211,9 +216,10 @@ A.loadWsClDocs = async function (c) {
   );
 };
 
-A.loadWsClComms = async function (c) {
+A.loadWsClComms = async function (c, _token) {
   const el = document.getElementById('wsClComms');
   const comms = await A.cachedInvoke('db:getClientCommunications', A.state.currentClientId);
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const iconMap = { call: 'ri-phone-line', email: 'ri-mail-line', meeting: 'ri-group-line', message: 'ri-chat-1-line', default: 'ri-chat-3-line' };
   const colorMap = { call: '#4A8BC2', email: '#8B5CF6', meeting: '#1A8A5C', message: '#C6A15B', default: '#8C8A84' };
   A.safeSet(
@@ -264,19 +270,26 @@ A.clAddComm = function () {
   );
 };
 
-A.loadWsClPayments = async function (c) {
+A.loadWsClPayments = async function (c, _token) {
   const el = document.getElementById('wsClPayments');
-  const cases = (await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId)) || [];
-  let allPayments = [];
-  for (const ca of cases) {
-    const pays = await A.cachedInvoke('db:getPaiements', ca.id);
-    pays.forEach(p => allPayments.push({ ...p, case_number: ca.case_number }));
-  }
-  const totalPaid = allPayments.reduce((s, p) => s + parseFloat(p.montant || 0), 0);
-  const totalFees = cases.reduce((s, ca) => s + parseFloat(ca.total_fees || 0), 0);
-  A.safeSet(
-    el,
-    esc => `<div class="cl-payments-chart">
+  if (!A.state.ipc) return;
+  try {
+    const cases = (await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId)) || [];
+    if (_token !== undefined && _token !== A.state._clientDetailToken) return;
+    const results = await Promise.allSettled(cases.map(ca => A.cachedInvoke('db:getPaiements', ca.id)));
+    let allPayments = [];
+    results.forEach((r, i) => {
+      if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+        r.value.forEach(p => allPayments.push({ ...p, case_number: cases[i].case_number }));
+      } else if (r.status === 'rejected') {
+        A.logError('loadWsClPayments:getPaiements', r.reason);
+      }
+    });
+    const totalPaid = allPayments.reduce((s, p) => s + parseFloat(p.montant || 0), 0);
+    const totalFees = cases.reduce((s, ca) => s + parseFloat(ca.total_fees || 0), 0);
+    A.safeSet(
+      el,
+      esc => `<div class="cl-payments-chart">
       <canvas id="clPieChart" width="80" height="80"></canvas>
       <div class="cl-payments-numbers">
         <div class="cl-pay-row"><span class="cl-pay-label">${_t('feesLabel')}</span><span class="cl-pay-value">${totalFees.toFixed(0)} د.م.</span></div>
@@ -285,8 +298,12 @@ A.loadWsClPayments = async function (c) {
       </div>
     </div>
     ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('paymentDateHeader')}</th><th>${_t('paymentCaseHeader')}</th><th>${_t('paymentAmountHeader')}</th><th>${_t('paymentMethodHeader')}</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`
-  );
-  A.drawClPieChart(totalFees, totalPaid);
+    );
+    A.drawClPieChart(totalFees, totalPaid);
+  } catch (e) {
+    A.logError('loadWsClPayments', e);
+    A.showToast(_t('failedLoadPayments'), 'error');
+  }
 };
 
 A.drawClPieChart = function (total, paid) {
@@ -328,9 +345,10 @@ A.drawClPieChart = function (total, paid) {
   ctx.fill();
 };
 
-A.loadWsClTimeline = async function (c) {
+A.loadWsClTimeline = async function (c, _token) {
   const el = document.getElementById('wsClTimeline');
   const logs = await A.cachedInvoke('db:getLogs', {});
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const clLogs = (logs || []).filter(l => l.details && l.details.includes('@' + A.state.currentClientId)).slice(0, 30);
   A.safeSet(el, esc =>
     clLogs.length
@@ -387,9 +405,10 @@ A.loadWsClNotes = async function (c) {
   }
 };
 
-A.loadWsClAnalytics = async function (c) {
+A.loadWsClAnalytics = async function (c, _token) {
   const el = document.getElementById('wsClAnalytics');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const active = cases.filter(ca => ca.status === 'active').length;
   const closed = cases.filter(ca => ca.status === 'closed').length;
   const totalFees = cases.reduce((s, ca) => s + parseFloat(ca.total_fees || 0), 0);
