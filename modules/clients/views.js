@@ -56,8 +56,8 @@ A.renderClientCards = function (list) {
     <div class="client-card-stats"><span>${c._caseCount || 0} ${_t('casesPlural')}</span><span>${c._balance || 0}${_t('currencyMAD')}</span></div>
     <div class="client-card-actions">
       <button class="btn-icon" data-click="client:open:${c.id}" data-click-stop="true" title="${_t('openBtnTooltip')}"><i class="ri-eye-line"></i></button>
-      <button class="btn-icon" data-click="contact:call:${esc(c.phone)}" data-click-stop="true" title="${_t('callBtn')}"><i class="ri-phone-line"></i></button>
-      <button class="btn-icon" data-click="contact:mail:${esc(c.email)}" data-click-stop="true" title="${_t('emailBtn')}"><i class="ri-mail-line"></i></button>
+      <button class="btn-icon" data-ns="contact" data-cmd="call" data-arg="${esc(c.phone)}" data-click-stop="true" title="${_t('callBtn')}"><i class="ri-phone-line"></i></button>
+      <button class="btn-icon" data-ns="contact" data-cmd="mail" data-arg="${esc(c.email)}" data-click-stop="true" title="${_t('emailBtn')}"><i class="ri-mail-line"></i></button>
     </div>
   </div>`
           )
@@ -127,7 +127,7 @@ A.loadWsClOverview = async function (c, _token) {
           <button class="ws-qa-btn cl-add-case"><i class="ri-briefcase-add-line"></i> ${_t('caseQuickAction')}</button>
           <button class="ws-qa-btn cl-add-comm"><i class="ri-chat-3-line"></i> ${_t('commQuickAction')}</button>
           <button class="ws-qa-btn cl-add-doc"><i class="ri-file-add-line"></i> ${_t('docQuickAction')}</button>
-          <button class="ws-qa-btn" data-click="click:#clientDetailOverlay [data-ws=clnotes]"><i class="ri-edit-2-line"></i> ${_t('noteQuickAction')}</button>
+          <button class="ws-qa-btn" data-ns="_click" data-cmd="#clientDetailOverlay [data-ws=clnotes]"><i class="ri-edit-2-line"></i> ${_t('noteQuickAction')}</button>
         </div>
       </div>
     </div>
@@ -170,7 +170,7 @@ A.loadWsClCases = async function (c, _token) {
   if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   A.safeSet(
     el,
-    esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" data-click="click:#addCaseBtn"><i class="ri-add-line"></i> ${_t('newCaseBtn')}</button></div>
+    esc => `<div class="toolbar"><button class="btn btn-primary btn-sm" data-ns="_click" data-cmd="#addCaseBtn"><i class="ri-add-line"></i> ${_t('newCaseBtn')}</button></div>
     ${
       cases.length
         ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('caseNumberHeader')}</th><th>${_t('subjectHeader')}</th><th>${_t('courtHeader')}</th><th>${_t('statusHeader')}</th><th>${_t('priorityHeader')}</th><th></th></tr></thead><tbody>${cases

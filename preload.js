@@ -8,6 +8,7 @@ const PUSH_CHANNELS = ['app:navigateToCase', 'app:notification', 'app:updateAvai
 const rateLimits = new Map();
 const RATE_LIMIT_WINDOW = 60000;
 const MAX_REQUESTS_PER_WINDOW = 60;
+const RATE_LIMIT_MAX_KEYS = 500;
 const subscribedChannels = new Set();
 
 const VALID_CHANNELS = [
@@ -126,6 +127,9 @@ const VALID_CHANNELS = [
   'ai:analyzeDocument',
   'app:navigateToCase',
   'app:checkMasterKey',
+  'cert:getPinnedStatus',
+  'cert:approveNewPin',
+  'cert:resetPins',
   'license:check',
   'license:activate',
   'license:deactivate',
@@ -818,6 +822,17 @@ const IPC_SCHEMAS = {
   'app:navigateToCase': { args: [s_opt(s_integer({ nullable: true }))], strict: true },
   'app:checkMasterKey': { args: [], strict: true },
 
+  // ───── Cert Pinning ─────
+  'cert:getPinnedStatus': { args: [], strict: true },
+  'cert:approveNewPin': {
+    args: [
+      s_string({ minLength: 1 }),
+      s_string({ minLength: 1 })
+    ],
+    strict: true
+  },
+  'cert:resetPins': { args: [], strict: true },
+
   // ───── License ─────
   'license:check': { args: [], strict: true },
   'license:activate': {
@@ -928,14 +943,23 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       return Promise.reject(new Error(isDev ? 'Invalid channel: ' + channel : 'Invalid channel'));
     }
 
-    const argsSize = JSON.stringify(args).length;
-    if (argsSize > MAX_ARGS_SIZE) {
-      if (isDev) console.warn('Arguments too large for channel:', channel, argsSize);
-      return Promise.reject(new Error('Arguments too large'));
+    var approx = 0;
+    for (var idx = 0; idx < args.length; idx++) {
+      if (typeof args[idx] === 'string') { approx += args[idx].length * 2; }
+      else if (typeof args[idx] === 'number') { approx += 8; }
+      else if (args[idx] && args[idx].length) { approx += args[idx].length * (typeof args[idx] === 'string' ? 2 : 8); }
+      if (approx > MAX_ARGS_SIZE) {
+        if (isDev) console.warn('Arguments too large for channel:', channel);
+        return Promise.reject(new Error('Arguments too large'));
+      }
     }
 
     const now = Date.now();
     const key = channel;
+    if (rateLimits.size >= RATE_LIMIT_MAX_KEYS) {
+      var oldest = rateLimits.keys().next().value;
+      rateLimits.delete(oldest);
+    }
     if (!rateLimits.has(key)) rateLimits.set(key, []);
     const timestamps = rateLimits.get(key);
     while (timestamps.length && timestamps[0] < now - RATE_LIMIT_WINDOW) timestamps.shift();

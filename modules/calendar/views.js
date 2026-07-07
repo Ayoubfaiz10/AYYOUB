@@ -41,7 +41,7 @@ A.renderMonthView = function () {
     html += `<div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
       <div class="cal-day-num">${d.getDate()}</div>
       ${visible.map(e => `<div class="cal-day-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 20)}</div>`).join('')}
-      ${more > 0 ? `<div class="cal-day-more" data-click="click:.cal-day[data-date='${dateStr}']" data-click-stop="true">+${more} ${_t('moreEventsLabel')}</div>` : ''}
+      ${more > 0 ? `<div class="cal-day-more" data-ns="_click" data-cmd=".cal-day[data-date='${dateStr}']" data-click-stop="true">+${more} ${_t('moreEventsLabel')}</div>` : ''}
     </div>`;
   }
   A.safeSetStatic(grid, html);

@@ -3,6 +3,7 @@ const fs = require('fs');
 const fsp = fs.promises;
 const path = require('path');
 const crypto = require('crypto');
+const { Transform } = require('stream');
 const { app } = require('electron');
 
 const USER_DATA = app.getPath('userData');
@@ -10,10 +11,12 @@ const DB_PATH = path.join(USER_DATA, 'lawyer.db');
 const STORAGE_DIR = path.join(USER_DATA, 'storage', 'affaires');
 if (!fs.existsSync(STORAGE_DIR)) {
   fs.mkdirSync(STORAGE_DIR, { recursive: true });
+  try { fs.chmodSync(STORAGE_DIR, 0o700); } catch (e) {}
 }
 const BACKUP_DIR = path.join(USER_DATA, 'backups');
 if (!fs.existsSync(BACKUP_DIR)) {
   fs.mkdirSync(BACKUP_DIR, { recursive: true });
+  try { fs.chmodSync(BACKUP_DIR, 0o700); } catch (e) {}
 }
 
 let db = null;
@@ -21,11 +24,65 @@ let SQL = null;
 let _lastAutoBackup = 0;
 let _encryptionKey = null;
 const BACKUP_INTERVAL_MS = 5 * 60 * 1000;
-const DB_ENC_MAGIC = Buffer.from('LAWYER_DB_ENC', 'utf8');
+const DB_ENC_MAGIC = Buffer.from('LAWDB01', 'utf8');
+const DB_ENC_MAGIC_OLD = Buffer.from('LAWYER_DB_ENC', 'utf8');
 const DB_ENC_ALGO = 'aes-256-gcm';
+const FIELD_MAX_SIZES = {
+  notes: 100000,
+  description: 50000,
+  outcome: 50000,
+  extracted_text: 10000000,
+  summary: 50000,
+  text: 50000
+};
+function enforceSize(data) {
+  if (!data || typeof data !== 'object') return data;
+  for (var k in data) {
+    if (data.hasOwnProperty(k) && FIELD_MAX_SIZES.hasOwnProperty(k) && typeof data[k] === 'string' && data[k].length > FIELD_MAX_SIZES[k]) {
+      data[k] = data[k].slice(0, FIELD_MAX_SIZES[k]);
+    }
+  }
+  return data;
+}
 
 function setEncryptionKey(key) {
   _encryptionKey = key;
+}
+
+function createEncryptStream() {
+  if (!_encryptionKey) {
+    return new Transform({
+      transform(chunk, _, callback) {
+        this.push(chunk);
+        callback();
+      }
+    });
+  }
+  const iv = crypto.randomBytes(16);
+  const salt = crypto.randomBytes(32);
+  const key = crypto.scryptSync(_encryptionKey, salt, 32);
+  const cipher = crypto.createCipheriv(DB_ENC_ALGO, key, iv);
+  let headerWritten = false;
+  return new Transform({
+    transform(chunk, _, callback) {
+      try {
+        if (!headerWritten) {
+          this.push(Buffer.concat([DB_ENC_MAGIC, salt, iv]));
+          headerWritten = true;
+        }
+        var enc = cipher.update(Buffer.from(chunk));
+        if (enc.length) this.push(enc);
+        callback();
+      } catch (e) { callback(e); }
+    },
+    flush(callback) {
+      try {
+        this.push(cipher.final());
+        this.push(cipher.getAuthTag());
+        callback();
+      } catch (e) { callback(e); }
+    }
+  });
 }
 
 function encryptDbBuffer(buffer) {
@@ -41,8 +98,11 @@ function encryptDbBuffer(buffer) {
 
 function decryptDbBuffer(buffer) {
   if (!_encryptionKey) return buffer;
-  if (!buffer.slice(0, DB_ENC_MAGIC.length).equals(DB_ENC_MAGIC)) return buffer;
-  let offset = DB_ENC_MAGIC.length;
+  var magicLen = DB_ENC_MAGIC.length;
+  var magicOldLen = DB_ENC_MAGIC_OLD.length;
+  var usesOldMagic = buffer.length >= magicOldLen && buffer.slice(0, magicOldLen).equals(DB_ENC_MAGIC_OLD);
+  if (!buffer.slice(0, magicLen).equals(DB_ENC_MAGIC) && !usesOldMagic) return buffer;
+  var offset = usesOldMagic ? magicOldLen : magicLen;
   const salt = buffer.slice(offset, offset + 32);
   offset += 32;
   const iv = buffer.slice(offset, offset + 16);
@@ -379,92 +439,136 @@ let _savePending = false;
 function queueSave() {
   if (_savePending) return _dbWriteQueue;
   _savePending = true;
-  _dbWriteQueue = _dbWriteQueue.then(
-    () => {
+  var next = _dbWriteQueue.then(
+    function () {
       _savePending = false;
-      const err = saveDbSync();
-      if (err) throw new Error('DB write failed: ' + err.message);
+      return saveDbSync();
     },
-    () => {
+    function () {
       _savePending = false;
     }
   );
-  return _dbWriteQueue;
+  _dbWriteQueue = next.catch(function () {});
+  return next;
 }
 
 function flushWrites() {
   return _dbWriteQueue;
 }
 
-/* ─── Synchronous save: guarantees durability after every mutation ─── */
+function rotateBackups() {
+  try {
+    var files = fs.readdirSync(BACKUP_DIR).filter(function (f) { return f.endsWith('.db') && f.startsWith('auto'); })
+      .map(function (f) {
+        var s = fs.statSync(path.join(BACKUP_DIR, f));
+        var d = new Date(s.mtimeMs);
+        var pad = function (n) { return String(n).padStart(2, '0'); };
+        var dayKey = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        var temp = new Date(d.valueOf());
+        temp.setDate(temp.getDate() + 3 - ((d.getDay() + 6) % 7));
+        var jan4 = new Date(temp.getFullYear(), 0, 4);
+        var weekNum = 1 + Math.round(((temp - jan4) / 86400000 + (jan4.getDay() + 6) % 7 - 3) / 7);
+        var weekKey = temp.getFullYear() + '-W' + pad(weekNum);
+        var monthKey = d.getFullYear() + '-' + pad(d.getMonth() + 1);
+        return { name: f, mtime: s.mtimeMs, dayKey: dayKey, weekKey: weekKey, monthKey: monthKey };
+      })
+      .sort(function (a, b) { return b.mtime - a.mtime; });
+    var keep = {}, seenDays = {}, seenWeeks = {}, seenMonths = {};
+    var dailyCount = 0, weeklyCount = 0, monthlyCount = 0;
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (dailyCount < 5 && !seenDays[f.dayKey]) { seenDays[f.dayKey] = 1; dailyCount++; keep[f.name] = 1; }
+    }
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (weeklyCount < 3 && !keep[f.name] && !seenWeeks[f.weekKey]) { seenWeeks[f.weekKey] = 1; weeklyCount++; keep[f.name] = 1; }
+    }
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+      if (monthlyCount < 1 && !keep[f.name] && !seenMonths[f.monthKey]) { seenMonths[f.monthKey] = 1; monthlyCount++; keep[f.name] = 1; }
+    }
+    for (var i = 0; i < files.length; i++) {
+      if (!keep[files[i].name]) { try { fs.unlinkSync(path.join(BACKUP_DIR, files[i].name)); } catch (e) {} }
+    }
+  } catch (e) { console.error('Rotating backup error:', e.message); }
+}
+
+function autoBackup() {
+  if (!fs.existsSync(DB_PATH) || Date.now() - _lastAutoBackup <= BACKUP_INTERVAL_MS) return;
+  _lastAutoBackup = Date.now();
+  var now = new Date();
+  var pad = function (n) { return String(n).padStart(2, '0'); };
+  var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+           '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
+  var backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
+  try { fs.copyFileSync(DB_PATH, backupPath); } catch (e) { /* best effort */ }
+  rotateBackups();
+}
+
 function saveDbSync() {
   if (!db) return;
   try {
-    if (fs.existsSync(DB_PATH) && Date.now() - _lastAutoBackup > BACKUP_INTERVAL_MS) {
-      _lastAutoBackup = Date.now();
-      const now = new Date();
-      const pad = n => String(n).padStart(2, '0');
-      const ts =
-        now.getFullYear() +
-        '-' +
-        pad(now.getMonth() + 1) +
-        '-' +
-        pad(now.getDate()) +
-        '_' +
-        pad(now.getHours()) +
-        '-' +
-        pad(now.getMinutes()) +
-        '-' +
-        pad(now.getSeconds());
-      const backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
+    autoBackup();
+    var tmpPath = DB_PATH + '.tmp';
+    var data = db.export();
+    if (!_encryptionKey) {
+      fs.writeFileSync(tmpPath, Buffer.from(data), { mode: 0o600 });
+    } else {
+      var iv = crypto.randomBytes(16);
+      var salt = crypto.randomBytes(32);
+      var key = crypto.scryptSync(_encryptionKey, salt, 32);
+      var cipher = crypto.createCipheriv(DB_ENC_ALGO, key, iv);
+      var fd = fs.openSync(tmpPath, 'w', 0o600);
       try {
-        fs.copyFileSync(DB_PATH, backupPath);
-      } catch (e) {
-        /* best effort on first write */
-      }
-      try {
-        const files = fs
-          .readdirSync(BACKUP_DIR)
-          .filter(f => f.startsWith('auto_backup_') && f.endsWith('.db'))
-          .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
-          .sort((a, b) => b.mtime - a.mtime);
-        if (files.length > 5) {
-          for (const f of files.slice(5)) {
-            try {
-              fs.unlinkSync(path.join(BACKUP_DIR, f.name));
-            } catch (e) {
-              /* best effort */
-            }
-          }
+        fs.writeSync(fd, DB_ENC_MAGIC);
+        fs.writeSync(fd, salt);
+        fs.writeSync(fd, iv);
+        var chunkSize = 65536;
+        var offset = 0;
+        while (offset < data.length) {
+          var end = Math.min(offset + chunkSize, data.length);
+          var chunk = Buffer.from(data.subarray(offset, end));
+          var enc = cipher.update(chunk);
+          if (enc.length) fs.writeSync(fd, enc);
+          offset = end;
         }
+        var final = cipher.final();
+        if (final.length) fs.writeSync(fd, final);
+        fs.writeSync(fd, cipher.getAuthTag());
+        fs.closeSync(fd);
       } catch (e) {
-        console.error('Rotating backup error:', e.message);
+        fs.closeSync(fd);
+        try { fs.unlinkSync(tmpPath); } catch (e2) {}
+        throw e;
       }
     }
-    const data = db.export();
-    const buffer = encryptDbBuffer(Buffer.from(data));
-    const tmpPath = DB_PATH + '.tmp';
-    fs.writeFileSync(tmpPath, buffer);
     fs.renameSync(tmpPath, DB_PATH);
+    try { fs.chmodSync(DB_PATH, 0o600); } catch (e) {}
   } catch (err) {
-    try {
-      if (fs.existsSync(DB_PATH + '.tmp')) fs.unlinkSync(DB_PATH + '.tmp');
-    } catch {}
+    try { if (fs.existsSync(DB_PATH + '.tmp')) fs.unlinkSync(DB_PATH + '.tmp'); } catch (e) {}
     console.error('DB sync save error:', err);
     return err;
   }
 }
 
-/* ─── Tradeoff: saveDbSync writes to disk synchronously after every mutation.
-     This guarantees durability at the cost of ~5-20ms per write.
-     For a single-user desktop app this is negligible; the benefit —
-     zero data loss on crash — is far more important. ─── */
-
 async function saveDb() {
+  if (!db) return;
   try {
-    if (!db) return;
-    saveDbSync();
+    autoBackup();
+    var tmpPath = DB_PATH + '.tmp';
+    var data = db.export();
+    var source = new (require('stream').Readable)({
+      read: function () {
+        this.push(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
+        this.push(null);
+      }
+    });
+    var dest = fs.createWriteStream(tmpPath, { mode: 0o600 });
+    await require('stream/promises').pipeline(source, createEncryptStream(), dest);
+    fs.renameSync(tmpPath, DB_PATH);
+    try { fs.chmodSync(DB_PATH, 0o600); } catch (e) {}
   } catch (err) {
+    try { if (fs.existsSync(DB_PATH + '.tmp')) fs.unlinkSync(DB_PATH + '.tmp'); } catch (e) {}
     console.error('DB save error:', err);
   }
 }
@@ -577,6 +681,7 @@ function getAllCases(includeArchived = false, userId = null, userRole = null) {
 }
 
 function addCase(data) {
+  data = enforceSize(data);
   if (!data.case_number || !data.title) return { error: 'رقم القضية والعنوان مطلوبان' };
   data.case_number = String(data.case_number).trim();
   data.title = String(data.title).trim();
@@ -642,8 +747,12 @@ function getArchivedCases() {
 }
 
 function autoArchive() {
-  mutate("UPDATE cases SET archived = 1 WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days')");
-  return db.getRowsModified();
+  var stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days') LIMIT 100");
+  if (!stale.length) return 0;
+  for (var i = 0; i < stale.length; i++) {
+    db.run('UPDATE cases SET archived = 1 WHERE id = ?', [stale[i].id]);
+  }
+  return stale.length;
 }
 
 function getCasesByClient(clientId) {
@@ -699,6 +808,7 @@ function findDuplicateClient(data) {
 }
 
 function updateClient(data) {
+  data = enforceSize(data);
   const old = query('SELECT name FROM clients WHERE id = ?', [data.id]);
   if (!old.length) return null;
   return transaction(() => {
@@ -730,6 +840,7 @@ function updateClient(data) {
 }
 
 function addClient(data) {
+  data = enforceSize(data);
   if (!data.name || !String(data.name).trim()) return { error: 'اسم الموكل مطلوب' };
   data.name = String(data.name).trim();
   data.phone = data.phone ? String(data.phone).trim() : '';
@@ -953,6 +1064,7 @@ function getTask(id) {
 }
 
 function addTask(data) {
+  data = enforceSize(data);
   if (!data.title || !String(data.title).trim()) return null;
   data.title = String(data.title).trim();
   if (data.case_id && !validateRef('cases', data.case_id)) return null;
@@ -987,6 +1099,7 @@ function addTask(data) {
 }
 
 function updateTask(id, data) {
+  data = enforceSize(data);
   const allowed = [
     'title',
     'description',
@@ -1085,6 +1198,7 @@ function getComments(taskId) {
   return query('SELECT * FROM task_comments WHERE task_id = ? ORDER BY created_at ASC', [taskId]);
 }
 function addComment(data) {
+  data = enforceSize(data);
   if (!data || !data.task_id || !data.text || !String(data.text).trim()) return null;
   mutate('INSERT INTO task_comments (task_id, author, text) VALUES (?, ?, ?)', [data.task_id, data.author || 'المحامي', data.text]);
   const res = query('SELECT last_insert_rowid() as id');
@@ -1306,6 +1420,7 @@ function updateCaseStatus(id, status) {
   return true;
 }
 function updateCaseNotes(id, notes) {
+  if (typeof notes === 'string' && notes.length > FIELD_MAX_SIZES.notes) notes = notes.slice(0, FIELD_MAX_SIZES.notes);
   mutate('UPDATE cases SET notes = ? WHERE id = ?', [notes, id]);
   addLog('update_case_notes', `تحديث ملاحظات القضية #${id}`);
   syncSearchIndex(id);
@@ -1366,6 +1481,7 @@ function deleteDocument(id) {
   if (doc.length && doc[0].case_id) syncSearchIndex(doc[0].case_id);
 }
 function updateDocument(id, data) {
+  data = enforceSize(data);
   const fields = [];
   const values = [];
   for (const [key, val] of Object.entries(data)) {
@@ -1384,6 +1500,7 @@ function updateDocument(id, data) {
   }
 }
 function addDocumentText(documentId, text) {
+  if (typeof text === 'string' && text.length > FIELD_MAX_SIZES.extracted_text) text = text.slice(0, FIELD_MAX_SIZES.extracted_text);
   const existing = query('SELECT id FROM document_text WHERE document_id = ?', [documentId]);
   if (existing.length) {
     mutate("UPDATE document_text SET extracted_text = ?, indexed_at = datetime('now', 'localtime') WHERE document_id = ?", [text, documentId]);
@@ -1425,6 +1542,7 @@ function getEvent(id) {
   return rows.length ? rows[0] : null;
 }
 function addEvent(data) {
+  data = enforceSize(data);
   if (!data.title || !data.date) return null;
   if (data.case_id && !validateRef('cases', data.case_id)) return null;
   if (data.client_id && !validateRef('clients', data.client_id)) return null;
@@ -1455,6 +1573,7 @@ function addEvent(data) {
   return res.length ? res[0].id : null;
 }
 function updateEvent(id, data) {
+  data = enforceSize(data);
   const fields = [];
   const values = [];
   const allowed = [
@@ -1573,6 +1692,8 @@ function cleanOldSentNotifications() {
   db.run("DELETE FROM sent_notifications WHERE datetime(sent_at) < datetime('now', '-30 days')");
 }
 
+var WINDOWS_RESERVED_FILE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\$|\.)/i;
+
 function cleanOrphanedFiles() {
   const docPaths = new Set(query("SELECT file_path FROM documents WHERE file_path IS NOT NULL AND file_path != ''").map(r => path.resolve(r.file_path)));
   let deletedCount = 0;
@@ -1585,6 +1706,7 @@ function cleanOrphanedFiles() {
       return;
     }
     for (const entry of entries) {
+      if (WINDOWS_RESERVED_FILE.test(entry.name) || entry.name.startsWith('..')) continue;
       const fullPath = path.join(dir, entry.name);
       if (entry.isDirectory()) {
         walk(fullPath);
@@ -1784,6 +1906,7 @@ function getProcedures(affaireId) {
   return query('SELECT * FROM procedures WHERE affaire_id = ? ORDER BY date DESC, id DESC', [affaireId]);
 }
 function addProcedure(data) {
+  data = enforceSize(data);
   if (!data.affaire_id || !data.date || !data.type) return null;
   if (!validateRef('cases', data.affaire_id)) return null;
   mutate('INSERT INTO procedures (affaire_id, date, type, description) VALUES (?, ?, ?, ?)', [data.affaire_id, data.date, data.type, data.description]);
@@ -1791,6 +1914,7 @@ function addProcedure(data) {
   return res.length ? res[0].id : null;
 }
 function updateProcedure(id, data) {
+  data = enforceSize(data);
   if (!id || typeof id !== 'number') return;
   if (!query('SELECT id FROM procedures WHERE id = ?', [id]).length) return;
   if (!data.date || !data.type) return;
@@ -1916,6 +2040,7 @@ function deleteJugement(id) {
 }
 
 function addCommunication(data) {
+  data = enforceSize(data);
   if (!data.type || !data.date) return null;
   if (data.client_id && !validateRef('clients', data.client_id)) return null;
   if (data.case_id && !validateRef('cases', data.case_id)) return null;
@@ -2182,22 +2307,7 @@ function createBackup(reason) {
   const filepath = path.join(BACKUP_DIR, filename);
   fs.writeFileSync(filepath, buffer);
   mutate('UPDATE backup_settings SET last_backup_at = ? WHERE id = 1', [now.toISOString()]);
-  const settings = getBackupSettings();
-  const maxKeep = settings.keep_count || 30;
-  const allAutoFiles = fs
-    .readdirSync(BACKUP_DIR)
-    .filter(f => f.endsWith('.db') && isAutoBackup(f))
-    .map(f => ({ name: f, mtime: fs.statSync(path.join(BACKUP_DIR, f)).mtimeMs }))
-    .sort((a, b) => b.mtime - a.mtime);
-  if (allAutoFiles.length > maxKeep) {
-    allAutoFiles.slice(maxKeep).forEach(f => {
-      try {
-        fs.unlinkSync(path.join(BACKUP_DIR, f.name));
-      } catch (e) {
-        /* best effort */
-      }
-    });
-  }
+  rotateBackups();
   return filename;
 }
 
@@ -2253,15 +2363,21 @@ function exportTableCSV(tableName) {
 }
 
 function validateBackupFile(filename) {
-  if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const safeName = path.basename(filename);
-  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = safeBackupName(filename);
   const filepath = path.join(BACKUP_DIR, safeName);
   if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
   const stat = fs.statSync(filepath);
   if (stat.size === 0) throw new Error('الملف فارغ / Fichier vide');
-  if (stat.size > 100 * 1024 * 1024) throw new Error('الملف كبير جداً / Fichier trop volumineux');
+  if (stat.size > 500 * 1024 * 1024) throw new Error('الملف كبير جداً / Fichier trop volumineux');
+  var fd = fs.openSync(filepath, 'r');
+  var header = Buffer.alloc(8);
+  fs.readSync(fd, header, 0, 8, 0);
+  fs.closeSync(fd);
+  var magicStr = header.toString('utf8');
+  if (magicStr !== 'LAWDB01' && !header.slice(0, DB_ENC_MAGIC_OLD.length).equals(DB_ENC_MAGIC_OLD)) {
+    throw new Error('صيغة غير معروفة / Format inconnu');
+  }
   const buffer = decryptDbBuffer(fs.readFileSync(filepath));
   try {
     const testDb = new SQL.Database(buffer);
@@ -2278,10 +2394,21 @@ function validateBackupFile(filename) {
   }
 }
 
+var WINDOWS_RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
+
+function safeBackupName(name) {
+  if (typeof name !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  if (name.includes('\0') || name.includes(':')) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  var base = path.basename(name);
+  if (base !== name) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  if (WINDOWS_RESERVED.test(base)) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  if (name.length > 255) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  return base;
+}
+
 function deleteBackupFile(filename) {
   if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const safeName = path.basename(filename);
-  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = safeBackupName(filename);
   const filepath = path.join(BACKUP_DIR, safeName);
   if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
@@ -2297,9 +2424,7 @@ function deleteBackupFile(filename) {
 }
 
 function restoreFromBackup(filename) {
-  if (!filename || typeof filename !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  const safeName = path.basename(filename);
-  if (safeName !== filename) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
+  const safeName = safeBackupName(filename);
   const filepath = path.join(BACKUP_DIR, safeName);
   if (path.resolve(filepath) !== filepath) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (!fs.existsSync(filepath)) throw new Error('الملف غير موجود / Fichier introuvable');
@@ -2319,7 +2444,7 @@ function exportFullArchive() {
   const ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) + '_' + pad(now.getHours()) + '-' + pad(now.getMinutes());
   const filename = 'archive_' + ts + '.db';
   const filepath = path.join(BACKUP_DIR, filename);
-  fs.writeFileSync(filepath, buffer);
+  fs.writeFileSync(filepath, buffer, { mode: 0o600 });
   const meta = {
     timestamp: now.toISOString(),
     version: '2.0',
@@ -2355,6 +2480,8 @@ function revokeToken(jti, expiry) {
   if (!jti || typeof jti !== 'string') return;
   try {
     query('INSERT OR IGNORE INTO revoked_tokens (jti, expiry) VALUES (?, ?)', [jti, expiry]);
+    query("DELETE FROM revoked_tokens WHERE jti NOT IN (SELECT jti FROM revoked_tokens ORDER BY expiry DESC LIMIT 10000)");
+    cleanExpiredRevokedTokens();
     queueSave();
   } catch (e) {
     console.error('revokeToken error:', e);
@@ -2374,6 +2501,10 @@ function isTokenRevoked(jti) {
 function cleanExpiredRevokedTokens() {
   try {
     query('DELETE FROM revoked_tokens WHERE expiry < ?', [Date.now()]);
+    var count = query('SELECT COUNT(*) as c FROM revoked_tokens');
+    if (count && count[0] && count[0].c > 10000) {
+      mutate('DELETE FROM revoked_tokens WHERE rowid IN (SELECT rowid FROM revoked_tokens ORDER BY expiry ASC LIMIT ' + (count[0].c - 10000) + ')');
+    }
   } catch (e) {
     console.error('cleanExpiredRevokedTokens error:', e);
   }

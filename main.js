@@ -21,12 +21,94 @@ if (!process.env.MASTER_KEY) {
 }
 
 /* ─── Path security: prevent directory traversal ─── */
+const PATH_CACHE = new Map();
+
+function cachedRealpath(p) {
+  if (PATH_CACHE.has(p)) return PATH_CACHE.get(p);
+  var r = fs.realpathSync(p);
+  if (PATH_CACHE.size > 1024) PATH_CACHE.clear();
+  PATH_CACHE.set(p, r);
+  return r;
+}
+
 function isPathSafe(targetPath, allowedBase) {
   try {
-    var resolved = fs.realpathSync(path.resolve(targetPath));
-    var base = fs.realpathSync(path.resolve(allowedBase));
+    var resolved = cachedRealpath(path.resolve(targetPath));
+    var base = cachedRealpath(path.resolve(allowedBase));
     return resolved === base || resolved.startsWith(base + path.sep);
   } catch (e) { return false; }
+}
+
+/* ─── TLS Certificate Pinning for AI providers ─── */
+const PINNED_DOMAINS = ['api.groq.com', 'api.openai.com', 'api.anthropic.com', 'generativelanguage.googleapis.com'];
+var PINNED_CERTS_PATH = null;
+
+function getPinnedCertsPath() {
+  if (!PINNED_CERTS_PATH) PINNED_CERTS_PATH = path.join(app.getPath('userData'), 'storage', 'pinned_certs.json');
+  return PINNED_CERTS_PATH;
+}
+
+function loadPinnedCerts() {
+  try {
+    var p = getPinnedCertsPath();
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) { /* ignore */ }
+  return {};
+}
+
+function savePinnedCerts(pins) {
+  try {
+    var p = getPinnedCertsPath();
+    var dir = path.dirname(p);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(p, JSON.stringify(pins, null, 2), { mode: 0o600 });
+  } catch (e) { /* ignore */ }
+}
+
+function loadPendingPinApprovals() {
+  try {
+    var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+    if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
+  } catch (e) { /* ignore */ }
+  return {};
+}
+
+function savePendingPinApprovals(pending) {
+  try {
+    var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+    var dir = path.dirname(p);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(p, JSON.stringify(pending, null, 2), { mode: 0o600 });
+  } catch (e) { /* ignore */ }
+}
+
+function setupCertPinning() {
+  var pinnedCerts = loadPinnedCerts();
+  var pendingPins = loadPendingPinApprovals();
+  session.defaultSession.setCertificateVerifyProc(function (req, cb) {
+    if (PINNED_DOMAINS.indexOf(req.hostname) === -1) { cb(0); return; }
+    var fingerprint = req.certificate && req.certificate.fingerprint;
+    if (!fingerprint) { cb(0); return; }
+    var expected = pinnedCerts[req.hostname];
+    if (!expected) {
+      pinnedCerts[req.hostname] = fingerprint;
+      savePinnedCerts(pinnedCerts);
+      cb(0);
+    } else if (expected === fingerprint) {
+      cb(0);
+    } else if (pendingPins[req.hostname] === fingerprint) {
+      pinnedCerts[req.hostname] = fingerprint;
+      savePinnedCerts(pinnedCerts);
+      delete pendingPins[req.hostname];
+      savePendingPinApprovals(pendingPins);
+      cb(0);
+    } else {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('cert:pinChanged', { hostname: req.hostname, oldFingerprint: expected, newFingerprint: fingerprint });
+      }
+      cb(-2);
+    }
+  });
 }
 
 /* ─── Upload source path validation ─── */
@@ -102,6 +184,23 @@ function formatFileSize(bytes) {
   return size.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
 }
 
+function nullGuard(obj, defaults = {}) {
+  if (obj == null) return { ...defaults };
+  for (const k of Object.keys(defaults)) {
+    if (obj[k] === null || obj[k] === undefined) obj[k] = defaults[k];
+  }
+  return obj;
+}
+
+function safeStrEq(a, b) {
+  try {
+    const ab = Buffer.from(String(a), 'utf8');
+    const bb = Buffer.from(String(b), 'utf8');
+    if (ab.length !== bb.length) return false;
+    return crypto.timingSafeEqual(ab, bb);
+  } catch { return false; }
+}
+
 const CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'window_config.json');
 
 function loadWindowState() {
@@ -116,8 +215,8 @@ function loadWindowState() {
 function saveWindowState(state) {
   try {
     const dir = path.dirname(CONFIG_PATH);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(state));
+    if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); try { fs.chmodSync(dir, 0o700); } catch (e) {} }
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(state), { mode: 0o600 });
   } catch (e) { console.warn('Failed to save window state:', e.message); }
 }
 
@@ -181,8 +280,8 @@ function getLicense() {
 
 function saveLicense(data) {
   const dir = path.dirname(LICENSE_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(LICENSE_PATH, JSON.stringify(data, null, 2));
+  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); try { fs.chmodSync(dir, 0o700); } catch (e) {} }
+  fs.writeFileSync(LICENSE_PATH, JSON.stringify(data, null, 2), { mode: 0o600 });
 }
 
 function getMachineId() {
@@ -382,7 +481,8 @@ function createWindow() {
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; script-src 'self'; connect-src " + connectSrc.join(' ') + "; base-uri 'none'; form-action 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'"]
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com; style-src-attr 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; media-src 'self' blob:; connect-src " + connectSrc.join(' ') + "; base-uri 'none'; form-action 'self'; object-src 'none'; frame-src 'none'; worker-src 'none'; frame-ancestors 'none'; manifest-src 'self'"],
+        'Strict-Transport-Security': ['max-age=31536000; includeSubDomains']
       }
     });
   });
@@ -464,41 +564,43 @@ function wrapDbCall(name, fn) {
     try {
       return fn(...args);
     } catch (err) {
-      logToLogger(2, 'db:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
+      var msg = err.message || String(err);
+      var sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
+      logToLogger(2, 'db:' + name, sanitized, { stack: (err.stack || '').slice(0, 300) });
       throw err;
     }
   };
 }
 
-// ─── Safe IPC helper: catches errors, logs them, returns structured response ───
-function safeIpc(name, fn) {
+// ─── Protected IPC: auth check + error handling at the ipcMain.handle level ───
+function protectedIpc(name, handler) {
   return async (event, ...args) => {
-    if (!name.startsWith('auth:') && !name.startsWith('app:') && !name.startsWith('notif:') && !currentUser) {
+    if (!currentUser && !name.startsWith('auth:') && !name.startsWith('app:') && !name.startsWith('notif:')) {
       return { error: 'Unauthorized: الرجاء تسجيل الدخول أولاً' };
     }
     try {
-      return await fn(event, ...args);
+      return await handler(event, ...args);
     } catch (err) {
-      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
+      var msg = err.message || String(err);
+      var sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
+      logToLogger(2, 'ipc:' + name, sanitized, { stack: (err.stack || '').slice(0, 300) });
       return { error: 'حدث خطأ داخلي. الرجاء المحاولة مرة أخرى' };
     }
   };
 }
 
-// ─── Mutate IPC helper: same as safeIpc but also persists DB after every mutation ───
-function mutateIpc(name, fn) {
-  return async (event, ...args) => {
-    if (!name.startsWith('auth:') && !currentUser) {
-      return { error: 'Unauthorized: الرجاء تسجيل الدخول أولاً' };
-    }
-    try {
-      const result = await fn(event, ...args);
-      return result;
-    } catch (err) {
-      logToLogger(2, 'ipc:' + name, err.message || String(err), { stack: (err.stack || '').slice(0, 300) });
-      return { error: 'حدث خطأ داخلي. الرجاء المحاولة مرة أخرى' };
-    }
-  };
+// ─── Safe IPC helper: register handler through protectedIpc ───
+function safeIpc(name, handler) {
+  ipcMain.handle(name, protectedIpc(name, handler));
+}
+
+// ─── Mutate IPC helper: like safeIpc but persists DB after every mutation ───
+function mutateIpc(name, handler) {
+  ipcMain.handle(name, protectedIpc(name, async (event, ...args) => {
+    const result = await handler(event, ...args);
+    db.flushWrites().catch(e => logToLogger(2, 'flush:' + name, e.message));
+    return result;
+  }));
 }
 
 async function init() {
@@ -523,22 +625,17 @@ async function init() {
   const archived = db.autoArchive();
   if (archived > 0) console.log(`Auto-archived ${archived} closed cases`);
 
-  function nullGuard(obj, defaults) {
-    if (obj === null || obj === undefined) return defaults || {};
-    return obj;
-  }
-
   // ─── DB IPC Handlers ───
 
-  ipcMain.handle('db:getAllCases', safeIpc('getAllCases', withPerm('view_case')(() => db.getAllCases(false, currentUser?.id, currentUser?.role))));
-  ipcMain.handle('db:addCase', mutateIpc('addCase', withPerm('edit_case')(async (_e, data) => {
+  safeIpc('db:getAllCases', withPerm('view_case')(() => db.getAllCases(false, currentUser?.id, currentUser?.role)));
+  mutateIpc('db:addCase', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addCase(data);
     if (result && result.id) db.addLog('add_case', `إضافة قضية ${data.case_number || ''} - ${data.title || ''}`);
     await db.flushWrites();
     return result;
-  })));
-  ipcMain.handle('db:deleteCase', mutateIpc('deleteCase', withPerm('delete_case')(async (_e, id) => {
+  }));
+  mutateIpc('db:deleteCase', withPerm('delete_case')(async (_e, id) => {
     if (id == null) return;
 
     // 0. Auto-backup before deletion
@@ -565,66 +662,66 @@ async function init() {
     }
 
     db.addLog('delete_case', `حذف قضية ${c ? c.case_number : '#' + id} مع جميع ملفاتها`);
-  })));
-  ipcMain.handle('db:getCasesByClient', safeIpc('getCasesByClient', withPerm('view_case')((_e, clientId) => db.getCasesByClient(clientId))));
-  ipcMain.handle('db:getAllClients', safeIpc('getAllClients', withPerm('view_case')(() => db.getAllClients())));
-  ipcMain.handle('db:addClient', mutateIpc('addClient', withPerm('edit_case')(async (_e, data) => {
+  }));
+  safeIpc('db:getCasesByClient', withPerm('view_case')((_e, clientId) => db.getCasesByClient(clientId)));
+  safeIpc('db:getAllClients', withPerm('view_case')(() => db.getAllClients()));
+  mutateIpc('db:addClient', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const result = db.addClient(data);
     if (result && result.id) db.addLog('add_client', `إضافة موكل ${data.name || ''}`);
     await db.flushWrites();
     return result;
-  })));
-  ipcMain.handle('db:deleteClient', mutateIpc('deleteClient', withPerm('edit_case')(async (_e, id) => {
+  }));
+  mutateIpc('db:deleteClient', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
     db.createBackup('before_delete_client');
     const c = db.getAllClients().find(x => x.id === id);
     await db.deleteClient(id);
     db.addLog('delete_client', `حذف موكل ${c ? c.name : '#' + id}`);
     await db.flushWrites();
-  })));
-  ipcMain.handle('db:getAllTasks', safeIpc('getAllTasks', withPerm('manage_tasks')((_e, includeArchived) => db.getAllTasks(includeArchived))));
-  ipcMain.handle('db:getTask', safeIpc('getTask', withPerm('manage_tasks')((_e, id) => db.getTask(id))));
-  ipcMain.handle('db:addTask', mutateIpc('addTask', withPerm('manage_tasks')(async (_e, data) => {
+  }));
+  safeIpc('db:getAllTasks', withPerm('manage_tasks')((_e, includeArchived) => db.getAllTasks(includeArchived)));
+  safeIpc('db:getTask', withPerm('manage_tasks')((_e, id) => db.getTask(id)));
+  mutateIpc('db:addTask', withPerm('manage_tasks')(async (_e, data) => {
     data = nullGuard(data);
     if (data.case_id && !db.validateRef('cases', data.case_id)) return { error: 'القضية غير موجودة' };
     const id = db.addTask(data);
     await db.flushWrites();
     return { id };
-  })));
-  ipcMain.handle('db:updateTask', mutateIpc('updateTask', withPerm('manage_tasks')(async (_e, id, data) => db.updateTask(id, data))));
-  ipcMain.handle('db:deleteTask', mutateIpc('deleteTask', withPerm('manage_tasks')(async (_e, id) => db.deleteTask(id))));
-  ipcMain.handle('db:getSubtasks', safeIpc('getSubtasks', withPerm('manage_tasks')((_e, taskId) => db.getSubtasks(taskId))));
-  ipcMain.handle('db:addSubtask', mutateIpc('addSubtask', withPerm('manage_tasks')(async (_e, data) => db.addSubtask(nullGuard(data)))));
-  ipcMain.handle('db:toggleSubtask', mutateIpc('toggleSubtask', withPerm('manage_tasks')(async (_e, id) => db.toggleSubtask(id))));
-  ipcMain.handle('db:deleteSubtask', mutateIpc('deleteSubtask', withPerm('manage_tasks')(async (_e, id) => db.deleteSubtask(id))));
-  ipcMain.handle('db:getComments', safeIpc('getComments', withPerm('manage_tasks')((_e, taskId) => db.getComments(taskId))));
-  ipcMain.handle('db:addComment', mutateIpc('addComment', withPerm('manage_tasks')(async (_e, data) => db.addComment(nullGuard(data)))));
-  ipcMain.handle('db:getAllWorkflows', safeIpc('getAllWorkflows', withPerm('manage_tasks')(() => db.getAllWorkflows())));
-  ipcMain.handle('db:addWorkflow', mutateIpc('addWorkflow', withPerm('manage_tasks')(async (_e, data) => db.addWorkflow(nullGuard(data)))));
-  ipcMain.handle('db:applyWorkflow', mutateIpc('applyWorkflow', withPerm('manage_tasks')(async (_e, args) => {
+  }));
+  mutateIpc('db:updateTask', withPerm('manage_tasks')(async (_e, id, data) => db.updateTask(id, data)));
+  mutateIpc('db:deleteTask', withPerm('manage_tasks')(async (_e, id) => db.deleteTask(id)));
+  safeIpc('db:getSubtasks', withPerm('manage_tasks')((_e, taskId) => db.getSubtasks(taskId)));
+  mutateIpc('db:addSubtask', withPerm('manage_tasks')(async (_e, data) => db.addSubtask(nullGuard(data))));
+  mutateIpc('db:toggleSubtask', withPerm('manage_tasks')(async (_e, id) => db.toggleSubtask(id)));
+  mutateIpc('db:deleteSubtask', withPerm('manage_tasks')(async (_e, id) => db.deleteSubtask(id)));
+  safeIpc('db:getComments', withPerm('manage_tasks')((_e, taskId) => db.getComments(taskId)));
+  mutateIpc('db:addComment', withPerm('manage_tasks')(async (_e, data) => db.addComment(nullGuard(data))));
+  safeIpc('db:getAllWorkflows', withPerm('manage_tasks')(() => db.getAllWorkflows()));
+  mutateIpc('db:addWorkflow', withPerm('manage_tasks')(async (_e, data) => db.addWorkflow(nullGuard(data))));
+  mutateIpc('db:applyWorkflow', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, workflowId } = nullGuard(args);
     return db.applyWorkflow(caseId, workflowId);
-  })));
-  ipcMain.handle('db:deleteWorkflow', mutateIpc('deleteWorkflow', withPerm('manage_tasks')(async (_e, id) => db.deleteWorkflow(id))));
-  ipcMain.handle('db:getAllTemplates', safeIpc('getAllTemplates', withPerm('manage_tasks')(() => db.getAllTemplates())));
-  ipcMain.handle('db:addTemplate', mutateIpc('addTemplate', withPerm('manage_tasks')(async (_e, data) => db.addTemplate(nullGuard(data)))));
-  ipcMain.handle('db:applyTemplate', mutateIpc('applyTemplate', withPerm('manage_tasks')(async (_e, args) => {
+  }));
+  mutateIpc('db:deleteWorkflow', withPerm('manage_tasks')(async (_e, id) => db.deleteWorkflow(id)));
+  safeIpc('db:getAllTemplates', withPerm('manage_tasks')(() => db.getAllTemplates()));
+  mutateIpc('db:addTemplate', withPerm('manage_tasks')(async (_e, data) => db.addTemplate(nullGuard(data))));
+  mutateIpc('db:applyTemplate', withPerm('manage_tasks')(async (_e, args) => {
     const { caseId, templateId } = nullGuard(args);
     return db.applyTemplate(caseId, templateId);
-  })));
-  ipcMain.handle('db:deleteTemplate', mutateIpc('deleteTemplate', withPerm('manage_tasks')(async (_e, id) => {
+  }));
+  mutateIpc('db:deleteTemplate', withPerm('manage_tasks')(async (_e, id) => {
     if (id == null) return { ok: false, error: 'معرف القالب مطلوب' };
     db.deleteTemplate(id);
     db.addLog('delete_template', `حذف قالب #${id}`);
     return { ok: true };
-  })));
-  ipcMain.handle('db:getTaskAnalytics', safeIpc('getTaskAnalytics', withPerm('manage_tasks')(() => db.getTaskAnalytics())));
-  ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', withPerm('view_case')(() => db.getDashboardStats())));
-  ipcMain.handle('db:getDashboardExtendedStats', safeIpc('getDashboardExtendedStats', withPerm('view_case')(() => db.getDashboardExtendedStats())));
-  ipcMain.handle('db:getDocuments', safeIpc('getDocuments', withPerm('view_case')((_e, caseId) => db.getDocuments(caseId))));
-  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', withPerm('view_case')(() => db.getAllDocuments(currentUser?.id, currentUser?.role))));
-  ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
+  }));
+  safeIpc('db:getTaskAnalytics', withPerm('manage_tasks')(() => db.getTaskAnalytics()));
+  safeIpc('db:getDashboardStats', withPerm('view_case')(() => db.getDashboardStats()));
+  safeIpc('db:getDashboardExtendedStats', withPerm('view_case')(() => db.getDashboardExtendedStats()));
+  safeIpc('db:getDocuments', withPerm('view_case')((_e, caseId) => db.getDocuments(caseId)));
+  safeIpc('db:getAllDocuments', withPerm('view_case')(() => db.getAllDocuments(currentUser?.id, currentUser?.role)));
+  mutateIpc('db:uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'مسار الملف مطلوب' };
     if (!isAllowedUploadSource(sourcePath)) return { error: 'مسار الملف غير مصرح به' };
@@ -643,8 +740,8 @@ async function init() {
     setTimeout(() => indexDocument(docId), 100);
     db.addLog('upload_document', `رفع وثيقة ${path.basename(finalPath)} للقضية #${caseId} (${docType})`);
     return docId;
-  })));
-  ipcMain.handle('db:selectAndUpload', mutateIpc('selectAndUpload', withPerm('upload_doc')(async (_e, args) => {
+  }));
+  mutateIpc('db:selectAndUpload', withPerm('upload_doc')(async (_e, args) => {
     const { caseId, docType, tags } = nullGuard(args);
     if (!db.validateRef('cases', caseId)) return { error: 'القضية غير موجودة' };
     const result = await dialog.showOpenDialog(mainWindow, {
@@ -678,18 +775,24 @@ async function init() {
       } catch (e) { console.error('Upload error:', sourcePath, e.message); }
     }
     return uploaded.length ? uploaded : null;
-  })));
-  ipcMain.handle('db:globalSearch', safeIpc('globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : '', currentUser?.id, currentUser?.role))));
-  ipcMain.handle('db:getSearchIndex', safeIpc('getSearchIndex', withPerm('view_case')(() => db.getSearchIndex(currentUser?.id, currentUser?.role))));
-  ipcMain.handle('db:rebuildSearchIndex', mutateIpc('rebuildSearchIndex', withPerm('manage_users')(async () => { db.rebuildSearchIndex(); db.addLog('rebuild_search', 'إعادة بناء فهرس البحث'); })));
-  ipcMain.handle('db:openDocument', safeIpc('openDocument', withPerm('view_case')(async (_e, docId) => {
+  }));
+  safeIpc('db:globalSearch', withPerm('view_case')((_e, queryTerm) => db.globalSearch(typeof queryTerm === 'string' ? queryTerm : '', currentUser?.id, currentUser?.role)));
+  safeIpc('db:getSearchIndex', withPerm('view_case')(() => db.getSearchIndex(currentUser?.id, currentUser?.role)));
+  mutateIpc('db:rebuildSearchIndex', withPerm('manage_users')(async () => { db.rebuildSearchIndex(); db.addLog('rebuild_search', 'إعادة بناء فهرس البحث'); }));
+  safeIpc('db:openDocument', withPerm('view_case')(async (_e, docId) => {
     if (docId == null) return;
     try {
+      const SAFE_EXTS = new Set(['.pdf', '.docx', '.jpg', '.jpeg', '.png', '.txt', '.doc']);
       const doc = db.getDocument(docId);
-      if (doc && doc.file_path && fs.existsSync(doc.file_path) && isPathSafe(doc.file_path, db.STORAGE_DIR)) shell.openPath(doc.file_path);
+      if (doc && doc.file_path && fs.existsSync(doc.file_path) && isPathSafe(doc.file_path, db.STORAGE_DIR)) {
+        var ext = path.extname(doc.file_path).toLowerCase();
+        if (!SAFE_EXTS.has(ext)) return { error: 'نوع ملف غير مسموح / Type de fichier non autorisé' };
+        var current = fs.realpathSync(doc.file_path);
+        shell.openPath(current);
+      }
     } catch (e) { logToLogger(2, 'openDocument', e.message); }
-  })));
-  ipcMain.handle('db:downloadDocument', safeIpc('downloadDocument', withPerm('view_case')(async (_e, docId) => {
+  }));
+  safeIpc('db:downloadDocument', withPerm('view_case')(async (_e, docId) => {
     if (docId == null) return;
     try {
       const doc = db.getDocument(docId);
@@ -702,14 +805,14 @@ async function init() {
         return { ok: true };
       }
     } catch (e) { logToLogger(2, 'downloadDocument', e.message); return { error: e.message }; }
-  })));
-  ipcMain.handle('db:updateDocNotes', mutateIpc('updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
+  }));
+  mutateIpc('db:updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
     const { id, notes } = nullGuard(args);
     if (id == null) return;
     db.updateDocument(id, { notes: notes || '' });
     db.addLog('update_doc_notes', `تحديث ملاحظات الوثيقة #${id}`);
-  })));
-  ipcMain.handle('db:deleteDocument', mutateIpc('deleteDocument', withPerm('delete_document')(async (_e, id) => {
+  }));
+  mutateIpc('db:deleteDocument', withPerm('delete_document')(async (_e, id) => {
     if (id == null) return { ok: false, error: 'معرف الوثيقة مطلوب' };
     const doc = db.getDocument(id);
     if (!doc) return { ok: false, error: 'الوثيقة غير موجودة' };
@@ -719,134 +822,143 @@ async function init() {
     db.deleteDocument(id);
     db.addLog('delete_document', `حذف وثيقة ${doc.filename || '#' + id}`);
     return { ok: true };
-  })));
-  ipcMain.handle('db:getProcedures', safeIpc('getProcedures', withPerm('view_case')((_e, affaireId) => db.getProcedures(affaireId))));
-  ipcMain.handle('db:addProcedure', mutateIpc('addProcedure', withPerm('edit_case')(async (_e, data) => {
+  }));
+  safeIpc('db:getProcedures', withPerm('view_case')((_e, affaireId) => db.getProcedures(affaireId)));
+  mutateIpc('db:addProcedure', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
     const id = db.addProcedure(data);
     db.addLog('add_procedure', `إضافة إجراء للقضية #${data.affaire_id}: ${data.type || ''} - ${data.date || ''}`);
     return { id };
-  })));
-  ipcMain.handle('db:getPaiements', safeIpc('getPaiements', withPerm('view_finance')((_e, affaireId) => db.getPaiements(affaireId))));
-  ipcMain.handle('db:addPaiement', mutateIpc('addPaiement', withPerm('view_finance')(async (_e, data) => {
+  }));
+  safeIpc('db:getPaiements', withPerm('view_finance')((_e, affaireId) => db.getPaiements(affaireId)));
+  mutateIpc('db:addPaiement', withPerm('view_finance')(async (_e, data) => {
     data = nullGuard(data);
     if (!db.validateRef('cases', data.affaire_id)) return { error: 'القضية غير موجودة' };
     const id = db.addPaiement(data);
     db.addLog('add_paiement', `إضافة دفعة ${data.montant || 0} درهم للقضية #${data.affaire_id}`);
     return { id };
-  })));
-  ipcMain.handle('db:updateHonorairesTotaux', mutateIpc('updateHonorairesTotaux', withPerm('view_finance')(async (_e, data) => {
+  }));
+  mutateIpc('db:updateHonorairesTotaux', withPerm('view_finance')(async (_e, data) => {
     data = nullGuard(data);
     if (data.caseId == null || data.montant === undefined) return { error: 'caseId و montant مطلوبان' };
     if (!db.validateRef('cases', data.caseId)) return { error: 'القضية غير موجودة' };
     db.updateHonorairesTotaux(data.caseId, parseFloat(data.montant) || 0);
     db.addLog('update_honoraires', `تحديث مجموع الأتعاب للقضية #${data.caseId}: ${data.montant} درهم`);
     return { ok: true };
-  })));
-  ipcMain.handle('db:getChartData', safeIpc('getChartData', withPerm('view_finance')(() => db.getChartData())));
-  ipcMain.handle('db:archiveCase', mutateIpc('archiveCase', withPerm('edit_case')(async (_e, id) => {
+  }));
+  safeIpc('db:getChartData', withPerm('view_finance')(() => db.getChartData()));
+  mutateIpc('db:archiveCase', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
     db.createBackup('before_archive_case');
     db.archiveCase(id);
-  })));
-  ipcMain.handle('db:unarchiveCase', mutateIpc('unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); })));
-  ipcMain.handle('db:archiveClient', mutateIpc('archiveClient', withPerm('edit_case')(async (_e, id) => {
+  }));
+  mutateIpc('db:unarchiveCase', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveCase(id); }));
+  mutateIpc('db:archiveClient', withPerm('edit_case')(async (_e, id) => {
     if (id == null) return;
     db.createBackup('before_archive_client');
     db.archiveClient(id);
-  })));
-  ipcMain.handle('db:unarchiveClient', mutateIpc('unarchiveClient', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveClient(id); })));
-  ipcMain.handle('db:updateCaseStatus', mutateIpc('updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
+  }));
+  mutateIpc('db:unarchiveClient', withPerm('edit_case')(async (_e, id) => { if (id != null) db.unarchiveClient(id); }));
+  mutateIpc('db:updateCaseStatus', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null && data.status) {
       db.updateCaseStatus(data.id, data.status);
       await db.flushWrites();
     }
-  })));
-  ipcMain.handle('db:updateCaseNotes', mutateIpc('updateCaseNotes', withPerm('edit_case')(async (_e, data) => {
+  }));
+  mutateIpc('db:updateCaseNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) {
       db.updateCaseNotes(data.id, data.notes || '');
       await db.flushWrites();
     }
-  })));
-  ipcMain.handle('db:getArchivedCases', safeIpc('getArchivedCases', withPerm('view_case')(() => db.getAllCases(true, currentUser?.id, currentUser?.role).filter(c => c.archived === 1))));
-  ipcMain.handle('db:addCommunication', mutateIpc('addCommunication', withPerm('edit_case')(async (_e, data) => {
+  }));
+  safeIpc('db:getArchivedCases', withPerm('view_case')(() => db.getAllCases(true, currentUser?.id, currentUser?.role).filter(c => c.archived === 1)));
+  mutateIpc('db:addCommunication', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     const id = db.addCommunication(data);
     db.addLog('add_communication', `تسجيل اتصال مع الموكل #${data.client_id} - ${data.type || ''}`);
     return id;
-  })));
-  ipcMain.handle('db:getClientCommunications', safeIpc('getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId))));
-  ipcMain.handle('db:getAllCommunications', safeIpc('getAllCommunications', withPerm('view_case')(() => db.getAllCommunications(currentUser?.id, currentUser?.role))));
-  ipcMain.handle('db:updateClientNotes', mutateIpc('updateClientNotes', withPerm('edit_case')(async (_e, data) => {
+  }));
+  safeIpc('db:getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId)));
+  safeIpc('db:getAllCommunications', withPerm('view_case')(() => db.getAllCommunications(currentUser?.id, currentUser?.role)));
+  mutateIpc('db:updateClientNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateClient(data);
-  })));
-  ipcMain.handle('db:getTodayProcedures', safeIpc('getTodayProcedures', withPerm('view_case')(() => db.getTodayProcedures())));
-  ipcMain.handle('db:getAlertSettings', safeIpc('getAlertSettings', withPerm('manage_users')(() => db.getAlertSettings())));
-  ipcMain.handle('db:updateAlertSettings', mutateIpc('updateAlertSettings', withPerm('manage_users')(async (_e, data) => {
+  }));
+  safeIpc('db:getTodayProcedures', withPerm('view_case')(() => db.getTodayProcedures()));
+  safeIpc('db:getAlertSettings', withPerm('manage_users')(() => db.getAlertSettings()));
+  mutateIpc('db:updateAlertSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateAlertSettings(nullGuard(data));
     db.addLog('update_alert_settings', `تعديل إعدادات التنبيهات`);
-  })));
-  ipcMain.handle('db:getUpcomingDeadlines', safeIpc('getUpcomingDeadlines', withPerm('view_case')(() => db.getUpcomingDeadlines())));
-  ipcMain.handle('db:getUpcomingHearings', safeIpc('getUpcomingHearings', withPerm('view_case')(() => db.getUpcomingHearings())));
-  ipcMain.handle('db:getBackupSettings', safeIpc('getBackupSettings', withPerm('manage_users')(() => db.getBackupSettings())));
-  ipcMain.handle('db:updateBackupSettings', mutateIpc('updateBackupSettings', withPerm('manage_users')(async (_e, data) => {
+  }));
+  safeIpc('db:getUpcomingDeadlines', withPerm('view_case')(() => db.getUpcomingDeadlines()));
+  safeIpc('db:getUpcomingHearings', withPerm('view_case')(() => db.getUpcomingHearings()));
+  safeIpc('db:getBackupSettings', withPerm('manage_users')(() => db.getBackupSettings()));
+  mutateIpc('db:updateBackupSettings', withPerm('manage_users')(async (_e, data) => {
     db.updateBackupSettings(nullGuard(data));
     db.addLog('update_backup_settings', `تعديل إعدادات النسخ الاحتياطي`);
-  })));
-  ipcMain.handle('db:createBackup', mutateIpc('createBackup', withPerm('manage_users')(async () => {
+  }));
+  mutateIpc('db:createBackup', withPerm('manage_users')(async () => {
     const name = db.createBackup('manual');
     db.addLog('create_backup', `إنشاء نسخة احتياطية يدوية: ${name}`);
     return name;
-  })));
-  ipcMain.handle('db:listBackups', safeIpc('listBackups', withPerm('manage_users')(() => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } })));
-  ipcMain.handle('db:validateBackup', safeIpc('validateBackup', withPerm('manage_users')((_e, filename) => {
+  }));
+  safeIpc('db:listBackups', withPerm('manage_users')(() => { try { return db.listBackups(); } catch (e) { logToLogger(2, 'listBackups', e.message); return []; } }));
+  safeIpc('db:validateBackup', withPerm('manage_users')((_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     return db.validateBackupFile(filename);
-  })));
-  ipcMain.handle('db:restoreBackup', mutateIpc('restoreBackup', withPerm('manage_users')(async (_e, filename) => {
+  }));
+  mutateIpc('db:restoreBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     db.createBackup('before_restore');
     const result = db.restoreFromBackup(filename);
     db.addLog('restore_backup', `استعادة نسخة احتياطية: ${filename}`);
     return result;
-  })));
-  ipcMain.handle('db:deleteBackup', mutateIpc('deleteBackup', withPerm('manage_users')(async (_e, filename) => {
+  }));
+  mutateIpc('db:deleteBackup', withPerm('manage_users')(async (_e, filename) => {
     if (!filename || typeof filename !== 'string' || filename.includes('..')) return { error: 'اسم الملف غير صالح' };
     const result = db.deleteBackupFile(filename);
     db.addLog('delete_backup', `حذف نسخة احتياطية: ${filename}`);
     return result;
-  })));
-  ipcMain.handle('db:exportArchive', mutateIpc('exportArchive', withPerm('export_data')(async () => {
+  }));
+  mutateIpc('db:exportArchive', withPerm('export_data')(async () => {
     const result = db.exportFullArchive();
     db.addLog('export_archive', `تصدير أرشيف كامل: ${result.filename}`);
     return result;
-  })));
-  ipcMain.handle('db:getLogs', safeIpc('getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters))));
-  ipcMain.handle('db:addLog', mutateIpc('addLog', withPerm('manage_users')((_e, action, details) => { if (action) db.addLog(action, details || ''); })));
-  ipcMain.handle('db:integrityCheck', safeIpc('integrityCheck', withPerm('manage_users')(() => db.integrityCheck())));
-  ipcMain.handle('db:repairOrphans', mutateIpc('repairOrphans', withPerm('manage_users')(() => db.repairOrphans())));
-  ipcMain.handle('db:cleanOrphanedFiles', safeIpc('cleanOrphanedFiles', withPerm('manage_users')(() => {
+  }));
+  safeIpc('db:getLogs', withPerm('view_audit')((_e, filters) => db.getLogs(filters)));
+  ipcMain.handle('db:addLog', (_e, action, details) => {
+    logToLogger(1, 'guard', 'renderer attempted db:addLog', { action });
+    return { error: 'forbidden' };
+  });
+  var AUDIT_ALLOWED_PREFIXES = ['error', 'renderer_'];
+  safeIpc('audit:log', (_e, action, details) => {
+    if (!AUDIT_ALLOWED_PREFIXES.some(function (p) { return action && action.indexOf(p) === 0; })) return { error: 'action not allowed' };
+    if (action) db.addLog(action, (details || '').slice(0, 500));
+    return { ok: true };
+  });
+  safeIpc('db:integrityCheck', withPerm('manage_users')(() => db.integrityCheck()));
+  mutateIpc('db:repairOrphans', withPerm('manage_users')(() => db.repairOrphans()));
+  safeIpc('db:cleanOrphanedFiles', withPerm('manage_users')(() => {
     const result = db.cleanOrphanedFiles();
     db.addLog('clean_orphans', `تنظيف ${result.deletedCount} ملفاً يتيماً (${result.freedMB} MB)`);
     return result;
-  })));
+  }));
 
   // ─── Logger IPC ───
-  ipcMain.handle('logger:log', mutateIpc('logger:log', withPerm('manage_users')((_e, level, context, message) => {
+  mutateIpc('logger:log', withPerm('manage_users')((_e, level, context, message) => {
     if (!currentUser) return;
     const lvlMap = { INFO: 0, WARN: 1, ERROR: 2, CRITICAL: 3 };
     const lvl = lvlMap[level] !== undefined ? lvlMap[level] : 1;
     logToLogger(lvl, context || 'renderer', message || '');
-  })));
+  }));
 
-  ipcMain.handle('logger:getLogs', safeIpc('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters))));
-  ipcMain.handle('logger:export', safeIpc('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json'))));
-  ipcMain.handle('logger:clear', safeIpc('logger:clear', withPerm('manage_users')(() => logger.clearLogs())));
-  ipcMain.handle('logger:stats', safeIpc('logger:stats', withPerm('view_audit')(() => logger.getStats())));
+  safeIpc('logger:getLogs', withPerm('view_audit')((_e, filters) => logger.getLogs(filters)));
+  safeIpc('logger:export', withPerm('view_audit')((_e, format) => logger.exportLogs(format || 'json')));
+  safeIpc('logger:clear', withPerm('manage_users')(() => logger.clearLogs()));
+  safeIpc('logger:stats', withPerm('view_audit')(() => logger.getStats()));
 
   ipcMain.handle('notif:getCacheStats', () => {
     if (!currentUser) return {};
@@ -863,15 +975,38 @@ async function init() {
     return { hasMasterKey: !!process.env.MASTER_KEY };
   });
 
-  ipcMain.handle('app:navigateToCase', safeIpc('app:navigateToCase', withPerm('view_case')((_e, caseId) => {
+  safeIpc('app:navigateToCase', withPerm('view_case')((_e, caseId) => {
     if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
     if (caseId) mainWindow?.webContents.send('app:navigateToCase', caseId);
-  })));
+  }));
+
+  // ───── Cert Pinning ─────
+  ipcMain.handle('cert:getPinnedStatus', () => {
+    var pins = loadPinnedCerts();
+    return Object.keys(pins).map(function (h) { return { hostname: h, fingerprint: pins[h] }; });
+  });
+  ipcMain.handle('cert:approveNewPin', (_e, hostname, newFingerprint) => {
+    if (PINNED_DOMAINS.indexOf(hostname) === -1) return { ok: false, error: 'النطاق غير مدعوم' };
+    if (!newFingerprint || typeof newFingerprint !== 'string') return { ok: false, error: 'بصمة غير صالحة' };
+    var pending = loadPendingPinApprovals();
+    pending[hostname] = newFingerprint;
+    savePendingPinApprovals(pending);
+    return { ok: true };
+  });
+  ipcMain.handle('cert:resetPins', () => {
+    savePinnedCerts({});
+    try {
+      var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+      if (fs.existsSync(p)) fs.unlinkSync(p);
+    } catch (e) { /* ignore */ }
+    return { ok: true };
+  });
 }
 
 async function runApp() {
   await init();
   if (!app.requestSingleInstanceLock()) { app.quit(); return; }
+  setupCertPinning();
   createWindow();
 
   mainWindow.webContents.once('did-finish-load', () => {
@@ -1066,24 +1201,24 @@ function notifyUser(type, message) {
 
 // ─── Events System ───
 
-ipcMain.handle('events:getAll', safeIpc('events:getAll', withPerm('view_case')(() => db.getAllEvents())));
-ipcMain.handle('events:get', safeIpc('events:get', withPerm('view_case')((_e, id) => db.getEvent(id))));
-ipcMain.handle('events:add', mutateIpc('events:add', withPerm('edit_case')(async (_e, data) => {
+safeIpc('events:getAll', withPerm('view_case')(() => db.getAllEvents()));
+safeIpc('events:get', withPerm('view_case')((_e, id) => db.getEvent(id)));
+mutateIpc('events:add', withPerm('edit_case')(async (_e, data) => {
   if (!data) return { error: 'البيانات مطلوبة' };
   const id = db.addEvent(data);
   if (id) db.addLog('add_event', `إضافة حدث ${data.title || ''} - ${data.date || ''}`);
   return id;
-})));
-ipcMain.handle('events:update', mutateIpc('events:update', withPerm('edit_case')(async (_e, id, data) => {
+}));
+mutateIpc('events:update', withPerm('edit_case')(async (_e, id, data) => {
   if (id == null || !data) return;
   db.updateEvent(id, data);
   db.addLog('update_event', `تحديث حدث #${id}`);
-})));
-ipcMain.handle('events:delete', mutateIpc('events:delete', withPerm('edit_case')(async (_e, id) => {
+}));
+mutateIpc('events:delete', withPerm('edit_case')(async (_e, id) => {
   if (id == null) return;
   db.deleteEvent(id);
   db.addLog('delete_event', `حذف حدث #${id}`);
-})));
+}));
 // ─── Auth ───
 
 const BCRYPT_SALT_ROUNDS = 12;
@@ -1105,8 +1240,8 @@ const MAX_LOGIN_ATTEMPTS = 5;
 const LOGIN_LOCKOUT_WINDOW = 15 * 60 * 1000; // 15 min window before reset
 const MAX_LOCKOUT_SECS = 900; // 15 minutes max lockout
 
-function hashBcrypt(pwd) {
-  return bcrypt.hashSync(pwd, BCRYPT_SALT_ROUNDS);
+async function hashBcrypt(pwd) {
+  return bcrypt.hash(pwd, BCRYPT_SALT_ROUNDS);
 }
 
 function verifyPassword(pwd, passwordHash) {
@@ -1115,7 +1250,7 @@ function verifyPassword(pwd, passwordHash) {
 }
 
 function signToken(userId, expiryMs) {
-  const jti = crypto.randomBytes(8).toString('hex');
+  const jti = crypto.randomBytes(16).toString('hex');
   const payload = `${jti}:${userId}:${expiryMs}`;
   const hmac = crypto.createHmac('sha256', HMAC_KEY).update(payload).digest('hex');
   return `${payload}:${hmac}`;
@@ -1240,7 +1375,7 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
     if (!officeName || typeof officeName !== 'string' || !officeName.trim()) return { ok: false, error: 'اسم المكتب مطلوب' };
     if (!adminName || typeof adminName !== 'string' || !adminName.trim()) return { ok: false, error: 'اسم المدير مطلوب' };
     if (!password || typeof password !== 'string' || password.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
-    const hash = hashBcrypt(password);
+    const hash = await hashBcrypt(password);
     const cleanEmail = 'admin@' + officeName.trim().replace(/\s+/g, '') + '.ma';
     db.setOfficeSetting('office_name', officeName.trim());
     db.setOfficeSetting('setup_date', new Date().toISOString());
@@ -1256,9 +1391,9 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
     const user = db.getUserById(id);
     if (!user) return { ok: false, error: 'فشل استرجاع المستخدم' };
     var questions = [];
-    if (securityQ1 && securityA1) questions.push({ question: securityQ1, answerHash: hashBcrypt(securityA1) });
-    if (securityQ2 && securityA2) questions.push({ question: securityQ2, answerHash: hashBcrypt(securityA2) });
-    if (securityQ3 && securityA3) questions.push({ question: securityQ3, answerHash: hashBcrypt(securityA3) });
+    if (securityQ1 && securityA1) questions.push({ question: securityQ1, answerHash: await hashBcrypt(securityA1) });
+    if (securityQ2 && securityA2) questions.push({ question: securityQ2, answerHash: await hashBcrypt(securityA2) });
+    if (securityQ3 && securityA3) questions.push({ question: securityQ3, answerHash: await hashBcrypt(securityA3) });
     if (questions.length) {
       db.setSecurityQuestions(id, questions);
     }
@@ -1329,11 +1464,11 @@ ipcMain.handle('auth:checkSecurityAnswer', (_e, { userId, questionIndex, answer 
   }
 });
 
-ipcMain.handle('auth:resetPassword', safeIpc('resetPassword', withPerm('manage_users')(async (_e, { userId, newPassword, remember }) => {
+safeIpc('auth:resetPassword', withPerm('manage_users')(async (_e, { userId, newPassword, remember }) => {
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
-    const hash = hashBcrypt(newPassword);
+    const hash = await hashBcrypt(newPassword);
     db.updateUser(userId, { password_hash: hash });
     const user = db.getUserById(userId);
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
@@ -1346,17 +1481,15 @@ ipcMain.handle('auth:resetPassword', safeIpc('resetPassword', withPerm('manage_u
     handleError('resetPassword', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
-})));
+}));
 
-ipcMain.handle('auth:resetWithMasterKey', safeIpc('resetWithMasterKey', withPerm('manage_users')(async (_e, { userId, newPassword, masterKey }) => {
+safeIpc('auth:resetWithMasterKey', withPerm('manage_users')(async (_e, { userId, newPassword, masterKey }) => {
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
     if (!masterKey || typeof masterKey !== 'string') return { ok: false, error: 'مفتاح الاستعادة مطلوب' };
-    const mkBuf = Buffer.from(process.env.MASTER_KEY);
-    const inBuf = Buffer.from(masterKey);
-    if (mkBuf.length !== inBuf.length || !crypto.timingSafeEqual(mkBuf, inBuf)) return { ok: false, error: 'مفتاح الاستعادة غير صحيح' };
-    const hash = hashBcrypt(newPassword);
+    if (!safeStrEq(process.env.MASTER_KEY, masterKey)) return { ok: false, error: 'مفتاح الاستعادة غير صحيح' };
+    const hash = await hashBcrypt(newPassword);
     db.updateUser(userId, { password_hash: hash });
     const user = db.getUserById(userId);
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
@@ -1369,7 +1502,7 @@ ipcMain.handle('auth:resetWithMasterKey', safeIpc('resetWithMasterKey', withPerm
     handleError('resetWithMasterKey', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
-})));
+}));
 
 ipcMain.handle('auth:checkRemembered', (_e, token) => {
   try {
@@ -1419,16 +1552,16 @@ ipcMain.handle('auth:verifyPassword', (_e, pwd) => {
   }
 });
 
-ipcMain.handle('auth:hashPassword', safeIpc('auth:hashPassword', withPerm('manage_users')((_e, pwd) => {
+safeIpc('auth:hashPassword', withPerm('manage_users')(async (_e, pwd) => {
   try {
     if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
     if (pwd.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
-    return { ok: true, hash: hashBcrypt(pwd) };
+    return { ok: true, hash: await hashBcrypt(pwd) };
   } catch (e) {
     handleError('hashPassword', e);
     return { ok: false, error: 'خطأ في تشفير كلمة السر' };
   }
-})));
+}));
 
 ipcMain.handle('auth:updateProfile', async (_e, data) => {
   if (!currentUser) return { ok: false, error: 'لا يوجد مستخدم حالي' };
@@ -1453,7 +1586,7 @@ ipcMain.handle('auth:changePassword', async (_e, data) => {
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر الجديدة يجب أن تكون 8 أحرف على الأقل' };
     const storedHash = db.getPasswordHashForUser(currentUser.id);
     if (!storedHash || !bcrypt.compareSync(oldPassword, storedHash)) return { ok: false, error: 'كلمة السر الحالية غير صحيحة' };
-    const newHash = hashBcrypt(newPassword);
+    const newHash = await hashBcrypt(newPassword);
     db.updateUser(currentUser.id, { password_hash: newHash });
     await db.flushWrites();
     logToLogger(0, 'profile', 'تغيير كلمة السر للمستخدم ' + currentUser.name);
@@ -1493,7 +1626,7 @@ ipcMain.handle('auth:addUser', async (_e, data) => {
     if (data.password.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
     data = { ...data };
     delete data.password_hash;
-    data.password_hash = hashBcrypt(data.password);
+    data.password_hash = await hashBcrypt(data.password);
     data._userId = currentUser?.id; data._userName = currentUser?.name;
     const id = db.addUser(data);
     return id ? { ok: true, id } : { ok: false, error: 'فشل إضافة المستخدم' };
@@ -1510,7 +1643,7 @@ ipcMain.handle('auth:updateUser', async (_e, id, data) => {
     data = { ...data };
     delete data.password_hash;
     if (data.password) {
-      data.password_hash = hashBcrypt(data.password);
+      data.password_hash = await hashBcrypt(data.password);
     }
     delete data.password;
     db.updateUser(id, data);
@@ -1612,10 +1745,16 @@ const https = require('https');
 
 const ALGORITHM = 'aes-256-gcm';
 
-function encrypt(text) {
+function scryptAsync(password, salt, keylen) {
+  return new Promise(function (res, rej) {
+    crypto.scrypt(password, salt, keylen, function (e, k) { return e ? rej(e) : res(k); });
+  });
+}
+
+async function encrypt(text) {
   const iv = crypto.randomBytes(16);
   const salt = crypto.randomBytes(32);
-  const key = crypto.scryptSync(ENCRYPTION_KEY, salt, 32);
+  const key = await scryptAsync(ENCRYPTION_KEY, salt, 32);
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv);
   let encrypted = cipher.update(text, 'utf8', 'hex');
   encrypted += cipher.final('hex');
@@ -1628,9 +1767,9 @@ function encrypt(text) {
   });
 }
 
-function decrypt(encryptedData) {
+async function decrypt(encryptedData) {
   const { salt, iv, encrypted, authTag } = JSON.parse(encryptedData);
-  const key = crypto.scryptSync(ENCRYPTION_KEY, Buffer.from(salt, 'hex'), 32);
+  const key = await scryptAsync(ENCRYPTION_KEY, Buffer.from(salt, 'hex'), 32);
   const decipher = crypto.createDecipheriv(ALGORITHM, key, Buffer.from(iv, 'hex'));
   decipher.setAuthTag(Buffer.from(authTag, 'hex'));
   let decrypted = decipher.update(encrypted, 'hex', 'utf8');
@@ -1729,7 +1868,7 @@ async function callProvider(provider, apiKey, model, messages) {
 }
 
 async function callAI(systemPrompt, message, context) {
-  const config = getAiConfig();
+  const config = await getAiConfig();
   const apiKey = config.apiKey;
   if (!apiKey) return { error: AI_ERROR_MESSAGES.no_key, friendlyError: AI_ERROR_MESSAGES.no_key, provider: config.provider || 'groq' };
 
@@ -1789,12 +1928,16 @@ async function callAI(systemPrompt, message, context) {
 
 function sanitizeContext(text) {
   if (!text) return '';
-  return text
-    .replace(/0[567]\d{8}/g, '[رقم هاتف]')
-    .replace(/00212[567]\d{8}/g, '[رقم هاتف]')
-    .replace(/\+212[567]\d{8}/g, '[رقم هاتف]')
-    .replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[بريد إلكتروني]')
-    .replace(/\b\d{16,}\b/g, '[رقم بطاقة]');
+  var norm = text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) & 0xF); });
+  return norm
+    .replace(/\+?[\d][\d\s\-().]{7,}[\d]/g, function (m) {
+      var digits = m.replace(/\D/g, '');
+      if (/^(0|00212|\+212)?[567]\d{8}$/.test(digits)) return '[رقم هاتف]';
+      if (digits.length >= 14 && digits.length <= 19) return '[رقم بطاقة]';
+      return m;
+    })
+    .replace(/\b\d{16,}\b/g, '[رقم بطاقة]')
+    .replace(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z\u0600-\u06FF]{2,}/g, '[بريد إلكتروني]');
 }
 
 function buildCaseContext(c) {
@@ -1827,12 +1970,12 @@ function buildClientContext(cl) {
 الملاحظات: ${cl.notes || ''}`);
 }
 
-ipcMain.handle('ai:ask', safeIpc('ai:ask', withPerm('use_ai')(async (_e, { mode, message, context }) => {
+safeIpc('ai:ask', withPerm('use_ai')(async (_e, { mode, message, context }) => {
   const prompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.chat;
   return callAI(prompt, message, context);
-})));
+}));
 
-ipcMain.handle('ai:askContextual', safeIpc('ai:askContextual', withPerm('use_ai')(async (_e, { mode, message, contextType, contextId }) => {
+safeIpc('ai:askContextual', withPerm('use_ai')(async (_e, { mode, message, contextType, contextId }) => {
   let context = '';
   if (contextType === 'case') {
     const c = db.getAllCases().find(x => x.id === contextId);
@@ -1901,9 +2044,9 @@ ipcMain.handle('ai:askContextual', safeIpc('ai:askContextual', withPerm('use_ai'
   }
   const prompt = SYSTEM_PROMPTS[mode] || SYSTEM_PROMPTS.chat;
   return callAI(prompt, message, context);
-})));
+}));
 
-ipcMain.handle('ai:getSmartInsights', safeIpc('ai:getSmartInsights', withPerm('use_ai')(async () => {
+safeIpc('ai:getSmartInsights', withPerm('use_ai')(async () => {
   const cases = db.getAllCases();
   const events = db.getAllEvents();
   const tasks = db.getAllTasks();
@@ -1926,9 +2069,9 @@ ipcMain.handle('ai:getSmartInsights', safeIpc('ai:getSmartInsights', withPerm('u
   const completedTasksThisWeek = tasks.filter(t => t.status === 'done' && t.updated_at && t.updated_at >= new Date(Date.now()-7*86400000).toISOString()).length;
   const summary = `لديك ${activeCases} قضية نشطة (من أصل ${totalCases})، ${totalClients} موكل، ${completedTasksThisWeek} مهمة منجزة هذا الأسبوع.`;
   return { insights: insights.slice(0, 5), summary };
-})));
+}));
 
-ipcMain.handle('ai:generateTimeline', safeIpc('ai:generateTimeline', withPerm('use_ai')(async (_e, { caseId }) => {
+safeIpc('ai:generateTimeline', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'لا توجد معلومات كافية لإنشاء الجدول الزمني', friendlyError: 'لا توجد معلومات كافية لإنشاء الجدول الزمني' };
   const events = db.getEventsByCase(caseId);
@@ -1940,9 +2083,9 @@ ipcMain.handle('ai:generateTimeline', safeIpc('ai:generateTimeline', withPerm('u
   if (tasks.length) context += `\nالمهام: ${tasks.map(t => `${t.title} (${t.status})`).join(', ')}\n`;
   if (docs.length) context += `\nالوثائق (${docs.length}): ${docs.slice(0,8).map(d => d.filename).join(', ')}\n`;
   return callAI('أنت خبير في إعداد الجداول الزمنية للقضايا القانونية. قم بإنشاء جدول زمني منظم (timeline) بالعربية لهذه القضية بناءً على البيانات التالية.', 'أنشئ جدولاً زمنياً مفصلاً لهذه القضية.', sanitizeContext(context));
-})));
+}));
 
-ipcMain.handle('ai:summarizeDocument', safeIpc('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
+safeIpc('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const doc = db.getDocument(docId);
   if (!doc) return { text: '', error: 'الوثيقة غير موجودة', friendlyError: 'الوثيقة غير موجودة' };
   const txt = db.getDocumentText(docId);
@@ -1950,9 +2093,9 @@ ipcMain.handle('ai:summarizeDocument', safeIpc('ai:summarizeDocument', withPerm(
   if (!text || text.length < 50) return { text: '', error: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص', friendlyError: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص' };
   let context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
   return callAI('أنت خبير في تحليل وثائق المحاماة. لخص هذه الوثيقة القانونية بالعربية في 3-5 نقاط واضحة.', 'لخص هذه الوثيقة بالعربية.', context);
-})));
+}));
 
-ipcMain.handle('ai:detectRisks', safeIpc('ai:detectRisks', withPerm('use_ai')(async (_e, { caseId }) => {
+safeIpc('ai:detectRisks', withPerm('use_ai')(async (_e, { caseId }) => {
   const c = db.getAllCases().find(x => x.id === caseId);
   if (!c) return { text: '', error: 'القضية غير موجودة', friendlyError: 'القضية غير موجودة' };
   const events = db.getEventsByCase(caseId);
@@ -1966,9 +2109,9 @@ ipcMain.handle('ai:detectRisks', safeIpc('ai:detectRisks', withPerm('use_ai')(as
   const upcoming = events.filter(e => e.status !== 'cancelled' && e.date && new Date(e.date) >= now).sort((a,b) => new Date(a.date)-new Date(b.date));
   if (upcoming.length) context += `\nالأحداث القادمة: ${upcoming.slice(0,5).map(e => `${e.date} ${e.title}`).join(', ')}\n`;
   return callAI('أنت خبير في تقييم المخاطر القانونية. قم بتحليل القضية التالية وحدد المخاطر المحتملة مع اقتراحات للتخفيف منها. أجب بالعربية.', 'حلل المخاطر القانونية لهذه القضية.', context);
-})));
+}));
 
-ipcMain.handle('ai:analyzeDocument', safeIpc('ai:analyzeDocument', withPerm('use_ai')(async (_e, { docId }) => {
+safeIpc('ai:analyzeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const doc = db.getDocument(docId);
   if (!doc) return { error: 'الوثيقة غير موجودة' };
 
@@ -1996,7 +2139,7 @@ ipcMain.handle('ai:analyzeDocument', safeIpc('ai:analyzeDocument', withPerm('use
   }
 
   return { analysis: result.text || result.friendlyError || 'تعذر تحليل الوثيقة', cached: false, doc };
-})));
+}));
 
 function getMasterKeyOrThrow() {
   const key = process.env.MASTER_KEY;
@@ -2013,14 +2156,14 @@ function deriveKey(info, length) {
 const HMAC_KEY = deriveKey('hmac-v1', 32);
 const ENCRYPTION_KEY = deriveKey('encryption-v1', 32);
 
-function getAiConfig() {
+async function getAiConfig() {
   try {
     if (fs.existsSync(AI_CONFIG_PATH)) {
       const data = JSON.parse(fs.readFileSync(AI_CONFIG_PATH, 'utf8'));
       
       if (data.encrypted) {
         try {
-          const apiKey = decrypt(data.encrypted);
+          const apiKey = await decrypt(data.encrypted);
           return { apiKey, provider: data.provider || 'groq', model: data.model || '' };
         } catch (e) {
           console.warn('فشل فك تشفير مفتاح API');
@@ -2030,7 +2173,7 @@ function getAiConfig() {
       
       if (data.apiKey) {
         console.warn('تم اكتشاف مفتاح API غير مشفر');
-        const encrypted = encrypt(data.apiKey);
+        const encrypted = await encrypt(data.apiKey);
         try {
           fs.writeFileSync(AI_CONFIG_PATH, JSON.stringify({
             encrypted,
@@ -2047,24 +2190,24 @@ function getAiConfig() {
   return {};
 }
 
-function saveAiConfig(config) {
+async function saveAiConfig(config) {
   const dir = path.dirname(AI_CONFIG_PATH);
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); try { fs.chmodSync(dir, 0o700); } catch (e) {} }
   
   const apiKey = config.apiKey;
   
-  const encrypted = encrypt(apiKey);
+  const encrypted = await encrypt(apiKey);
   
   fs.writeFileSync(AI_CONFIG_PATH, JSON.stringify({
     encrypted,
     provider: config.provider || 'groq',
     model: config.model || ''
-  }, null, 2));
+  }, null, 2), { mode: 0o600 });
   
   console.log('تم حفظ مفتاح API مشفراً بنجاح');
 }
 
-ipcMain.handle('ai:getConfig', safeIpc('ai:getConfig', withPerm('use_ai')(() => {
+safeIpc('ai:getConfig', withPerm('use_ai')(() => {
   try {
     const config = getAiConfig();
     return { provider: config.provider || 'groq', model: config.model || '', hasKey: !!config.apiKey };
@@ -2072,15 +2215,15 @@ ipcMain.handle('ai:getConfig', safeIpc('ai:getConfig', withPerm('use_ai')(() => 
     console.warn('ai:getConfig error:', e.message);
     return { provider: 'groq', model: '', hasKey: false };
   }
-})));
-ipcMain.handle('ai:saveConfig', safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
+}));
+safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
   try {
     saveAiConfig(config);
     return { ok: true };
   } catch (e) {
     return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
   }
-})));
+}));
 
 app.on('window-all-closed', async () => {
   await saveDbOnQuit();

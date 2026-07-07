@@ -3,6 +3,11 @@ var A = (window.App = window.App || {});
 A.state = {};
 A.state.ipc = null;
 A.state.statusLabels = { active: 'نشطة', pending: 'معلقة', closed: 'مغلقة' };
+A._trustedClicks = [
+  '#clientDetailOverlay [data-ws=clnotes]',
+  '#addCaseBtn',
+  '.cal-day[data-date='
+];
 
 A.escapeHtml = function (str) {
   if (str == null) return '';
@@ -28,7 +33,7 @@ A.logError = function (context, error) {
   const msg = error?.message || error || 'Unknown error';
   console.error(`[${context}]`, msg, error?.stack || '');
   try {
-    A.state.ipc?.invoke('db:addLog', 'error', `[${context}] ${msg.slice(0, 200)}`);
+    A.state.ipc?.invoke('audit:log', 'error', `[${context}] ${msg.slice(0, 200)}`);
   } catch (e) {}
 };
 
@@ -238,17 +243,30 @@ A.formatDateTime = function (isoStr) {
 
 window.showToast = A.showToast;
 
-// Global delegated click handler for data-click attributes (CSP-compliant)
+function parseClickAttr(el) {
+  var ns = el.getAttribute('data-ns');
+  var cmd = el.getAttribute('data-cmd');
+  var arg = el.getAttribute('data-arg');
+  if (ns && cmd) return { ns: ns, cmd: cmd, arg: arg || '' };
+  var click = el.getAttribute('data-click');
+  if (!click) return { ns: '', cmd: '', arg: '' };
+  var i1 = click.indexOf(':');
+  if (i1 === -1) return { ns: click, cmd: '', arg: '' };
+  var i2 = click.indexOf(':', i1 + 1);
+  if (i2 === -1) return { ns: click.slice(0, i1), cmd: click.slice(i1 + 1), arg: '' };
+  return { ns: click.slice(0, i1), cmd: click.slice(i1 + 1, i2), arg: click.slice(i2 + 1) };
+}
+
+// Global delegated click handler for data-click / data-ns attributes (CSP-compliant)
 document.addEventListener('click', function (e) {
-  var el = e.target.closest('[data-click]');
+  var el = e.target.closest('[data-click],[data-ns]');
   if (!el) return;
   if (el.getAttribute('data-click-stop') === 'true') e.stopPropagation();
-  var action = el.getAttribute('data-click');
-  if (!action) return;
-  var parts = action.split(':');
-  var ns = parts[0],
-    cmd = parts[1],
-    arg = parts.slice(2).join(':');
+  var attr = parseClickAttr(el);
+  if (!attr.ns) return;
+  var ns = attr.ns;
+  var cmd = attr.cmd;
+  var arg = attr.arg;
   if (ns === 'nav') {
     if (cmd === 'cases' && parts[2] && parts[2] === 'open') {
       window.navigateTo('cases');
@@ -305,9 +323,11 @@ document.addEventListener('click', function (e) {
     if (cmd === 'apply') window.applyTemplate && window.applyTemplate();
     else if (cmd === 'new') window.showNewTemplateForm && window.showNewTemplateForm();
     else if (cmd === 'delete') window.deleteTemplateItem && window.deleteTemplateItem(parseInt(arg, 10));
-  } else if (ns === 'click') {
-    var target = document.querySelector(cmd);
-    if (target) target.click();
+  } else if (ns === '_click') {
+    if (A._trustedClicks && A._trustedClicks.some(function (p) { return cmd.indexOf(p) === 0; })) {
+      var t2 = document.querySelector(cmd);
+      if (t2) t2.click();
+    }
   }
 });
 

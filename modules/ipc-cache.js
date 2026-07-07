@@ -37,7 +37,7 @@ const cacheDeps = {
   'db:getUpcomingDeadlines': ['db:addCase', 'db:addTask', 'db:updateTask'],
   'db:getUpcomingHearings': ['events:add', 'events:update', 'events:delete'],
   'db:getTodayProcedures': ['db:addProcedure'],
-  'db:getLogs': ['db:addLog'],
+  'db:getLogs': ['db:addLog', 'audit:log'],
   'logger:getLogs': ['logger:log', 'logger:clear'],
   'db:getAllCommunications': ['db:addCommunication'],
   'db:getDocuments': ['db:uploadDocument', 'db:deleteDocument', 'db:updateDocNotes'],
