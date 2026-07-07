@@ -5,7 +5,12 @@
      PHASE 1 — Design System Tokens
      ══════════════════════════════════════════════ */
 
-  /* ── Navy Palette ── */
+  /* ── Linear Premium Palette ── */
+  --canvas: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f4f4f2;
+
+  /* ── Navy Palette (backward compat) ── */
   --navy-50: #e8edf2;
   --navy-100: #c5d0de;
   --navy-200: #9eafbf;
@@ -27,17 +32,20 @@
   --gold-600: #a8883e;
   --gold-700: #8b6f30;
 
+  /* ── Gold Tint (sparing usage) ── */
+  --gold-tint: rgba(198, 161, 91, 0.08);
+
   /* ── Extended Neutrals ── */
   --gray-900: #171f2a;
   --gray-950: #0d141c;
 
-  /* ── Surface Ladder (Linear-inspired) ── */
-  --surface-canvas: #f8f8f7;
-  --surface-raised: #ffffff;
-  --surface-elevated: #ffffff;
-  --surface-modal: #ffffff;
-  --surface-popover: #ffffff;
-  --surface-sidebar: #f9f9fb;
+  /* ── Surface Ladder (Linear Premium) ── */
+  --surface-canvas: var(--canvas);
+  --surface-raised: var(--surface);
+  --surface-elevated: var(--surface);
+  --surface-modal: var(--surface);
+  --surface-popover: var(--surface);
+  --surface-sidebar: var(--surface-2);
 
   /* ── Semantic Aliases (shadcn/ui-inspired) ── */
   --background: var(--surface-canvas);
@@ -46,25 +54,35 @@
   --card-foreground: var(--gray-800);
   --primary: var(--gold-500);
   --primary-foreground: #ffffff;
-  --secondary: var(--gray-100);
+  --secondary: var(--surface-2);
   --secondary-foreground: var(--gray-700);
   --muted: var(--gray-50);
   --muted-foreground: var(--gray-400);
   --destructive: #d94a4a;
   --destructive-foreground: #ffffff;
-  --border: var(--gray-200);
-  --input: var(--gray-200);
+  --border: #e8e7e4;
+  --border-strong: #d4d3cf;
+  --input: #e8e7e4;
   --ring: rgba(198, 161, 91, 0.25);
 
-  /* ── Typography Scale (8-level, --type- prefix) ── */
+  /* ── Typography Scale (12-level, --type- prefix) ── */
   --type-caption: 11px;
   --type-small: 12px;
   --type-body: 13px;
   --type-body-large: 14px;
-  --type-subtitle: 15px;
+  --type-subtitle: 16px;
   --type-title: 18px;
   --type-heading: 22px;
   --type-display: 28px;
+  --type-display-1: 36px;
+  --type-display-2: 48px;
+  --type-display-3: 56px;
+  --type-display-4: 72px;
+
+  /* ── Line Heights ── */
+  --lh-tight: 1.15;
+  --lh-body: 1.5;
+  --lh-relaxed: 1.65;
 
   /* ── Spacing (4px base) ── */
   --spacing-px: 1px;
@@ -163,6 +181,8 @@
 
   /* ─── Typography ─── */
   --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
   --font-size-xs: 12px;
   --font-size-sm: 13px;
   --font-size-base: 14px;
@@ -253,6 +273,7 @@
   --easing-default: cubic-bezier(0.25, 0.1, 0.25, 1);
   --easing-enter: cubic-bezier(0.16, 1, 0.3, 1);
   --easing-exit: cubic-bezier(0.4, 0, 0.8, 0.15);
+  --easing-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 
   /* ─── Radii ─── */
   --radius-sm: 4px;
@@ -276,6 +297,18 @@
   --focus-ring-gold: 0 0 0 2px rgba(198, 161, 91, 0.12);
   --focus-ring-gold-wide: 0 0 0 3px rgba(198, 161, 91, 0.1);
 
+  /* ── Premium Shadow Tokens ── */
+  --sh-xs: 0 1px 2px rgba(0, 0, 0, 0.02);
+  --sh-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+  --sh-md: 0 4px 6px rgba(0, 0, 0, 0.03), 0 2px 4px rgba(0, 0, 0, 0.02);
+  --sh-lg: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.02);
+  --sh-xl: 0 20px 25px rgba(0, 0, 0, 0.05), 0 8px 10px rgba(0, 0, 0, 0.02);
+  --sh-2xl: 0 25px 50px rgba(0, 0, 0, 0.06);
+  --sh-gold: 0 4px 14px rgba(198, 161, 91, 0.2);
+  --sh-gold-hover: 0 6px 20px rgba(198, 161, 91, 0.3);
+  --sh-sidebar: 4px 0 12px rgba(0, 0, 0, 0.03);
+  --sh-topbar: 0 1px 4px rgba(0, 0, 0, 0.04);
+
   /* ─── Blur Values ─── */
   --blur-sm: 4px;
   --blur-md: 6px;
@@ -291,25 +324,36 @@
   --btn-padding: 8px 16px;
   --btn-radius: 6px;
   --btn-font-size: 13px;
+  --btn-font-weight: 600;
   --btn-transition: all 150ms ease;
 
   --btn-primary-bg: var(--gold);
   --btn-primary-color: #fff;
   --btn-primary-hover-bg: var(--gold-dark);
+  --btn-primary-shadow: var(--sh-gold);
 
   --btn-secondary-bg: var(--gray-100);
   --btn-secondary-color: var(--gray-700);
   --btn-secondary-hover-bg: var(--gray-200);
+  --btn-secondary-border: 1px solid var(--border);
 
   --btn-danger-bg: var(--danger);
   --btn-danger-color: #fff;
   --btn-danger-hover-bg: #c0392b;
 
+  /* ── Ghost / Outline ── */
+  --btn-ghost-bg: transparent;
+  --btn-ghost-hover-bg: var(--surface-2);
+  --btn-outline-border: 1.5px solid var(--border-strong);
+
   /* ─── Card ─── */
   --card-padding: 20px;
   --card-radius: 12px;
-  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --card-shadow: var(--sh-sm);
+  --card-shadow-hover: var(--sh-lg);
   --card-header-padding: 16px 20px;
+  --card-border-color: var(--border);
+  --card-bg: var(--surface);
 
   /* ─── Modal ─── */
   --modal-padding: 24px;
@@ -342,12 +386,12 @@
   --gray-950: #ffffff;
 
   /* ── Surface Ladder (dark) ── */
-  --surface-canvas: #111827;
-  --surface-raised: #1a2332;
-  --surface-elevated: #1f2937;
-  --surface-modal: #1f2937;
-  --surface-popover: #1f2937;
-  --surface-sidebar: #0f172a;
+  --surface-canvas: #0b121f;
+  --surface-raised: #131d2e;
+  --surface-elevated: #1a2538;
+  --surface-modal: #1a2538;
+  --surface-popover: #1a2538;
+  --surface-sidebar: #0a111c;
 
   /* ── Semantic Aliases (dark) ── */
   --background: var(--surface-canvas);
@@ -362,10 +406,14 @@
   --muted-foreground: var(--gray-400);
   --destructive: #ef4444;
   --destructive-foreground: #ffffff;
-  --border: var(--gray-200);
-  --input: var(--gray-200);
+  --border: #2a3347;
+  --border-strong: #3b4458;
+  --input: #2a3347;
   --ring: rgba(198, 161, 91, 0.35);
   --focus-ring-color: rgba(198, 161, 91, 0.35);
+
+  /* ── Gold Tint (dark) ── */
+  --gold-tint: rgba(198, 161, 91, 0.12);
 
   /* ── Shadows (dark) ── */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.15), 0 1px 1px rgba(0, 0, 0, 0.1);
@@ -396,9 +444,21 @@
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.35), 0 8px 16px rgba(0, 0, 0, 0.2);
-  --sidebar-bg: #0f172a;
+  --sidebar-bg: #0a111c;
   --focus-ring-gold: 0 0 0 2px rgba(198, 161, 91, 0.25);
   --focus-ring-gold-wide: 0 0 0 3px rgba(198, 161, 91, 0.2);
+
+  /* ── Premium Shadow Tokens (dark) ── */
+  --sh-xs: 0 1px 2px rgba(0, 0, 0, 0.15);
+  --sh-sm: 0 1px 3px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.1);
+  --sh-md: 0 4px 6px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1);
+  --sh-lg: 0 10px 15px rgba(0, 0, 0, 0.3), 0 4px 6px rgba(0, 0, 0, 0.15);
+  --sh-xl: 0 20px 25px rgba(0, 0, 0, 0.35), 0 8px 10px rgba(0, 0, 0, 0.15);
+  --sh-2xl: 0 25px 50px rgba(0, 0, 0, 0.4);
+  --sh-gold: 0 4px 14px rgba(198, 161, 91, 0.25);
+  --sh-gold-hover: 0 6px 20px rgba(198, 161, 91, 0.35);
+  --sh-sidebar: 4px 0 12px rgba(0, 0, 0, 0.15);
+  --sh-topbar: 0 1px 4px rgba(0, 0, 0, 0.15);
   --overlay-light: rgba(0, 0, 0, 0.5);
   --overlay-medium: rgba(0, 0, 0, 0.7);
   --overlay-navy: rgba(15, 23, 42, 0.7);

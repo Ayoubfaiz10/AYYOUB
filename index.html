@@ -6,7 +6,7 @@
     <title>مدير مكتب المحامي</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
     <link href="fonts/remixicon.css" rel="stylesheet" />
     <script defer src="node_modules/chart.js/dist/chart.umd.min.js"></script>
     <script defer src="node_modules/dompurify/dist/purify.min.js"></script>
@@ -20,6 +20,7 @@
       }
       #app {
         display: flex;
+        flex-direction: column;
         height: 100vh;
       }
     </style>
@@ -296,111 +297,112 @@
     </div>
 
     <div id="app" style="display: none">
-      <aside id="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-brand">
-            <div class="sidebar-brand-icon">M</div>
-            <div class="sidebar-brand-text">
-              <span class="sidebar-brand-title" data-i18n="startupName">مدير المكتب</span>
-              <span class="sidebar-brand-sub">Cabinet Manager</span>
-            </div>
+      <header id="topbar">
+        <div class="topbar-brand">
+          <span class="topbar-brand-text" data-i18n="startupName">مدير المكتب</span>
+        </div>
+        <div class="topbar-search">
+          <i class="ri-search-line"></i>
+          <input type="text" id="globalSearch" placeholder="بحث في القضايا، الموكلين، الوثائق..." autocomplete="off" data-i18n="searchPlaceholder" />
+          <kbd class="search-kbd">Ctrl+K</kbd>
+          <div id="globalSearchResults" class="search-results" style="display: none"></div>
+        </div>
+        <div class="topbar-actions">
+          <button class="topbar-icon-btn" id="quickAddBtn" title="إضافة سريعة" data-i18n="quickAdd" data-i18n-attr="title">
+            <i class="ri-add-line"></i>
+          </button>
+          <button class="topbar-icon-btn" id="notifBtn" data-i18n="notifTitle" data-i18n-attr="title">
+            <i class="ri-notification-3-line"></i><span class="notif-badge" style="display: none">0</span>
+          </button>
+          <span id="asGlobalStatus" class="topbar-as-status" style="display: none"
+            ><i class="ri-check-line"></i> <span data-i18n="autoSaveStatus">تم الحفظ</span></span
+          >
+          <div class="topbar-user">
+            <div class="topbar-avatar">M</div>
+            <i class="ri-arrow-down-s-line topbar-user-arrow"></i>
           </div>
         </div>
-        <nav id="nav">
-          <div class="nav-section-label" data-i18n="navMain">الرئيسية</div>
-          <button class="nav-item active" data-section="dashboard">
-            <i class="ri-dashboard-3-line nav-icon"></i><span class="nav-label" data-i18n="navDashboard">الرئيسية</span>
-          </button>
-          <button class="nav-item" data-section="search">
-            <i class="ri-search-2-line nav-icon"></i><span class="nav-label" data-i18n="navAdvancedSearch">بحث متقدم</span>
-          </button>
-          <button class="nav-item" data-section="notifications">
-            <i class="ri-notification-3-line nav-icon"></i><span class="nav-label" data-i18n="navNotifications">الإشعارات</span
-            ><span class="nav-badge" id="notifBadge" style="display: none">0</span>
-          </button>
+      </header>
 
-          <div class="nav-section-label" data-i18n="navFiles">الملفات</div>
-          <button class="nav-item" data-section="clients">
-            <i class="ri-user-3-line nav-icon"></i><span class="nav-label" data-i18n="navClients">الموكلين</span>
-          </button>
-          <button class="nav-item" data-section="cases">
-            <i class="ri-briefcase-4-line nav-icon"></i><span class="nav-label" data-i18n="navCases">القضايا</span>
-          </button>
-          <button class="nav-item" data-section="hearings">
-            <i class="ri-scales-3-line nav-icon"></i><span class="nav-label" data-i18n="navHearings">الجلسات</span>
-          </button>
-          <button class="nav-item" data-section="documents">
-            <i class="ri-file-4-line nav-icon"></i><span class="nav-label" data-i18n="navDocuments">الوثائق</span>
-          </button>
-
-          <div class="nav-section-label" data-i18n="navOrganization">التنظيم</div>
-          <button class="nav-item" data-section="calendar">
-            <i class="ri-calendar-2-line nav-icon"></i><span class="nav-label" data-i18n="navCalendar">التقويم</span>
-          </button>
-          <button class="nav-item" data-section="tasks"><i class="ri-task-line nav-icon"></i><span class="nav-label" data-i18n="navTasks">المهام</span></button>
-          <button class="nav-item" data-section="expenses">
-            <i class="ri-money-dollar-circle-line nav-icon"></i><span class="nav-label" data-i18n="navExpenses">المصاريف</span>
-          </button>
-
-          <div class="nav-section-label" data-i18n="navOther">أخرى</div>
-          <button class="nav-item" data-section="reports">
-            <i class="ri-bar-chart-2-line nav-icon"></i><span class="nav-label" data-i18n="navReports">التقارير</span>
-          </button>
-          <button class="nav-item" data-section="ai">
-            <i class="ri-robot-3-line nav-icon"></i><span class="nav-label" data-i18n="navAI">المساعد الذكي</span>
-          </button>
-          <button class="nav-item" data-section="archive">
-            <i class="ri-archive-line nav-icon"></i><span class="nav-label" data-i18n="navArchive">الأرشيف</span>
-          </button>
-          <button class="nav-item" data-section="support">
-            <i class="ri-customer-service-line nav-icon"></i><span class="nav-label" data-i18n="navSupport">الدعم</span>
-          </button>
-          <button class="nav-item" data-section="settings">
-            <i class="ri-settings-3-line nav-icon"></i><span class="nav-label" data-i18n="navSettings">الإعدادات</span>
-          </button>
-
-          <div style="flex: 1; min-height: 8px"></div>
-          <button class="nav-item" id="licenseManageBtn">
-            <i class="ri-key-2-line nav-icon"></i><span class="nav-label" data-i18n="navLicense">الترخيص</span>
-          </button>
-          <button class="nav-item" id="lockAppBtn"><i class="ri-lock-line nav-icon"></i><span class="nav-label" data-i18n="navLock">قفل</span></button>
-        </nav>
-        <div class="sidebar-footer">
-          <button class="sidebar-footer-btn" id="darkModeToggle" title="الوضع الليلي" data-i18n="settingsAppearance" data-i18n-attr="title">
-            <i class="ri-moon-line"></i>
-          </button>
-        </div>
-      </aside>
-
-      <div id="main-area">
-        <header id="topbar">
-          <div class="topbar-brand">
-            <span class="topbar-brand-text" data-i18n="startupName">مدير المكتب</span>
-          </div>
-          <div class="topbar-search">
-            <i class="ri-search-line"></i>
-            <input type="text" id="globalSearch" placeholder="بحث في القضايا، الموكلين، الوثائق..." autocomplete="off" data-i18n="searchPlaceholder" />
-            <kbd class="search-kbd">Ctrl+K</kbd>
-            <div id="globalSearchResults" class="search-results" style="display: none"></div>
-          </div>
-          <div class="topbar-actions">
-            <button class="topbar-icon-btn" id="quickAddBtn" title="إضافة سريعة" data-i18n="quickAdd" data-i18n-attr="title">
-              <i class="ri-add-line"></i>
-            </button>
-            <button class="topbar-icon-btn" id="notifBtn" data-i18n="notifTitle" data-i18n-attr="title">
-              <i class="ri-notification-3-line"></i><span class="notif-badge" style="display: none">0</span>
-            </button>
-            <span id="asGlobalStatus" class="topbar-as-status" style="display: none"
-              ><i class="ri-check-line"></i> <span data-i18n="autoSaveStatus">تم الحفظ</span></span
-            >
-            <div class="topbar-user">
-              <div class="topbar-avatar">M</div>
-              <i class="ri-arrow-down-s-line topbar-user-arrow"></i>
+      <div id="app-body">
+        <aside id="sidebar">
+          <div class="sidebar-header">
+            <div class="sidebar-brand">
+              <div class="sidebar-brand-icon">M</div>
+              <div class="sidebar-brand-text">
+                <span class="sidebar-brand-title" data-i18n="startupName">مدير المكتب</span>
+                <span class="sidebar-brand-sub">Cabinet Manager</span>
+              </div>
             </div>
           </div>
-        </header>
+          <nav id="nav">
+            <div class="nav-section-label" data-i18n="navMain">الرئيسية</div>
+            <button class="nav-item active" data-section="dashboard">
+              <i class="ri-dashboard-3-line nav-icon"></i><span class="nav-label" data-i18n="navDashboard">الرئيسية</span>
+            </button>
+            <button class="nav-item" data-section="search">
+              <i class="ri-search-2-line nav-icon"></i><span class="nav-label" data-i18n="navAdvancedSearch">بحث متقدم</span>
+            </button>
+            <button class="nav-item" data-section="notifications">
+              <i class="ri-notification-3-line nav-icon"></i><span class="nav-label" data-i18n="navNotifications">الإشعارات</span
+              ><span class="nav-badge" id="notifBadge" style="display: none">0</span>
+            </button>
 
-        <main id="content">
+            <div class="nav-section-label" data-i18n="navFiles">الملفات</div>
+            <button class="nav-item" data-section="clients">
+              <i class="ri-user-3-line nav-icon"></i><span class="nav-label" data-i18n="navClients">الموكلين</span>
+            </button>
+            <button class="nav-item" data-section="cases">
+              <i class="ri-briefcase-4-line nav-icon"></i><span class="nav-label" data-i18n="navCases">القضايا</span>
+            </button>
+            <button class="nav-item" data-section="hearings">
+              <i class="ri-scales-3-line nav-icon"></i><span class="nav-label" data-i18n="navHearings">الجلسات</span>
+            </button>
+            <button class="nav-item" data-section="documents">
+              <i class="ri-file-4-line nav-icon"></i><span class="nav-label" data-i18n="navDocuments">الوثائق</span>
+            </button>
+
+            <div class="nav-section-label" data-i18n="navOrganization">التنظيم</div>
+            <button class="nav-item" data-section="calendar">
+              <i class="ri-calendar-2-line nav-icon"></i><span class="nav-label" data-i18n="navCalendar">التقويم</span>
+            </button>
+            <button class="nav-item" data-section="tasks"><i class="ri-task-line nav-icon"></i><span class="nav-label" data-i18n="navTasks">المهام</span></button>
+            <button class="nav-item" data-section="expenses">
+              <i class="ri-money-dollar-circle-line nav-icon"></i><span class="nav-label" data-i18n="navExpenses">المصاريف</span>
+            </button>
+
+            <div class="nav-section-label" data-i18n="navOther">أخرى</div>
+            <button class="nav-item" data-section="reports">
+              <i class="ri-bar-chart-2-line nav-icon"></i><span class="nav-label" data-i18n="navReports">التقارير</span>
+            </button>
+            <button class="nav-item" data-section="ai">
+              <i class="ri-robot-3-line nav-icon"></i><span class="nav-label" data-i18n="navAI">المساعد الذكي</span>
+            </button>
+            <button class="nav-item" data-section="archive">
+              <i class="ri-archive-line nav-icon"></i><span class="nav-label" data-i18n="navArchive">الأرشيف</span>
+            </button>
+            <button class="nav-item" data-section="support">
+              <i class="ri-customer-service-line nav-icon"></i><span class="nav-label" data-i18n="navSupport">الدعم</span>
+            </button>
+            <button class="nav-item" data-section="settings">
+              <i class="ri-settings-3-line nav-icon"></i><span class="nav-label" data-i18n="navSettings">الإعدادات</span>
+            </button>
+
+            <div style="flex: 1; min-height: 8px"></div>
+            <button class="nav-item" id="licenseManageBtn">
+              <i class="ri-key-2-line nav-icon"></i><span class="nav-label" data-i18n="navLicense">الترخيص</span>
+            </button>
+            <button class="nav-item" id="lockAppBtn"><i class="ri-lock-line nav-icon"></i><span class="nav-label" data-i18n="navLock">قفل</span></button>
+          </nav>
+          <div class="sidebar-footer">
+            <button class="sidebar-footer-btn" id="darkModeToggle" title="الوضع الليلي" data-i18n="settingsAppearance" data-i18n-attr="title">
+              <i class="ri-moon-line"></i>
+            </button>
+          </div>
+        </aside>
+
+        <div id="main-area">
+          <main id="content">
           <!-- ═══ DASHBOARD ═══ -->
           <section id="section-dashboard" class="section active">
             <!-- Empty State (first-run only) -->
@@ -1927,6 +1929,7 @@
             </div>
           </section>
         </main>
+      </div>
       </div>
     </div>
 
