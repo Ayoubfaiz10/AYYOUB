@@ -185,7 +185,7 @@ A.initCases = function () {
           return;
         }
         try {
-          const clientId = parseInt(document.getElementById('fClientId').value) || null;
+          const clientId = parseInt(document.getElementById('fClientId').value, 10) || null;
           const res = await A.mutate('db:addCase', {
             case_number: cn,
             title: ti,
@@ -282,7 +282,7 @@ A.initCases = function () {
     col.parentElement.classList.remove('drag-over');
     const dragging = document.querySelector('.dragging');
     if (!dragging) return;
-    const id = parseInt(dragging.dataset?.id);
+    const id = parseInt(dragging.dataset?.id, 10);
     if (!id) return;
     const newStatus = col.parentElement.dataset.status;
     try {

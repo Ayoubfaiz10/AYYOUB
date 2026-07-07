@@ -22,12 +22,12 @@ A.renderClientTable = function (list) {
           .join('')
       : `<tr><td colspan="7"><div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>${_t('noResultsSearch')}</h3><p>${_t('searchClientsHint')}</p></div></td></tr>`
   );
-  document.querySelectorAll('.client-open-btn').forEach(b => b.addEventListener('click', () => A.openClientDetail(parseInt(b.dataset.id))));
+  document.querySelectorAll('.client-open-btn').forEach(b => b.addEventListener('click', () => A.openClientDetail(parseInt(b.dataset.id, 10))));
   document.querySelectorAll('.client-del-btn').forEach(b =>
     b.addEventListener('click', async () => {
       if (await A.showConfirm(_t('deleteClientConfirm'))) {
         try {
-          await A.mutate('db:deleteClient', parseInt(b.dataset.id));
+          await A.mutate('db:deleteClient', parseInt(b.dataset.id, 10));
         } catch (e) {
           A.logError('deleteClient', e);
           A.showToast(_t('clientDeleteFailed'), 'error');

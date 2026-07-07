@@ -157,7 +157,7 @@ A.initProfile = function () {
     var city = document.getElementById('pfCity')?.value?.trim();
     if (city) data.city = city;
     var exp = document.getElementById('pfExperience')?.value;
-    if (exp) data.experience_years = parseInt(exp);
+    if (exp) data.experience_years = parseInt(exp, 10);
     var specialties = [];
     document.querySelectorAll('#pfSpecialties input[type="checkbox"]:checked').forEach(function (cb) {
       specialties.push(cb.value);

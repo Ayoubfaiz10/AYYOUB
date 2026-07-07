@@ -37,7 +37,7 @@
   --surface-elevated: #ffffff;
   --surface-modal: #ffffff;
   --surface-popover: #ffffff;
-  --surface-sidebar: var(--navy-700);
+  --surface-sidebar: #f9f9fb;
 
   /* ── Semantic Aliases (shadcn/ui-inspired) ── */
   --background: var(--surface-canvas);
@@ -325,12 +325,12 @@
   --input-height: 40px;
 
   /* ─── Sidebar Specific ─── */
-  --sidebar-bg: var(--navy);
-  --sidebar-text: rgba(255, 255, 255, 0.55);
-  --sidebar-text-hover: rgba(255, 255, 255, 0.85);
-  --sidebar-text-active: #ffffff;
-  --sidebar-hover: rgba(255, 255, 255, 0.05);
-  --sidebar-active: rgba(255, 255, 255, 0.07);
+  --sidebar-bg: #f9f9fb;
+  --sidebar-text: #52525b;
+  --sidebar-text-hover: #09090b;
+  --sidebar-text-active: #18181b;
+  --sidebar-hover: #f4f4f5;
+  --sidebar-active: #f4f4f5;
 }
 
 /* ─── Dark Mode ─── */

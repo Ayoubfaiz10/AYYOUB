@@ -600,7 +600,7 @@ function addCase(data) {
       data.paid_fees,
       data.expenses,
       data.deadline_date,
-      0,
+      data.total_fees || 0,
       data.priority || 'medium',
       data.case_type || 'مدني',
       data.created_date || new Date().toISOString().slice(0, 10)
@@ -1330,7 +1330,13 @@ function getDocuments(caseId) {
     [caseId]
   );
 }
-function getAllDocuments() {
+function getAllDocuments(userId, userRole) {
+  if (userId && userRole && !['admin', 'senior_lawyer'].includes(userRole)) {
+    return query(
+      `SELECT d.*, COALESCE(c.case_number, '') as case_number, COALESCE(cl.name, '') as client_name FROM documents d LEFT JOIN cases c ON d.case_id = c.id LEFT JOIN clients cl ON c.client_id = cl.id WHERE (c.access_level = 'team' OR c.id IN (SELECT case_id FROM case_permissions WHERE user_id = ?)) ORDER BY d.upload_date DESC`,
+      [userId]
+    );
+  }
   return query(
     "SELECT d.*, COALESCE(c.case_number, '') as case_number, COALESCE(cl.name, '') as client_name FROM documents d LEFT JOIN cases c ON d.case_id = c.id LEFT JOIN clients cl ON c.client_id = cl.id ORDER BY d.upload_date DESC"
   );
@@ -1922,7 +1928,13 @@ function addCommunication(data) {
   ]);
   return query('SELECT last_insert_rowid() as id')[0]?.id || null;
 }
-function getAllCommunications() {
+function getAllCommunications(userId, userRole) {
+  if (userId && userRole && !['admin', 'senior_lawyer'].includes(userRole)) {
+    return query(
+      `SELECT comm.*, cl.name as client_name, ca.case_number FROM communications comm LEFT JOIN clients cl ON comm.client_id = cl.id LEFT JOIN cases ca ON comm.case_id = ca.id WHERE (ca.access_level = 'team' OR ca.id IN (SELECT case_id FROM case_permissions WHERE user_id = ?)) ORDER BY comm.date DESC, comm.created_at DESC`,
+      [userId]
+    );
+  }
   return query(
     `SELECT comm.*, cl.name as client_name, ca.case_number FROM communications comm LEFT JOIN clients cl ON comm.client_id = cl.id LEFT JOIN cases ca ON comm.case_id = ca.id ORDER BY comm.date DESC, comm.created_at DESC`
   );
@@ -1951,7 +1963,7 @@ function getUsers() {
   return query('SELECT id, name, email, role, avatar, active, last_login, phone, bar_number, city, specialties, experience_years FROM users ORDER BY id ASC');
 }
 function getAllUsers() {
-  return query('SELECT id, name, email, role, avatar, active, last_login, phone, bar_number, city, specialties, experience_years FROM users ORDER BY id ASC');
+  return query('SELECT id, name, email, role, avatar, active, last_login, phone, bar_number, city, specialties, experience_years, password_hash FROM users ORDER BY id ASC');
 }
 function addUser(data) {
   const hash = data.password_hash || '';

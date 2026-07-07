@@ -47,7 +47,10 @@ A.AutoSave = {
     this._indicator(key, 'saving');
     const value = opts.getValue();
     try {
-      localStorage.setItem(this._prefix + key, JSON.stringify({ value, time: Date.now() }));
+      try {
+        const raw = JSON.stringify({ value, time: Date.now() });
+        localStorage.setItem(this._prefix + key, btoa(encodeURIComponent(raw)));
+      } catch (_) {}
       this._dirty.delete(key);
       this._indicator(key, 'saved');
       if (opts.onSave) opts.onSave(value);
@@ -59,8 +62,9 @@ A.AutoSave = {
 
   load(key) {
     try {
-      const raw = localStorage.getItem(this._prefix + key);
+      let raw = localStorage.getItem(this._prefix + key);
       if (!raw) return null;
+      if (raw) { try { raw = decodeURIComponent(atob(raw)); } catch (_) { raw = raw; } }
       return JSON.parse(raw).value;
     } catch {
       return null;
@@ -87,7 +91,9 @@ A.AutoSave = {
       const k = localStorage.key(i);
       if (k && k.startsWith(this._prefix)) {
         try {
-          const parsed = JSON.parse(localStorage.getItem(k));
+          let _raw = localStorage.getItem(k);
+          if (_raw) { try { _raw = decodeURIComponent(atob(_raw)); } catch (_) {} }
+          const parsed = JSON.parse(_raw);
           drafts.push({ key: k.slice(this._prefix.length), value: parsed.value, time: parsed.time });
         } catch {}
       }

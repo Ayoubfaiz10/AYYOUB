@@ -139,18 +139,23 @@ A.renderPriorityView = function () {
 A.renderTaskAnalytics = async function () {
   const container = document.getElementById('taskAnalyticsContainer');
   if (!container || !A.state.ipc) return;
-  const stats = await A.cachedInvoke('db:getTaskAnalytics');
-  A.safeSetStatic(
-    container,
-    `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);margin-bottom:var(--spacing-3);">
-    <div class="task-analytics-card"><h4>إجمالي المهام</h4><div class="task-analytics-number">${esc(String(stats.total))}</div></div>
-    <div class="task-analytics-card"><h4>منجز هذا الأسبوع</h4><div class="task-analytics-number">${esc(String(stats.completedThisWeek))}</div></div>
-    <div class="task-analytics-card"><h4>متأخرة</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--destructive)' : 'var(--success)'};">${A.escapeHtml(String(stats.overdue))}</div></div>
-  </div>
-  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);">
-    <div class="task-analytics-card"><h4>متروكة</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.byStatus.backlog || 0))}</div></div>
-    <div class="task-analytics-card"><h4>قيد التنفيذ</h4><div class="task-analytics-number">${A.escapeHtml(String((stats.byStatus.todo || 0) + (stats.byStatus.in_progress || 0)))}</div></div>
-    <div class="task-analytics-card"><h4>معدل الإنجاز</h4><div class="task-analytics-number" style="font-size:20px;">${A.escapeHtml(String(stats.avgCompletionDays))} يوم</div></div>
-  </div>`
-  );
+  try {
+    const stats = await A.cachedInvoke('db:getTaskAnalytics');
+    A.safeSetStatic(
+      container,
+      `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);margin-bottom:var(--spacing-3);">
+      <div class="task-analytics-card"><h4>إجمالي المهام</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.total))}</div></div>
+      <div class="task-analytics-card"><h4>منجز هذا الأسبوع</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.completedThisWeek))}</div></div>
+      <div class="task-analytics-card"><h4>متأخرة</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--destructive)' : 'var(--success)'};">${A.escapeHtml(String(stats.overdue))}</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);">
+      <div class="task-analytics-card"><h4>متروكة</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.byStatus.backlog || 0))}</div></div>
+      <div class="task-analytics-card"><h4>قيد التنفيذ</h4><div class="task-analytics-number">${A.escapeHtml(String((stats.byStatus.todo || 0) + (stats.byStatus.in_progress || 0)))}</div></div>
+      <div class="task-analytics-card"><h4>معدل الإنجاز</h4><div class="task-analytics-number" style="font-size:20px;">${A.escapeHtml(String(stats.avgCompletionDays))} يوم</div></div>
+    </div>`
+    );
+  } catch (e) {
+    A.logError('renderTaskAnalytics', e);
+    A.safeSetStatic(container, '<div style="text-align:center;padding:40px;color:var(--muted-foreground);">' + A.escapeHtml('تعذر تحميل تحليلات المهام') + '</div>');
+  }
 };

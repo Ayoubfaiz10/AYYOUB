@@ -14,7 +14,7 @@ const VALID_CHANNELS = [
   'auth:boot',
   'auth:hasPassword',
   'auth:login',
-  'auth:hashPassword',
+
   'auth:getCurrentUser',
   'auth:getPermissions',
   'auth:getUsers',
@@ -28,6 +28,7 @@ const VALID_CHANNELS = [
   'auth:logout',
   'auth:getSecurityQuestion',
   'auth:checkSecurityAnswer',
+  'auth:verifyPassword',
   'auth:resetPassword',
   'auth:resetWithMasterKey',
   'db:getAllCases',
@@ -174,7 +175,7 @@ const IPC_SCHEMAS = {
     ],
     strict: true
   },
-  'auth:hashPassword': { args: [s_string({ minLength: 8, maxLength: 256 })], strict: true },
+
   'auth:setup': {
     args: [
       s_object({
@@ -183,7 +184,11 @@ const IPC_SCHEMAS = {
         password: s_string({ minLength: 8 }),
         openAtLogin: s_opt(s_boolean()),
         securityQ1: s_string({ minLength: 1 }),
-        securityA1: s_string({ minLength: 1 })
+        securityA1: s_string({ minLength: 1 }),
+        securityQ2: s_opt(s_string({ minLength: 1 })),
+        securityA2: s_opt(s_string({ minLength: 1 })),
+        securityQ3: s_opt(s_string({ minLength: 1 })),
+        securityA3: s_opt(s_string({ minLength: 1 }))
       })
     ],
     strict: true
@@ -207,6 +212,10 @@ const IPC_SCHEMAS = {
         answer: s_string({ minLength: 1 })
       })
     ],
+    strict: true
+  },
+  'auth:verifyPassword': {
+    args: [s_string({ minLength: 1 })],
     strict: true
   },
   'auth:resetPassword': {

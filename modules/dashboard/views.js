@@ -1,5 +1,9 @@
 var A = (window.App = window.App || {});
 
+const chartCorporateBlue = '#1E40AF';
+const chartAccentBlue = '#2563EB';
+const chartSlateGray = '#475569';
+
 A.renderDashboard = function (data) {
   const { stats, ext, cases: casesList, clients, chartData, tasks } = data;
   const safeCases = casesList || [];
@@ -100,19 +104,22 @@ A.renderKpiCards = function (stats, ext, cases, clients, chartData) {
 A.setKpi = function (numId, value, trendId, now, prev, invertBad) {
   const numEl = document.getElementById(numId);
   const trendEl = document.getElementById(trendId);
-  if (numEl) numEl.textContent = value;
+  if (numEl) {
+    numEl.textContent = value;
+    numEl.classList.toggle('is-zero', value === 0 || value === '0' || value === '0MAD' || value === '0.00MAD');
+  }
   if (trendEl && now !== undefined && prev !== undefined && prev > 0) {
     const pct = Math.round(((now - prev) / prev) * 100);
     const abs = Math.abs(pct);
-    if (pct > 0) {
+    if (pct === 0 || pct === -100) {
+      trendEl.textContent = '';
+      trendEl.className = 'dash-kpi-trend';
+    } else if (pct > 0) {
       trendEl.textContent = '+' + abs + '%';
       trendEl.className = 'dash-kpi-trend up';
-    } else if (pct < 0) {
+    } else {
       trendEl.textContent = '-' + abs + '%';
       trendEl.className = 'dash-kpi-trend down';
-    } else {
-      trendEl.textContent = '0%';
-      trendEl.className = 'dash-kpi-trend neutral';
     }
     if (invertBad && pct > 0) trendEl.className = 'dash-kpi-trend down';
     if (invertBad && pct < 0) trendEl.className = 'dash-kpi-trend up';
@@ -133,12 +140,6 @@ A.renderChartRow = function (chartData, ext) {
     A._typeDonut = null;
   }
 
-  const gold = '#C6A15B';
-  const blue = '#4A8BC2';
-  const green = '#1A8A5C';
-  const purple = '#8B5CF6';
-  const red = '#D94A4A';
-  const gray400 = '#8C8A84';
   const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
   var chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
@@ -151,14 +152,18 @@ A.renderChartRow = function (chartData, ext) {
   var barCtx = document.getElementById('casesBarChart')?.getContext('2d');
   if (barCtx) {
     var monthly = chartData.monthly || [];
-    var labels = monthly.map(function (m) { return monthNames[parseInt(m.month) - 1] || m.month; });
+    var labels = monthly.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
     var values = monthly.map(function (m) { return m.count; });
     if (values.length) {
+      var barGradient = barCtx.createLinearGradient(0, 0, 0, 280);
+      barGradient.addColorStop(0, chartCorporateBlue);
+      barGradient.addColorStop(0.5, chartAccentBlue);
+      barGradient.addColorStop(1, '#1D4ED8');
       A._casesBarChart = new Chart(barCtx, {
         type: 'bar',
         data: {
           labels: labels,
-          datasets: [{ label: _t('casesCountLabel'), data: values, backgroundColor: gold, borderRadius: 6, barPercentage: 0.6 }]
+          datasets: [{ label: _t('casesCountLabel'), data: values, backgroundColor: barGradient, borderRadius: 6, barPercentage: 0.6 }]
         },
         options: {
           responsive: true,
@@ -169,7 +174,7 @@ A.renderChartRow = function (chartData, ext) {
             tooltip: {
               backgroundColor: tooltipBg,
               titleColor: darkMode ? '#F9FAFB' : '#1F2937',
-              bodyColor: gray400,
+              bodyColor: chartSlateGray,
               borderColor: tooltipBorder,
               borderWidth: 1,
               cornerRadius: 8,
@@ -181,13 +186,13 @@ A.renderChartRow = function (chartData, ext) {
             }
           },
           scales: {
-            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } },
-            x: { grid: { display: false }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } }
+            y: { beginAtZero: true, grid: { color: gridColor }, ticks: { color: chartSlateGray, font: { family: chartFontFamily, size: 10 } } },
+            x: { grid: { display: false }, ticks: { color: chartSlateGray, font: { family: chartFontFamily, size: 10 } } }
           }
         }
       });
     } else {
-      barCtx.fillStyle = gray400;
+      barCtx.fillStyle = chartSlateGray;
       barCtx.font = '12px Inter';
       barCtx.textAlign = 'center';
       barCtx.textBaseline = 'middle';
@@ -199,8 +204,8 @@ A.renderChartRow = function (chartData, ext) {
   var donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
   if (donutCtx) {
     var tData = ext.casesByType || [];
-    var typeColors = { 'مدني': blue, 'تجاري': gold, 'أسرة': green, 'إداري': purple, 'جنائي': red };
-    var defaultColors = [blue, gold, green, purple, red, '#FF8A65', '#6B7280'];
+    var typeColors = { 'مدني': chartCorporateBlue, 'تجاري': chartAccentBlue, 'أسرة': '#0EA5E9', 'إداري': '#64748B', 'جنائي': '#94A3B8' };
+    var defaultColors = [chartCorporateBlue, chartAccentBlue, '#0EA5E9', '#64748B', '#94A3B8', '#475569', '#6B7280'];
     var colors = tData.map(function (t) { return typeColors[t.case_type] || defaultColors[tData.indexOf(t) % defaultColors.length]; });
     if (tData.length) {
       A._typeDonut = new Chart(donutCtx, {
@@ -227,10 +232,12 @@ A.renderChartRow = function (chartData, ext) {
               position: 'bottom',
               labels: {
                 font: { family: chartFontFamily, size: 11, weight: '500' },
-                color: gray400,
+                color: chartSlateGray,
                 padding: 14,
                 usePointStyle: true,
-                pointStyle: 'circle'
+                pointStyle: 'circle',
+                rtl: true,
+                textAlign: 'right'
               }
             },
             tooltip: {
@@ -257,7 +264,7 @@ A.renderChartRow = function (chartData, ext) {
         }
       });
     } else {
-      donutCtx.fillStyle = gray400;
+      donutCtx.fillStyle = chartSlateGray;
       donutCtx.font = '12px Inter';
       donutCtx.textAlign = 'center';
       donutCtx.textBaseline = 'middle';
@@ -291,10 +298,10 @@ A.renderUpcomingWidget = async function () {
       })
     );
     if (!items.length) {
-      A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('noUpcomingLabel') + '</p>');
+      A.safeSetStatic(container, '<div class="dash-empty-modern"><div class="dash-empty-icon"><i class="ri-calendar-todo-line"></i></div><div class="dash-empty-label">' + _t('noUpcomingLabel') + '</div><button class="dash-empty-btn" data-click="nav:hearings"><i class="ri-add-line"></i> ' + _t('dashNewHearing') + '</button></div>');
       return;
     }
-    items.sort((a, b) => parseInt(a.time) - parseInt(b.time));
+    items.sort((a, b) => parseInt(a.time, 10) - parseInt(b.time));
     A.safeSet(container, esc =>
       items
         .slice(0, 5)
@@ -330,7 +337,7 @@ A.renderUrgentTasks = function (tasks) {
       </div>`
           )
           .join('')
-      : '<p class="empty-state-sm">' + _t('noUrgentTasks') + '</p>'
+      : '<div class="dash-empty-modern"><div class="dash-empty-icon"><i class="ri-error-warning-line"></i></div><div class="dash-empty-label">' + _t('noUrgentTasks') + '</div><button class="dash-empty-btn" data-click="nav:tasks"><i class="ri-add-line"></i> ' + _t('addTask') + '</button></div>'
   );
 };
 
@@ -403,11 +410,9 @@ A.renderRevenueLine = function (ext) {
   }
   var ctx = document.getElementById('revenueLineChart')?.getContext('2d');
   if (!ctx) return;
-  var gold = '#C6A15B';
-  var gray400 = '#8C8A84';
   var monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
   var revData = ext.monthlyRevenue || [];
-  var labels = revData.map(function (m) { return monthNames[parseInt(m.month) - 1] || m.month; });
+  var labels = revData.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
   var values = revData.map(function (m) { return parseFloat(m.total) || 0; });
   var darkMode = document.body.classList.contains('dark-mode');
   var tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
@@ -423,21 +428,21 @@ A.renderRevenueLine = function (ext) {
           {
             label: _t('revenueLabel'),
             data: values,
-            borderColor: gold,
+            borderColor: chartCorporateBlue,
             backgroundColor: function (context) {
               var chart = context.chart;
               var ctx2 = chart.ctx;
               var gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
-              gradient.addColorStop(0, gold + '40');
-              gradient.addColorStop(1, gold + '02');
+              gradient.addColorStop(0, chartCorporateBlue + '30');
+              gradient.addColorStop(1, chartCorporateBlue + '02');
               return gradient;
             },
             fill: true,
             tension: 0.4,
-            pointBackgroundColor: gold,
+            pointBackgroundColor: chartCorporateBlue,
             pointRadius: 3,
             pointHoverRadius: 6,
-            pointHoverBackgroundColor: gold,
+            pointHoverBackgroundColor: chartCorporateBlue,
             pointHoverBorderColor: '#FFFFFF',
             pointHoverBorderWidth: 2,
             borderWidth: 2.5
@@ -474,19 +479,19 @@ A.renderRevenueLine = function (ext) {
             beginAtZero: true,
             grid: { color: gridColor },
             ticks: {
-              color: gray400,
+              color: chartSlateGray,
               font: { family: chartFontFamily, size: 10 },
               callback: function (v) {
                 return v.toLocaleString();
               }
             }
           },
-          x: { grid: { display: false }, ticks: { color: gray400, font: { family: chartFontFamily, size: 10 } } }
+          x: { grid: { display: false }, ticks: { color: chartSlateGray, font: { family: chartFontFamily, size: 10 } } }
         }
       }
     });
   } else {
-    ctx.fillStyle = gray400;
+    ctx.fillStyle = chartSlateGray;
     ctx.font = '12px Inter';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';

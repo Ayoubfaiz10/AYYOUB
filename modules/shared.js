@@ -60,6 +60,20 @@ A.showEmpty = function (containerId, icon, message) {
   );
 };
 
+A.on = function (id, event, handler) {
+  const el = document.getElementById(id);
+  if (!el) { A.logError('A.on', 'Missing element: ' + id); return; }
+  el.addEventListener(event, handler);
+};
+
+function wrapExecCommand(command) {
+  const sel = window.getSelection();
+  if (!sel.rangeCount) return;
+  const node = sel.getRangeAt(0).commonAncestorContainer;
+  if (!node.ownerDocument?.getSelection) return;
+  document.execCommand(command);
+}
+
 A.showSkeleton = function (containerId, count, type) {
   const el = typeof containerId === 'string' ? document.getElementById(containerId) : containerId;
   if (!el) return;
@@ -238,7 +252,7 @@ document.addEventListener('click', function (e) {
   if (ns === 'nav') {
     if (cmd === 'cases' && parts[2] && parts[2] === 'open') {
       window.navigateTo('cases');
-      setTimeout(function(){ window.openCaseDetail && window.openCaseDetail(parseInt(parts.slice(3).join(':'))); }, 200);
+      setTimeout(function(){ window.openCaseDetail && window.openCaseDetail(parseInt(parts.slice(3).join(':'), 10)); }, 200);
     } else {
       window.navigateTo(cmd);
     }
@@ -251,46 +265,46 @@ document.addEventListener('click', function (e) {
     else if (cmd === 'timeline') window.wsAiTimeline && window.wsAiTimeline();
     else if (cmd === 'risk') window.wsAiRisk && window.wsAiRisk();
     else if (cmd === 'chat') { var tab = document.querySelector('[data-ws=ai]'); if (tab) tab.click(); }
-    else if (cmd === 'summarize') { var sid = el.getAttribute('data-id'); var sname = el.getAttribute('data-name') || ''; window.wsAiSummarizeDoc && window.wsAiSummarizeDoc(parseInt(sid), sname); }
+    else if (cmd === 'summarize') { var sid = el.getAttribute('data-id'); var sname = el.getAttribute('data-name') || ''; window.wsAiSummarizeDoc && window.wsAiSummarizeDoc(parseInt(sid, 10), sname); }
   } else if (ns === 'support') {
     if (cmd === 'mail') window.open('mailto:support@cabinetmanager.ma');
   } else if (ns === 'case') {
-    if (cmd === 'open') window.openCaseDetail && window.openCaseDetail(parseInt(arg));
+    if (cmd === 'open') window.openCaseDetail && window.openCaseDetail(parseInt(arg, 10));
   } else if (ns === 'client') {
-    if (cmd === 'open') window.openClientDetail && window.openClientDetail(parseInt(arg));
+    if (cmd === 'open') window.openClientDetail && window.openClientDetail(parseInt(arg, 10));
   } else if (ns === 'doc') {
-    if (cmd === 'open') window.openDocViewer && window.openDocViewer(parseInt(arg));
-    else if (cmd === 'analyze') window.analyzeDoc && window.analyzeDoc(parseInt(arg));
-    else if (cmd === 'openFile') (async()=>{ try { await A.state.ipc.invoke('db:openDocument', parseInt(arg)); } catch(e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } })();
+    if (cmd === 'open') window.openDocViewer && window.openDocViewer(parseInt(arg, 10));
+    else if (cmd === 'analyze') window.analyzeDoc && window.analyzeDoc(parseInt(arg, 10));
+    else if (cmd === 'openFile') (async()=>{ try { await A.state.ipc.invoke('db:openDocument', parseInt(arg, 10)); } catch(e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } })();
     else if (cmd === 'filter') { document.getElementById('searchDocs').value = arg; A.renderDocGrid && A.renderDocGrid(); A.renderDocTable && A.renderDocTable(); }
   } else if (ns === 'event') {
-    if (cmd === 'open') window.openEventDetail && window.openEventDetail(parseInt(arg));
+    if (cmd === 'open') window.openEventDetail && window.openEventDetail(parseInt(arg, 10));
   } else if (ns === 'task') {
-    if (cmd === 'open') window.openTaskDetail && window.openTaskDetail(parseInt(arg));
-    else if (cmd === 'toggle') { e.stopPropagation(); window.toggleTaskStatus && window.toggleTaskStatus(parseInt(arg)); }
-    else if (cmd === 'addSubtask') window.addSubtaskTo && window.addSubtaskTo(parseInt(arg));
-    else if (cmd === 'addComment') window.addCommentTo && window.addCommentTo(parseInt(arg));
+    if (cmd === 'open') window.openTaskDetail && window.openTaskDetail(parseInt(arg, 10));
+    else if (cmd === 'toggle') { e.stopPropagation(); window.toggleTaskStatus && window.toggleTaskStatus(parseInt(arg, 10)); }
+    else if (cmd === 'addSubtask') window.addSubtaskTo && window.addSubtaskTo(parseInt(arg, 10));
+    else if (cmd === 'addComment') window.addCommentTo && window.addCommentTo(parseInt(arg, 10));
   } else if (ns === 'subtask') {
-    if (cmd === 'toggle') window.toggleSubtask && window.toggleSubtask(parseInt(arg));
-    else if (cmd === 'delete') window.deleteSubtaskItem && window.deleteSubtaskItem(parseInt(arg));
+    if (cmd === 'toggle') window.toggleSubtask && window.toggleSubtask(parseInt(arg, 10));
+    else if (cmd === 'delete') window.deleteSubtaskItem && window.deleteSubtaskItem(parseInt(arg, 10));
   } else if (ns === 'editor') {
-    if (cmd === 'bold') document.execCommand('bold');
-    else if (cmd === 'italic') document.execCommand('italic');
-    else if (cmd === 'list') document.execCommand('insertUnorderedList');
+    if (cmd === 'bold') wrapExecCommand('bold');
+    else if (cmd === 'italic') wrapExecCommand('italic');
+    else if (cmd === 'list') wrapExecCommand('insertUnorderedList');
   } else if (ns === 'contact') {
     if (cmd === 'call') { e.stopPropagation(); window.open('tel:' + arg, '_self'); }
     else if (cmd === 'mail') { e.stopPropagation(); window.open('mailto:' + arg, '_self'); }
   } else if (ns === 'settings') {
-    if (cmd === 'editUser') window.editSettingsUser && window.editSettingsUser(parseInt(arg));
-    else if (cmd === 'deleteUser') window.deleteSettingsUser && window.deleteSettingsUser(parseInt(arg));
+    if (cmd === 'editUser') window.editSettingsUser && window.editSettingsUser(parseInt(arg, 10));
+    else if (cmd === 'deleteUser') window.deleteSettingsUser && window.deleteSettingsUser(parseInt(arg, 10));
   } else if (ns === 'workflow') {
     if (cmd === 'apply') window.applyWorkflow && window.applyWorkflow();
     else if (cmd === 'new') window.showNewWorkflowForm && window.showNewWorkflowForm();
-    else if (cmd === 'delete') window.deleteWorkflowItem && window.deleteWorkflowItem(parseInt(arg));
+    else if (cmd === 'delete') window.deleteWorkflowItem && window.deleteWorkflowItem(parseInt(arg, 10));
   } else if (ns === 'template') {
     if (cmd === 'apply') window.applyTemplate && window.applyTemplate();
     else if (cmd === 'new') window.showNewTemplateForm && window.showNewTemplateForm();
-    else if (cmd === 'delete') window.deleteTemplateItem && window.deleteTemplateItem(parseInt(arg));
+    else if (cmd === 'delete') window.deleteTemplateItem && window.deleteTemplateItem(parseInt(arg, 10));
   } else if (ns === 'click') {
     var target = document.querySelector(cmd);
     if (target) target.click();

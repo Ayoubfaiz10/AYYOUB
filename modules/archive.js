@@ -28,7 +28,7 @@ A.loadArchive = async function () {
       .querySelectorAll('.case-archive-btn')
       .forEach(b =>
         b.addEventListener('click', async () => {
-          const result = await A.mutate('db:unarchiveCase', parseInt(b.dataset.id));
+          const result = await A.mutate('db:unarchiveCase', parseInt(b.dataset.id, 10));
           if (result && result.error) {
             A.showToast(_t('archiveToggleFailed'), 'error');
           } else {

@@ -164,7 +164,7 @@ A.initDocuments = function () {
       const btn = document.getElementById('uploadSelectFileBtn');
       if (btn)
         btn.addEventListener('click', async () => {
-          const caseId = parseInt(document.getElementById('uploadDocCase')?.value);
+          const caseId = parseInt(document.getElementById('uploadDocCase')?.value, 10);
           if (!caseId) {
             A.showToast(_t('selectCaseFirst'), 'error');
             return;

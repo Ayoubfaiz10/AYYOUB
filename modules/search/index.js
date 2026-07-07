@@ -14,13 +14,22 @@ A.loadSearchIndex = async function () {
         return { ...r, _lower: lower, _words: lower.split(/\s+/).filter(Boolean) };
       });
       A._searchIndexLoaded = true;
+      A._searchIndexRetryCount = 0;
     } else if (idx && idx.error) {
-      // Not authenticated yet — retry after auth
-      setTimeout(() => A.loadSearchIndex(), 2000);
+      A._searchIndexRetryCount = (A._searchIndexRetryCount || 0) + 1;
+      if (A._searchIndexRetryCount < 5) {
+        setTimeout(() => A.loadSearchIndex(), 2000 * A._searchIndexRetryCount);
+      } else {
+        A.logError('loadSearchIndex', 'Giving up after 5 retries');
+      }
     }
   } catch (e) {
-    A.logError('loadSearchIndex', e);
-    setTimeout(() => A.loadSearchIndex(), 3000);
+    A._searchIndexRetryCount = (A._searchIndexRetryCount || 0) + 1;
+    if (A._searchIndexRetryCount < 5) {
+      setTimeout(() => A.loadSearchIndex(), 3000 * A._searchIndexRetryCount);
+    } else {
+      A.logError('loadSearchIndex', 'Giving up after 5 retries');
+    }
   } finally {
     A.hideLoading('globalSearch');
   }
@@ -301,7 +310,7 @@ const CMD_QUICK_ACTIONS = [
 function matchNavAction(q, action) {
   if (!q) return true;
   const lower = action.text + ' ' + action.sub + ' ' + action.words;
-  return lower.includes(q);
+  return lower.includes(q.toLowerCase());
 }
 
 function execCmdItem() {
@@ -316,11 +325,11 @@ function execCmdItem() {
   } else if (action === 'case' && id) {
     A.addRecentItem('case', id, this.dataset.label, this.dataset.sub, 'cases');
     A.navigateTo('cases');
-    setTimeout(() => A.openCaseDetail(parseInt(id)), 200);
+    setTimeout(() => A.openCaseDetail(parseInt(id, 10)), 200);
   } else if (action === 'client' && id) {
     A.addRecentItem('client', id, this.dataset.label, this.dataset.sub, 'clients');
     A.navigateTo('clients');
-    setTimeout(() => A.openClientDetail(parseInt(id)), 200);
+    setTimeout(() => A.openClientDetail(parseInt(id, 10)), 200);
   } else if (action === 'expense') {
     A.navigateTo('expenses');
   } else if (action === 'doc') document.getElementById('uploadDocGlobalBtn')?.click();

@@ -36,6 +36,9 @@ const SENSITIVE_DIRS = [
   app.getPath('exe') ? path.dirname(app.getPath('exe')) : null,
 ].filter(Boolean);
 
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
+const LICENSE_GRACE_MS = 7 * 24 * 60 * 60 * 1000;
+
 function isAllowedUploadSource(sourcePath) {
   if (!sourcePath || typeof sourcePath !== 'string') return false;
   try {
@@ -56,11 +59,16 @@ async function getUniqueFilePath(dir, filename) {
   const ext = path.extname(filename);
   const base = path.basename(filename, ext);
   while (true) {
-    try { await fsp.access(finalPath); } catch { break; }
-    finalPath = path.join(dir, `${base}_(${count})${ext}`);
-    count++;
+    try {
+      const fd = await fsp.open(finalPath, 'wx');
+      await fd.close();
+      return finalPath;
+    } catch (e) {
+      if (e.code !== 'EEXIST') throw e;
+      finalPath = path.join(dir, `${base}_(${count})${ext}`);
+      count++;
+    }
   }
-  return finalPath;
 }
 
 /* ─── MIME magic-byte validation ─── */
@@ -75,7 +83,7 @@ const MAGIC_MAP = {
 function validateFileMagic(filePath, ext) {
   try {
     const sigs = MAGIC_MAP[ext];
-    if (!sigs) return true;
+    if (!sigs) return false;
     const fd = fs.openSync(filePath, 'r');
     const buf = Buffer.alloc(256);
     fs.readSync(fd, buf, 0, 256, 0);
@@ -131,7 +139,7 @@ function ensureTesseract() {
   if (_tesseractModule !== null) return _tesseractModule;
   try {
     _tesseractModule = require('tesseract.js');
-    console.log(process.env.NODE_ENV !== 'production' ? 'Tesseract.js loaded lazily' : '');
+    if (isDev) console.log('Tesseract.js loaded lazily');
     return _tesseractModule;
   } catch (e) {
     _tesseractModule = false;
@@ -228,7 +236,7 @@ async function licenseHttpPost(url, body) {
 function checkOfflineGrace(license) {
   if (!license || !license.lastValidated) return false;
   const now = Date.now();
-  return (now - license.lastValidated) < 7 * 24 * 60 * 60 * 1000;
+  return (now - license.lastValidated) < LICENSE_GRACE_MS;
 }
 
 /* ─── License IPC Handlers ─── */
@@ -265,7 +273,7 @@ ipcMain.handle('license:check', async function() {
       return { valid: false, message: e.message || 'الترخيص غير صالح' };
     }
     if (checkOfflineGrace(license)) {
-      return { valid: true, offline: true, key: license.key, graceDaysLeft: Math.floor((7 * 24 * 60 * 60 * 1000 - (Date.now() - license.lastValidated)) / (24 * 60 * 60 * 1000)) };
+      return { valid: true, offline: true, key: license.key, graceDaysLeft: Math.floor((LICENSE_GRACE_MS - (Date.now() - license.lastValidated)) / (24 * 60 * 60 * 1000)) };
     }
     return { valid: false, message: 'لا يمكن التحقق من الترخيص (الرجاء الاتصال بالإنترنت)' };
   }
@@ -615,7 +623,7 @@ async function init() {
   ipcMain.handle('db:getDashboardStats', safeIpc('getDashboardStats', withPerm('view_case')(() => db.getDashboardStats())));
   ipcMain.handle('db:getDashboardExtendedStats', safeIpc('getDashboardExtendedStats', withPerm('view_case')(() => db.getDashboardExtendedStats())));
   ipcMain.handle('db:getDocuments', safeIpc('getDocuments', withPerm('view_case')((_e, caseId) => db.getDocuments(caseId))));
-  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', withPerm('view_case')(() => db.getAllDocuments())));
+  ipcMain.handle('db:getAllDocuments', safeIpc('getAllDocuments', withPerm('view_case')(() => db.getAllDocuments(currentUser?.id, currentUser?.role))));
   ipcMain.handle('db:uploadDocument', mutateIpc('uploadDocument', withPerm('upload_doc')(async (_e, args) => {
     const { sourcePath, caseId, docType } = nullGuard(args);
     if (!sourcePath) return { error: 'مسار الملف مطلوب' };
@@ -771,7 +779,7 @@ async function init() {
     return id;
   })));
   ipcMain.handle('db:getClientCommunications', safeIpc('getClientCommunications', withPerm('view_case')((_e, clientId) => db.getClientCommunications(clientId))));
-  ipcMain.handle('db:getAllCommunications', safeIpc('getAllCommunications', withPerm('view_case')(() => db.getAllCommunications())));
+  ipcMain.handle('db:getAllCommunications', safeIpc('getAllCommunications', withPerm('view_case')(() => db.getAllCommunications(currentUser?.id, currentUser?.role))));
   ipcMain.handle('db:updateClientNotes', mutateIpc('updateClientNotes', withPerm('edit_case')(async (_e, data) => {
     data = nullGuard(data);
     if (data.id != null) db.updateClient(data);
@@ -845,7 +853,7 @@ async function init() {
     return {
     size: 0,
     maxSize: 500,
-    ttlMs: 7 * 24 * 60 * 60 * 1000,
+    ttlMs: LICENSE_GRACE_MS,
     memoryEstimate: 0
   };
   });
@@ -1202,7 +1210,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     }
     if (!verifyPassword(password, passwordHash)) {
       const rec = loginAttempts.get(loginKey) || { count: 0, firstAttempt: now };
-      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 100);
+      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 10);
       if (!rec.firstAttempt) rec.firstAttempt = now;
       if (rec.count >= MAX_LOGIN_ATTEMPTS) {
         const lockSecs = Math.min(MAX_LOCKOUT_SECS, Math.pow(2, rec.count - MAX_LOGIN_ATTEMPTS));
@@ -1216,7 +1224,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     currentUser = sessionUser;
     db.updateUser(user.id, { last_login: new Date().toISOString() });
     db.addLog('login', `تسجيل دخول: ${user.name}`, user.id, user.name);
-    var sessionToken = remember ? signToken(user.id, Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+    var sessionToken = remember ? signToken(user.id, Date.now() + SESSION_DURATION_MS) : null;
     return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('login', e);
@@ -1224,7 +1232,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
   }
 });
 
-ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openAtLogin, securityQ1, securityA1 }) => {
+ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openAtLogin, securityQ1, securityA1, securityQ2, securityA2, securityQ3, securityA3 }) => {
   try {
     const existing = db.getAllUsers() || [];
     const hasPassword = existing.some(u => u.password_hash && u.password_hash !== '');
@@ -1247,8 +1255,12 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
     if (!id) return { ok: false, error: 'فشل إنشاء حساب المدير' };
     const user = db.getUserById(id);
     if (!user) return { ok: false, error: 'فشل استرجاع المستخدم' };
-    if (securityQ1 && securityA1) {
-      db.setSecurityQuestions(id, [{ question: securityQ1, answerHash: hashBcrypt(securityA1) }]);
+    var questions = [];
+    if (securityQ1 && securityA1) questions.push({ question: securityQ1, answerHash: hashBcrypt(securityA1) });
+    if (securityQ2 && securityA2) questions.push({ question: securityQ2, answerHash: hashBcrypt(securityA2) });
+    if (securityQ3 && securityA3) questions.push({ question: securityQ3, answerHash: hashBcrypt(securityA3) });
+    if (questions.length) {
+      db.setSecurityQuestions(id, questions);
     }
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('setup', `إعداد المكتب: ${officeName} — المدير: ${adminName}`);
@@ -1256,7 +1268,7 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
       try { app.setLoginItemSettings({ openAtLogin: true }); } catch (e) { /* best effort */ }
     }
     await db.flushWrites();
-    var sessionToken = signToken(id, Date.now() + 7 * 24 * 60 * 60 * 1000);
+    var sessionToken = signToken(id, Date.now() + SESSION_DURATION_MS);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('setup', e);
@@ -1299,7 +1311,7 @@ ipcMain.handle('auth:checkSecurityAnswer', (_e, { userId, questionIndex, answer 
     const ok = bcrypt.compareSync(answer, storedHash);
     if (!ok) {
       const rec = securityAnswerAttempts.get(secKey) || { count: 0, firstAttempt: now };
-      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 100);
+      rec.count = Math.min(rec.count + 1, MAX_LOGIN_ATTEMPTS + 10);
       if (!rec.firstAttempt) rec.firstAttempt = now;
       rec.lastAttempt = now;
       if (rec.count >= MAX_LOGIN_ATTEMPTS) {
@@ -1328,7 +1340,7 @@ ipcMain.handle('auth:resetPassword', safeIpc('resetPassword', withPerm('manage_u
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
-    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + 7 * 24 * 60 * 60 * 1000) : null;
+    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + SESSION_DURATION_MS) : null;
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetPassword', e);
@@ -1351,7 +1363,7 @@ ipcMain.handle('auth:resetWithMasterKey', safeIpc('resetWithMasterKey', withPerm
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر (مفتاح الاستعادة) للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
-    var sessionToken = signToken(userId, Date.now() + 7 * 24 * 60 * 60 * 1000);
+    var sessionToken = signToken(userId, Date.now() + SESSION_DURATION_MS);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetWithMasterKey', e);
@@ -1392,6 +1404,19 @@ ipcMain.handle('auth:logout', (_e, args) => {
   }
   logToLogger(0, 'auth', reason || 'User logged out');
   return { ok: true };
+});
+
+ipcMain.handle('auth:verifyPassword', (_e, pwd) => {
+  try {
+    if (!currentUser) return { ok: false, error: 'لا يوجد مستخدم حالي' };
+    if (!pwd || typeof pwd !== 'string') return { ok: false, error: 'كلمة السر مطلوبة' };
+    const storedHash = db.getPasswordHashForUser(currentUser.id);
+    if (!storedHash) return { ok: false, error: 'لم يتم العثور على كلمة السر' };
+    return { ok: bcrypt.compareSync(pwd, storedHash) };
+  } catch (e) {
+    handleError('verifyPassword', e);
+    return { ok: false, error: 'حدث خطأ في التحقق من كلمة السر' };
+  }
 });
 
 ipcMain.handle('auth:hashPassword', safeIpc('auth:hashPassword', withPerm('manage_users')((_e, pwd) => {
@@ -1981,12 +2006,12 @@ function getMasterKeyOrThrow() {
   return key;
 }
 
-function deriveKey(info) {
-  return crypto.createHmac('sha256', process.env.MASTER_KEY).update(info).digest('hex').slice(0, 32);
+function deriveKey(info, length) {
+  return crypto.hkdfSync('sha256', Buffer.from(process.env.MASTER_KEY, 'utf8'), Buffer.alloc(0), Buffer.from(info, 'utf8'), length);
 }
 
-const HMAC_KEY = deriveKey('opencode:hmac');
-const ENCRYPTION_KEY = deriveKey('opencode:encryption');
+const HMAC_KEY = deriveKey('hmac-v1', 32);
+const ENCRYPTION_KEY = deriveKey('encryption-v1', 32);
 
 function getAiConfig() {
   try {

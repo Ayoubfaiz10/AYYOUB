@@ -41,3 +41,11 @@ test-results/
 
 # Git-tracked modules snapshot
 modules_backup/
+
+# Generated/backup files
+backup-lawyer-manager/
+main.backup.js
+lawyer-manager@2.0.0
+cd
+electron
+npm

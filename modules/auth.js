@@ -213,7 +213,7 @@ A.hideAuth = function () {
 A.checkAuth = async function () {
   if (!A.state.ipc) return;
   try {
-    var token = localStorage.getItem('session_token');
+    var token = localStorage.getItem('session_token') || A.state.currentSessionToken;
     if (token) {
       var user = await A.state.ipc.invoke('auth:checkRemembered', token);
       if (user) {
@@ -226,7 +226,7 @@ A.checkAuth = async function () {
         }
         return;
       }
-      localStorage.removeItem('session_token');
+      A.state.currentSessionToken = null;
     }
   } catch (e) {
     /* token check failed, continue to boot */
@@ -282,6 +282,10 @@ A.doSetup = function () {
 
   var sq1 = document.getElementById('sq1') ? document.getElementById('sq1').value : '';
   var sa1 = document.getElementById('sa1') ? document.getElementById('sa1').value.trim() : '';
+  var sq2 = document.getElementById('sq2') ? document.getElementById('sq2').value : '';
+  var sa2 = document.getElementById('sa2') ? document.getElementById('sa2').value.trim() : '';
+  var sq3 = document.getElementById('sq3') ? document.getElementById('sq3').value : '';
+  var sa3 = document.getElementById('sa3') ? document.getElementById('sa3').value.trim() : '';
 
   if (!sq1 || !sa1) {
     if (errorEl) {
@@ -291,13 +295,18 @@ A.doSetup = function () {
     return;
   }
 
-  A.state.ipc
-    .invoke('auth:setup', { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 })
+  var setupPayload = { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 };
+    if (sq2 && sa2) { setupPayload.securityQ2 = sq2; setupPayload.securityA2 = sa2; }
+    if (sq3 && sa3) { setupPayload.securityQ3 = sq3; setupPayload.securityA3 = sa3; }
+    A.state.ipc.invoke('auth:setup', setupPayload)
     .then(function (result) {
       if (result && result.ok) {
         if (errorEl) errorEl.style.display = 'none';
         var token = result.sessionToken;
-        if (token) localStorage.setItem('session_token', token);
+        if (token) {
+          A.state.currentSessionToken = token;
+          localStorage.setItem('session_token', token);
+        }
         if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
         A.hideAuth();
         if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
@@ -350,8 +359,10 @@ A.doLogin = function () {
         if (errorEl) errorEl.style.display = 'none';
         A.state.currentUser = result.user;
         if (result.sessionToken) {
+          A.state.currentSessionToken = result.sessionToken;
           localStorage.setItem('session_token', result.sessionToken);
         } else {
+          A.state.currentSessionToken = null;
           localStorage.removeItem('session_token');
         }
         if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
@@ -492,6 +503,7 @@ A.doForgotReset = function () {
         errorEl.style.display = 'none';
         A.state.currentUser = result.user;
         if (result.sessionToken) {
+          A.state.currentSessionToken = result.sessionToken;
           localStorage.setItem('session_token', result.sessionToken);
         }
         if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
@@ -589,6 +601,7 @@ A.doForgotMasterReset = function () {
         errorEl.style.display = 'none';
         A.state.currentUser = result.user;
         if (result.sessionToken) {
+          A.state.currentSessionToken = result.sessionToken;
           localStorage.setItem('session_token', result.sessionToken);
         }
         if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
@@ -664,7 +677,8 @@ A.initAuth = function () {
       var errorEl = document.getElementById('loginError');
       if (errorEl) errorEl.style.display = 'none';
       A._selectedUserId = null;
-      var token = localStorage.getItem('session_token');
+      var token = localStorage.getItem('session_token') || A.state.currentSessionToken;
+      A.state.currentSessionToken = null;
       localStorage.removeItem('session_token');
       A.state.ipc.invoke('auth:logout', { token: token, reason: 'lock' }).catch(function () {});
       A.state.currentUser = null;

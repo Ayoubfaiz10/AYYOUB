@@ -183,8 +183,8 @@ A.initAI = function () {
         const dx = ev.clientX - startX,
           dy = ev.clientY - startY;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) moved = true;
-        floatBtn.style.left = (parseInt(origX) || 24) + dx + 'px';
-        floatBtn.style.bottom = Math.max(10, (parseInt(origY) || 24) - dy) + 'px';
+        floatBtn.style.left = (parseInt(origX, 10) || 32) + dx + 'px';
+        floatBtn.style.bottom = Math.max(16, (parseInt(origY, 10) || 32) - dy) + 'px';
       };
       const onUp = () => {
         floatBtn._dragging = moved;
@@ -401,18 +401,10 @@ A.analyzeDoc = async function (docId) {
     }
     const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">(من الذاكرة المخبأة)</span>' : '';
     const html = result.analysis
-      .replace(
-        /=== الخلاصة ===/g,
-        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>'
-      )
-      .replace(
-        /=== النقاط الرئيسية ===/g,
-        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>'
-      )
-      .replace(
-        /=== التوصية القانونية ===/g,
-        '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>'
-      )
+      .replace(/^={3,}\s*الخلاصة\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>')
+      .replace(/^={3,}\s*النقاط الرئيسية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>')
+      .replace(/^={3,}\s*التوصية القانونية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>')
+      .replace(/^={3,}\s*(.+?)\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;">$1</h4>')
       .replace(/\*\*(.*?)\*\*/g, (_, m) => '<strong>' + A.escapeHtml(m) + '</strong>')
       .replace(/\n/g, '<br>');
     const safeHtml = DOMPurify.sanitize(html, { ALLOWED_TAGS: ['h4', 'strong', 'br', 'div', 'span', 'i'], ALLOWED_ATTR: ['style', 'class'] });

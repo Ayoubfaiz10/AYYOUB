@@ -192,6 +192,7 @@ A.renderMiniCalendar = function () {
   const today = now.getDate();
   const monthName = new Intl.DateTimeFormat(A.getLocale(), { month: 'long' }).format(now);
   var shortDays = A.getShortDayNames();
+  const eventDates = new Set(events.filter(e => e.status !== 'cancelled').map(e => e.date));
   let html = `<div style="text-align:center;font-weight:var(--font-weight-semibold);color:var(--foreground);margin-bottom:var(--spacing-1-5);">${monthName} ${year}</div>`;
   html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;text-align:center;">';
   shortDays.forEach(d => {
@@ -200,7 +201,7 @@ A.renderMiniCalendar = function () {
   for (let i = 0; i < firstDay; i++) html += '<div></div>';
   for (let d = 1; d <= daysInMonth; d++) {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-    const hasEvent = events.some(e => e.date === dateStr && e.status !== 'cancelled');
+    const hasEvent = eventDates.has(dateStr);
     const isToday = d === today;
     html += `<div style="padding:4px 0;border-radius:4px;${isToday ? 'background:var(--gold);color:#fff;font-weight:bold;' : hasEvent ? 'background:var(--muted);' : ''}">${d}</div>`;
   }

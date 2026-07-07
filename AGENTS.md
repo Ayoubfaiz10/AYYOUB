@@ -5,29 +5,33 @@
 ```bash
 npm start          # electron .
 npm run build      # electron-builder --win --x64 (NSIS installer)
-npm test           # node --test tests/unit/*.test.js
+npm test           # mocha "tests/unit/*.test.js" --timeout 30000
 ```
 
-Focused tests (all use `node:test` + `node:assert/strict`):
+Focused tests:
 
 ```bash
-npm run test:auth     tests/unit/auth.test.js
-npm run test:db       tests/unit/database.test.js
-npm run test:cases    tests/unit/cases.test.js
-npm run test:clients  tests/unit/clients.test.js
-npm run test:docs     tests/unit/documents.test.js
-npm run test:tasks    tests/unit/tasks.test.js
-npm run test:search   tests/unit/search.test.js
-npm run test:ipc      tests/unit/ipc-handlers.test.js
-# No npm script — run directly:
-node --test tests/unit/auth-flow.test.js
-# Legacy (custom framework, no assert lib):
-npm run test:legacy   node test/password.test.js
+npm run test:auth      mocha tests/unit/auth.test.js --timeout 30000
+npm run test:db        mocha tests/unit/database.test.js --timeout 30000
+npm run test:cases     mocha tests/unit/cases.test.js --timeout 30000
+npm run test:clients   mocha tests/unit/clients.test.js --timeout 30000
+npm run test:docs      mocha tests/unit/documents.test.js --timeout 30000
+npm run test:tasks     mocha tests/unit/tasks.test.js --timeout 30000
+npm run test:search    mocha tests/unit/search.test.js --timeout 30000
+npm run test:ipc       mocha tests/unit/ipc-handlers.test.js --timeout 30000
+npm run test:e2e       npx playwright test
+npm run test:legacy    node test/password.test.js
 ```
 
 Windows shortcut: `launch.bat` (runs `npm start` from script dir).
 
-**No linter, formatter, or typechecker is configured** — the repo relies on manual review.
+**Linter and formatter are configured:**
+
+```bash
+npm run lint           # eslint . --ext .js
+npm run format         # prettier --write "**/*.js"
+npm run format:check   # prettier --check "**/*.js"
+```
 
 ## Architecture
 

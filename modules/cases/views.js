@@ -79,10 +79,10 @@ A.renderKanbanView = function (list) {
 };
 
 A.attachCaseActions = function () {
-  document.querySelectorAll('.ws-open-btn').forEach(b => b.addEventListener('click', () => A.openCaseDetail(parseInt(b.dataset.id))));
+  document.querySelectorAll('.ws-open-btn').forEach(b => b.addEventListener('click', () => A.openCaseDetail(parseInt(b.dataset.id, 10))));
   document.querySelectorAll('.ws-archive-btn').forEach(b =>
     b.addEventListener('click', async () => {
-      const id = parseInt(b.dataset.id);
+      const id = parseInt(b.dataset.id, 10);
       const c = A.state.allCases.find(x => x.id === id);
       try {
         if (c && c.archived) await A.mutate('db:unarchiveCase', id);
@@ -99,7 +99,7 @@ A.attachCaseActions = function () {
     b.addEventListener('click', async () => {
       if (await A.showConfirm(_t('deleteCaseConfirm'))) {
         try {
-          await A.mutate('db:deleteCase', parseInt(b.dataset.id));
+          await A.mutate('db:deleteCase', parseInt(b.dataset.id, 10));
           A.showToast(_t('caseDeleted'), 'success');
         } catch (e) {
           A.logError('deleteCase', e);
@@ -247,16 +247,14 @@ A.loadWsDocuments = async function (_token) {
         try {
           if (window.electron?.webUtils?.getPathForFile) {
             filePath = window.electron.webUtils.getPathForFile(file);
-          } else if (file.path) {
-            filePath = file.path;
           }
           if (!filePath) {
             A.showToast(_t('filePathError'), 'error');
             return;
           }
           await A.mutate('db:uploadDocument', { sourcePath: filePath, caseId: A.state.currentCaseId, docType: document.getElementById('wsDocType').value });
-          A.loadWsDocuments();
-          A.loadWsOverviewDocs();
+          A.loadWsDocuments(A.state._caseDetailToken);
+          A.loadWsOverviewDocs(A.state._caseDetailToken);
         } catch (error) {
           A.logError('uploadDoc', error);
           A.showToast(_t('fileUploadError'), 'error');
@@ -522,11 +520,12 @@ A.loadWsContacts = async function (_token) {
   const el = document.getElementById('wsContacts');
   if (!A.state.ipc) return;
   try {
-    const allCases = await A.cachedInvoke('db:getAllCases');
+    const [allCases, clients] = await Promise.all([
+      A.cachedInvoke('db:getAllCases'),
+      A.cachedInvoke('db:getAllClients')
+    ]);
     if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const c = allCases.find(x => x.id === A.state.currentCaseId);
-    const clients = await A.cachedInvoke('db:getAllClients');
-    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const client = clients.find(x => x.id === c?.client_id);
     A.safeSet(
       el,
@@ -547,13 +546,12 @@ A.loadWsAnalytics = async function (c, _token) {
   const el = document.getElementById('wsAnalytics');
   if (!A.state.ipc) return;
   try {
-    const docs = await A.cachedInvoke('db:getDocuments', A.state.currentCaseId);
-    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
-    const procs = await A.cachedInvoke('db:getProcedures', A.state.currentCaseId);
-    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
-    const paiements = await A.cachedInvoke('db:getPaiements', A.state.currentCaseId);
-    if (_token !== undefined && _token !== A.state._caseDetailToken) return;
-    const allTasks = await A.cachedInvoke('db:getAllTasks');
+    const [docs, procs, paiements, allTasks] = await Promise.all([
+      A.cachedInvoke('db:getDocuments', A.state.currentCaseId),
+      A.cachedInvoke('db:getProcedures', A.state.currentCaseId),
+      A.cachedInvoke('db:getPaiements', A.state.currentCaseId),
+      A.cachedInvoke('db:getAllTasks')
+    ]);
     if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const tasks = allTasks.filter(t => t.case_id === A.state.currentCaseId || (t.notes && t.notes.includes('#' + A.state.currentCaseId)));
     const doneTasks = tasks.filter(t => t.status === 'done').length;

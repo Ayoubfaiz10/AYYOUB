@@ -43,7 +43,7 @@ window.editSettingsUser = async function (id) {
         name: document.getElementById('fUserName').value,
         email: document.getElementById('fUserEmail').value,
         role: document.getElementById('fUserRole').value,
-        active: parseInt(document.getElementById('fUserActive').value)
+        active: parseInt(document.getElementById('fUserActive').value, 10)
       };
       const pwd = document.getElementById('fUserPwd').value;
       if (pwd) data.password = pwd;
@@ -67,7 +67,7 @@ window.deleteSettingsUser = async function (id) {
 };
 
 A.initSettings = function () {
-  document.getElementById('settingLang')?.addEventListener('change', function () {
+  A.on('settingLang', 'change', function () {
     A.setLanguage(this.value);
     A.showToast(this.value === 'fr' ? 'Langue changée en français' : _t('langChangedToArabic'), 'success');
   });
@@ -80,7 +80,7 @@ A.initSettings = function () {
       <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input"></div>
       <div class="info-grid-2">
         <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin', 'senior_lawyer', 'junior_lawyer', 'assistant', 'intern', 'external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
-        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" value="12345678"></div>
+        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" placeholder="اتركه فارغاً لتوليد كلمة سر عشوائية"></div>
       </div>
     `,
       async () => {
@@ -121,15 +121,9 @@ A.initSettings = function () {
       msgEl.style.display = 'block';
       return;
     }
-    const loginResult = await A.state.ipc.invoke('auth:login', { password: currentPwd });
-    if (loginResult.corrupt) {
-      msgEl.textContent = loginResult.error;
-      msgEl.style.color = 'var(--destructive)';
-      msgEl.style.display = 'block';
-      return;
-    }
-    if (!loginResult.ok) {
-      msgEl.textContent = loginResult.error || _t('currentPwdWrong');
+    const verifyResult = await A.state.ipc.invoke('auth:verifyPassword', currentPwd);
+    if (!verifyResult || !verifyResult.ok) {
+      msgEl.textContent = verifyResult?.error || _t('currentPwdWrong');
       msgEl.style.color = 'var(--destructive)';
       msgEl.style.display = 'block';
       return;
@@ -146,7 +140,7 @@ A.initSettings = function () {
       msgEl.style.display = 'block';
       return;
     }
-    const result = await A.mutate('auth:setPassword', newPwd);
+    const result = await A.mutate('auth:changePassword', { oldPassword: currentPwd, newPassword: newPwd });
     if (!result || !result.ok) {
       msgEl.textContent = result?.error || _t('savePasswordFailed');
       msgEl.style.color = 'var(--destructive)';
@@ -167,8 +161,8 @@ A.initSettings = function () {
     try {
       await A.mutate('db:updateBackupSettings', {
         auto_enabled: document.getElementById('settingAutoBackup').checked ? 1 : 0,
-        frequency_hours: parseInt(document.getElementById('settingBackupFreq').value) || 24,
-        keep_count: parseInt(document.getElementById('settingBackupKeep').value) || 30
+        frequency_hours: parseInt(document.getElementById('settingBackupFreq').value, 10) || 24,
+        keep_count: parseInt(document.getElementById('settingBackupKeep').value, 10) || 30
       });
       A.showToast(_t('settingsSaved'), 'success');
     } catch (e) {
@@ -354,9 +348,9 @@ A.initSettings = function () {
     if (!A.state.ipc) return;
     try {
       await A.mutate('db:updateAlertSettings', {
-        days_before_1: parseInt(document.getElementById('settingDays1').value) || 7,
-        days_before_2: parseInt(document.getElementById('settingDays2').value) || 3,
-        days_before_3: parseInt(document.getElementById('settingDays3').value) || 1,
+        days_before_1: parseInt(document.getElementById('settingDays1').value, 10) || 7,
+        days_before_2: parseInt(document.getElementById('settingDays2').value, 10) || 3,
+        days_before_3: parseInt(document.getElementById('settingDays3').value, 10) || 1,
         enabled: document.getElementById('settingAlertEnabled').checked ? 1 : 0
       });
       A.showToast(_t('alertSettingsSaved'), 'success');

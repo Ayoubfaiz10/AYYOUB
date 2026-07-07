@@ -18,8 +18,12 @@ A.loadCalendar = async function () {
 };
 
 A.showEventForm = async function (editData) {
-  const cases = (await A.cachedInvoke('db:getAllCases')) || [];
-  const clients = (await A.cachedInvoke('db:getAllClients')) || [];
+  const [allCasesRes, allClientsRes] = await Promise.all([
+    A.cachedInvoke('db:getAllCases'),
+    A.cachedInvoke('db:getAllClients')
+  ]);
+  const cases = allCasesRes || [];
+  const clients = allClientsRes || [];
   const esc = A.escapeHtml;
   const caseOpts = cases
     .map(c => `<option value="${c.id}" ${editData && editData.case_id === c.id ? 'selected' : ''}>${esc(c.case_number)} - ${esc(c.title)}</option>`)
@@ -81,8 +85,8 @@ A.showEventForm = async function (editData) {
       }
       const data = {
         title,
-        case_id: parseInt(document.getElementById('fEventCase').value) || null,
-        client_id: parseInt(document.getElementById('fEventClient').value) || null,
+        case_id: parseInt(document.getElementById('fEventCase').value, 10) || null,
+        client_id: parseInt(document.getElementById('fEventClient').value, 10) || null,
         type: document.getElementById('fEventType').value,
         status: document.getElementById('fEventStatus').value,
         date: date,
@@ -107,7 +111,8 @@ A.showEventForm = async function (editData) {
           }
           if (data.recurring_type !== 'none') {
             const numRecur = { daily: 30, weekly: 12, monthly: 12, yearly: 3 }[data.recurring_type] || 12;
-            for (let i = 1; i <= numRecur; i++) {
+            const promises = [];
+            for (let i = 1; i < numRecur; i++) {
               const nextDate = new Date(data.date + 'T12:00:00');
               if (data.recurring_type === 'monthly') {
                 nextDate.setMonth(nextDate.getMonth() + i);
@@ -117,8 +122,9 @@ A.showEventForm = async function (editData) {
                 const interval = { daily: 1, weekly: 7 }[data.recurring_type] || 7;
                 nextDate.setDate(nextDate.getDate() + interval * i);
               }
-              await A.mutate('events:add', { ...data, date: nextDate.toISOString().slice(0, 10), recurring_type: 'none' });
+              promises.push(A.mutate('events:add', { ...data, date: nextDate.toISOString().slice(0, 10), recurring_type: 'none' }));
             }
+            await Promise.all(promises);
           }
         }
         A.hideModal();

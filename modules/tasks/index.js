@@ -55,7 +55,7 @@ A.showTaskForm = async function (editData) {
       const data = {
         title,
         description: document.getElementById('fTaskDesc').value,
-        case_id: parseInt(document.getElementById('fTaskCase').value) || null,
+        case_id: parseInt(document.getElementById('fTaskCase').value, 10) || null,
         assigned_to: document.getElementById('fTaskAssigned').value,
         status: document.getElementById('fTaskStatus').value,
         priority: document.getElementById('fTaskPriority').value,
@@ -228,8 +228,8 @@ window.applyWorkflow = async function () {
   const wfCaseEl = document.getElementById('wfCaseSelect');
   const wfEl = document.getElementById('wfSelect');
   const overlay = document.getElementById('workflowModalOverlay');
-  const caseId = wfCaseEl ? parseInt(wfCaseEl.value) : 0;
-  const wfId = wfEl ? parseInt(wfEl.value) : 0;
+  const caseId = wfCaseEl ? parseInt(wfCaseEl.value, 10) : 0;
+  const wfId = wfEl ? parseInt(wfEl.value, 10) : 0;
   if (!caseId || !wfId) {
     A.showToast('اختر القضية وسير العمل', 'error');
     return;
@@ -249,8 +249,8 @@ window.applyTemplate = async function () {
   const tmplCaseEl = document.getElementById('tmplCaseSelect');
   const tmplEl = document.getElementById('tmplSelect');
   const overlay = document.getElementById('workflowModalOverlay');
-  const caseId = tmplCaseEl ? parseInt(tmplCaseEl.value) : 0;
-  const tmplId = tmplEl ? parseInt(tmplEl.value) : 0;
+  const caseId = tmplCaseEl ? parseInt(tmplCaseEl.value, 10) : 0;
+  const tmplId = tmplEl ? parseInt(tmplEl.value, 10) : 0;
   if (!caseId || !tmplId) {
     A.showToast('اختر القضية والقالب', 'error');
     return;
@@ -455,7 +455,7 @@ A.initTasks = function () {
   document.getElementById('kanbanBoardV8')?.addEventListener('dragover', e => e.preventDefault());
   document.getElementById('kanbanBoardV8')?.addEventListener('drop', async e => {
     e.preventDefault();
-    const taskId = parseInt(e.dataTransfer.getData('text/plain'));
+    const taskId = parseInt(e.dataTransfer.getData('text/plain'), 10);
     if (!taskId) return;
     const col = e.target.closest('.kanban-col-v8');
     if (!col) return;

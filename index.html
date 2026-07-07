@@ -414,72 +414,52 @@
               </div>
             </div>
 
-            <!-- Welcome -->
+            <!-- Welcome + Actions -->
             <div class="dash-welcome-row" id="dashWelcomeRow">
-              <div class="dash-avatar-box" id="dashAvatar">م</div>
               <div class="dash-welcome-text">
+                <div class="dash-avatar-box" id="dashAvatar" style="display:none"></div>
                 <div class="dash-greeting" id="dashUserName">محامي</div>
                 <div class="dash-date" id="dashDate"></div>
               </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="dash-quick-actions" id="dashQuickActions">
-              <button class="qa-btn" data-action="case"><i class="ri-briefcase-add-line"></i> <span>إضافة قضية</span></button>
-              <button class="qa-btn" data-action="client"><i class="ri-user-add-line"></i> <span>إضافة موكل</span></button>
-              <button class="qa-btn" data-action="hearing"><i class="ri-calendar-add-line"></i> <span>إضافة جلسة</span></button>
-              <button class="qa-btn" data-action="document"><i class="ri-upload-2-line"></i> <span>رفع وثيقة</span></button>
+              <div class="dash-welcome-actions">
+                <button class="qa-btn dash-action-btn dash-action-primary" data-action="case"><i class="ri-briefcase-add-line"></i> <span>إضافة قضية</span></button>
+                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="client"><i class="ri-user-add-line"></i> <span>إضافة موكل</span></button>
+                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="hearing"><i class="ri-calendar-add-line"></i> <span>إضافة جلسة</span></button>
+                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="document"><i class="ri-upload-2-line"></i> <span>رفع وثيقة</span></button>
+              </div>
             </div>
 
             <!-- KPI Cards -->
             <div class="dash-kpi-grid" id="dashKpiRow">
               <div class="dash-kpi-card" id="kpiActiveCases">
-                <div class="dash-kpi-icon" style="background: var(--gold-bg-sm); color: var(--gold)"><i class="ri-briefcase-4-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumActiveCases">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashActiveCases">قضايا نشطة</span>
-                  <span class="dash-kpi-trend" id="kpiTrendActiveCases"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashActiveCases">قضايا نشطة</span>
+                <span class="dash-kpi-number" id="kpiNumActiveCases">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendActiveCases"></span>
               </div>
               <div class="dash-kpi-card" id="kpiClients">
-                <div class="dash-kpi-icon" style="background: var(--info-bg-xs); color: var(--info)"><i class="ri-user-3-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumClients">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashClients">الموكلين</span>
-                  <span class="dash-kpi-trend" id="kpiTrendClients"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashClients">الموكلين</span>
+                <span class="dash-kpi-number" id="kpiNumClients">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendClients"></span>
               </div>
               <div class="dash-kpi-card" id="kpiHearings">
-                <div class="dash-kpi-icon" style="background: var(--warning-bg-xs); color: var(--warning)"><i class="ri-scales-3-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumHearings">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashTodayHearings">جلسات هذا الأسبوع</span>
-                  <span class="dash-kpi-trend" id="kpiTrendHearings"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashTodayHearings">جلسات هذا الأسبوع</span>
+                <span class="dash-kpi-number" id="kpiNumHearings">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendHearings"></span>
               </div>
               <div class="dash-kpi-card" id="kpiRevenue">
-                <div class="dash-kpi-icon" style="background: var(--success-bg-xs); color: var(--success)"><i class="ri-money-dollar-circle-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumRevenue">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashRevenue">الإيرادات</span>
-                  <span class="dash-kpi-trend" id="kpiTrendRevenue"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashRevenue">الإيرادات</span>
+                <span class="dash-kpi-number" id="kpiNumRevenue">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendRevenue"></span>
               </div>
               <div class="dash-kpi-card" id="kpiTasks">
-                <div class="dash-kpi-icon" style="background: var(--danger-bg-xs); color: var(--destructive)"><i class="ri-task-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumTasks">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashPendingTasks">مهام معلقة</span>
-                  <span class="dash-kpi-trend" id="kpiTrendTasks"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashPendingTasks">مهام معلقة</span>
+                <span class="dash-kpi-number" id="kpiNumTasks">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendTasks"></span>
               </div>
               <div class="dash-kpi-card" id="kpiDocs">
-                <div class="dash-kpi-icon" style="background: var(--info-bg-xs); color: var(--info)"><i class="ri-file-4-line"></i></div>
-                <div class="dash-kpi-body">
-                  <span class="dash-kpi-number" id="kpiNumDocs">0</span>
-                  <span class="dash-kpi-label" data-i18n="dashDocs">الوثائق</span>
-                  <span class="dash-kpi-trend" id="kpiTrendDocs"></span>
-                </div>
+                <span class="dash-kpi-label" data-i18n="dashDocs">الوثائق</span>
+                <span class="dash-kpi-number" id="kpiNumDocs">0</span>
+                <span class="dash-kpi-trend" id="kpiTrendDocs"></span>
               </div>
             </div>
 
@@ -506,14 +486,14 @@
                   <h3><i class="ri-calendar-todo-line"></i> <span data-i18n="dashUpcomingHearings">الجلسات القادمة</span></h3>
                   <button class="btn btn-secondary btn-xs" data-click="nav:hearings" data-i18n="viewAll">عرض الكل</button>
                 </div>
-                <div id="dashUpcomingWidget" class="dash-card-body"><p class="empty-state-sm" data-i18n="dashNoUpcoming">لا توجد جلسات قادمة</p></div>
+                <div id="dashUpcomingWidget" class="dash-card-body"></div>
               </div>
               <div class="dash-card">
                 <div class="dash-card-header">
                   <h3><i class="ri-error-warning-line"></i> <span data-i18n="dashUrgentTasks">المهام العاجلة</span></h3>
                   <button class="btn btn-secondary btn-xs" data-click="nav:tasks" data-i18n="viewAll">عرض الكل</button>
                 </div>
-                <div id="dashUrgentTasks" class="dash-card-body"><p class="empty-state-sm" data-i18n="dashNoUrgentTasks">لا توجد مهام عاجلة</p></div>
+                <div id="dashUrgentTasks" class="dash-card-body"></div>
               </div>
             </div>
 
