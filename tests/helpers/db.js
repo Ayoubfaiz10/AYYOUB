@@ -175,8 +175,8 @@ function getChanges(db) {
 
 function setSecurityQuestions(db, userId, questions) {
   mutate(db, 'DELETE FROM security_questions WHERE user_id=?', [userId]);
-  for (var i = 0; i < questions.length; i++) {
-    var q = questions[i];
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
     mutate(db, 'INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)', [
       userId,
       i + 1,
@@ -189,7 +189,7 @@ function getSecurityQuestions(db, userId) {
   return query(db, 'SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
 }
 function getSecurityAnswer(db, userId, questionIndex) {
-  var r = query(db, 'SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
+  const r = query(db, 'SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
   return r.length ? r[0].answer_hash : null;
 }
 

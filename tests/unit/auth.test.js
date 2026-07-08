@@ -91,7 +91,7 @@ const ROLE_ACCESS = {
 };
 
 function canAccess(role, sectionId) {
-  var allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
+  const allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
   return allowed.indexOf(sectionId) !== -1;
 }
 

@@ -3,20 +3,20 @@ var A = (window.App = window.App || {});
 A.loadProfile = async function () {
   if (!A.state.ipc) return;
   try {
-    var user = await A.state.ipc.invoke('auth:getCurrentUser');
+    const user = await A.state.ipc.invoke('auth:getCurrentUser');
     if (!user) return;
-    var container = document.getElementById('profileContent');
+    const container = document.getElementById('profileContent');
     if (!container) return;
 
     A.initProfileForm(user);
 
-    var avatar = document.getElementById('profileAvatar');
-    var nameEl = document.getElementById('profileName');
-    var roleEl = document.getElementById('profileRole');
+    const avatar = document.getElementById('profileAvatar');
+    const nameEl = document.getElementById('profileName');
+    const roleEl = document.getElementById('profileRole');
     if (avatar) {
       if (user.avatar && user.avatar.startsWith('data:image')) {
         avatar.innerHTML = '';
-        var img = document.createElement('img');
+        const img = document.createElement('img');
         img.src = user.avatar;
         img.alt = 'avatar';
         img.style.cssText = 'width:80px;height:80px;border-radius:50%;object-fit:cover';
@@ -32,9 +32,9 @@ A.loadProfile = async function () {
 
     document.getElementById('profileLastLogin').textContent = user.last_login || '—';
 
-    var apiStatus = document.getElementById('profileApiKeyStatus');
+    const apiStatus = document.getElementById('profileApiKeyStatus');
     try {
-      var aiConfig = await A.state.ipc.invoke('ai:getConfig');
+      const aiConfig = await A.state.ipc.invoke('ai:getConfig');
       if (apiStatus) {
         if (aiConfig && aiConfig.hasKey) {
           apiStatus.textContent = _t('profileApiKeySet') || 'مضبوط';
@@ -46,10 +46,10 @@ A.loadProfile = async function () {
       }
     } catch (e) {}
 
-    var activityList = document.getElementById('profileActivityList');
+    const activityList = document.getElementById('profileActivityList');
     if (activityList) {
       try {
-        var logs = await A.cachedInvoke('db:getLogs', { limit: 5 });
+        const logs = await A.cachedInvoke('db:getLogs', { limit: 5 });
         if (logs && logs.length) {
           A.safeSet(activityList, function (esc) {
             return logs
@@ -78,8 +78,8 @@ A.loadProfile = async function () {
 
 A.initProfileForm = function (user) {
   if (!user) return;
-  var setVal = function (id, val) {
-    var el = document.getElementById(id);
+  const setVal = function (id, val) {
+    const el = document.getElementById(id);
     if (el) el.value = val || '';
   };
   setVal('pfName', user.name);
@@ -89,21 +89,21 @@ A.initProfileForm = function (user) {
   setVal('pfCity', user.city);
   setVal('pfExperience', user.experience_years);
 
-  var saved = (user.specialties || '')
+  const saved = (user.specialties || '')
     .split(',')
     .map(function (s) {
       return s.trim();
     })
     .filter(Boolean);
-  var checks = document.querySelectorAll('#pfSpecialties input[type="checkbox"]');
+  const checks = document.querySelectorAll('#pfSpecialties input[type="checkbox"]');
   checks.forEach(function (cb) {
     cb.checked = saved.indexOf(cb.value) !== -1;
   });
 };
 
 A.initProfile = function () {
-  var avatarEl = document.getElementById('profileAvatar');
-  var fileInput = document.getElementById('pfAvatarInput');
+  const avatarEl = document.getElementById('profileAvatar');
+  const fileInput = document.getElementById('pfAvatarInput');
 
   function triggerAvatarUpload() {
     if (fileInput) fileInput.click();
@@ -114,17 +114,17 @@ A.initProfile = function () {
 
   if (fileInput) {
     fileInput.addEventListener('change', async function () {
-      var file = fileInput.files && fileInput.files[0];
+      const file = fileInput.files && fileInput.files[0];
       if (!file) return;
       if (file.size > 1024 * 1024) {
         A.showToast('حجم الصورة يجب أن لا يتجاوز 1 ميغابايت', 'error');
         return;
       }
-      var reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = async function (e) {
-        var dataUrl = e.target.result;
+        const dataUrl = e.target.result;
         try {
-          var result = await A.state.ipc.invoke('auth:updateProfile', { avatar: dataUrl });
+          const result = await A.state.ipc.invoke('auth:updateProfile', { avatar: dataUrl });
           if (result && result.ok) {
             A.showToast('تم تغيير الصورة بنجاح', 'success');
             A.loadProfile();
@@ -141,31 +141,31 @@ A.initProfile = function () {
   }
 
   document.getElementById('profileSaveBtn')?.addEventListener('click', async function () {
-    var data = {};
-    var name = document.getElementById('pfName')?.value?.trim();
+    const data = {};
+    const name = document.getElementById('pfName')?.value?.trim();
     if (!name) {
       A.showToast('الاسم مطلوب', 'error');
       return;
     }
     data.name = name;
-    var email = document.getElementById('pfEmail')?.value?.trim();
+    const email = document.getElementById('pfEmail')?.value?.trim();
     if (email) data.email = email;
-    var phone = document.getElementById('pfPhone')?.value?.trim();
+    const phone = document.getElementById('pfPhone')?.value?.trim();
     if (phone) data.phone = phone;
-    var bar = document.getElementById('pfBarNumber')?.value?.trim();
+    const bar = document.getElementById('pfBarNumber')?.value?.trim();
     if (bar) data.bar_number = bar;
-    var city = document.getElementById('pfCity')?.value?.trim();
+    const city = document.getElementById('pfCity')?.value?.trim();
     if (city) data.city = city;
-    var exp = document.getElementById('pfExperience')?.value;
+    const exp = document.getElementById('pfExperience')?.value;
     if (exp) data.experience_years = parseInt(exp, 10);
-    var specialties = [];
+    const specialties = [];
     document.querySelectorAll('#pfSpecialties input[type="checkbox"]:checked').forEach(function (cb) {
       specialties.push(cb.value);
     });
     data.specialties = specialties.join(',');
 
     try {
-      var result = await A.state.ipc.invoke('auth:updateProfile', data);
+      const result = await A.state.ipc.invoke('auth:updateProfile', data);
       if (result && result.ok) {
         A.showToast(_t('savedSuccessfully') || 'تم الحفظ بنجاح', 'success');
         A.loadProfile();
@@ -178,10 +178,10 @@ A.initProfile = function () {
   });
 
   document.getElementById('pfChangePwdBtn')?.addEventListener('click', async function () {
-    var oldPwd = document.getElementById('pfCurrentPwd')?.value;
-    var newPwd = document.getElementById('pfNewPwd')?.value;
-    var confirmPwd = document.getElementById('pfConfirmPwd')?.value;
-    var msgEl = document.getElementById('pfPwdMsg');
+    const oldPwd = document.getElementById('pfCurrentPwd')?.value;
+    const newPwd = document.getElementById('pfNewPwd')?.value;
+    const confirmPwd = document.getElementById('pfConfirmPwd')?.value;
+    const msgEl = document.getElementById('pfPwdMsg');
 
     if (!oldPwd) {
       if (msgEl) {
@@ -209,7 +209,7 @@ A.initProfile = function () {
     }
 
     try {
-      var result = await A.state.ipc.invoke('auth:changePassword', { oldPassword: oldPwd, newPassword: newPwd });
+      const result = await A.state.ipc.invoke('auth:changePassword', { oldPassword: oldPwd, newPassword: newPwd });
       if (result && result.ok) {
         if (msgEl) {
           msgEl.style.display = 'block';

@@ -42,7 +42,7 @@ A._renderDocCards = function (displayed, container) {
     </div>`
           )
           .join('')
-      : `<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:48px;color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">${_t('noDocsLabel')}</p></div>`
+      : `<div style="text-align:center;padding:60px 20px;grid-column:1/-1;"><i class="ri-file-4-line" style="font-size:var(--icon-xl);color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">${_t('noDocsLabel')}</p></div>`
   );
 };
 

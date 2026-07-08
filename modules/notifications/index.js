@@ -11,11 +11,11 @@ A.loadNotifications = async function () {
     ]);
     const today = new Date().toISOString().slice(0, 10);
     const urgentDeadlines = (deadlines || []).filter(d => (d.days_remaining || 0) <= 7).map(d => ({
-      text: `⚖️ أجل قضية ${d.case_number} — ${d.days_remaining === 0 ? 'اليوم' : `بعد ${d.days_remaining} يوم`}`,
+      text: `<i class="ri-scales-line"></i> أجل قضية ${d.case_number} — ${d.days_remaining === 0 ? 'اليوم' : `بعد ${d.days_remaining} يوم`}`,
       time: d.deadline_date
     }));
     const urgentHearings = (hearings || []).filter(h => (h.days_remaining || 0) <= 3).map(h => ({
-      text: `🗓️ جلسة ${h.case_number} — ${h.days_remaining === 0 ? 'اليوم' : `بعد ${h.days_remaining} يوم`}`,
+      text: `<i class="ri-calendar-event-line"></i> جلسة ${h.case_number} — ${h.days_remaining === 0 ? 'اليوم' : `بعد ${h.days_remaining} يوم`}`,
       time: h.hearing_date
     }));
     const recent = [...urgentDeadlines, ...urgentHearings].slice(0, 6);

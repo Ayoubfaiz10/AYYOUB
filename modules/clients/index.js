@@ -41,6 +41,8 @@ A.openClientDetail = async function (id) {
   const _token = ++A.state._clientDetailToken;
 
   document.getElementById('clTitle').textContent = c.name;
+  const leaf = document.getElementById('clBreadcrumbLeaf');
+  if (leaf) leaf.textContent = c.name;
   document.getElementById('clAvatarSm').textContent = (c.name || '?').charAt(0);
   document.getElementById('clStatusBadge').textContent = _t('activeBadge');
 
@@ -140,6 +142,12 @@ A.initClients = function () {
   );
   document.getElementById('clientDetailClose')?.addEventListener('click', () => (document.getElementById('clientDetailOverlay').style.display = 'none'));
   document.getElementById('clientDetailCloseBtn')?.addEventListener('click', () => (document.getElementById('clientDetailOverlay').style.display = 'none'));
+  document.querySelectorAll('#clientDetailOverlay .ws-breadcrumb-link').forEach(function (link) {
+    link.addEventListener('click', function () {
+      document.getElementById('clientDetailOverlay').style.display = 'none';
+      A.navigateTo(link.dataset.section);
+    });
+  });
   document.getElementById('clEditBtn')?.addEventListener('click', () => {
     if (!A.state.currentClientId) return;
     A.showToast(_t('editClientComing'), 'info');

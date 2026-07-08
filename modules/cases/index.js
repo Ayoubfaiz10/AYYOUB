@@ -47,6 +47,8 @@ A.openCaseDetail = async function (caseId) {
   const _token = ++A.state._caseDetailToken;
 
   document.getElementById('cdTitle').textContent = `${c.case_number} — ${c.title}`;
+  const leaf = document.getElementById('cdBreadcrumbLeaf');
+  if (leaf) leaf.textContent = `${c.case_number} — ${c.title}`;
   document.getElementById('cdStatusBadge').textContent = A.state.statusLabels[c.status] || c.status;
   document.getElementById('cdStatusBadge').className = 'ws-badge badge-' + c.status;
 
@@ -234,6 +236,12 @@ A.initCases = function () {
 
   document.getElementById('caseDetailClose').addEventListener('click', () => (document.getElementById('caseDetailOverlay').style.display = 'none'));
   document.getElementById('caseDetailCloseBtn').addEventListener('click', () => (document.getElementById('caseDetailOverlay').style.display = 'none'));
+  document.querySelectorAll('#caseDetailOverlay .ws-breadcrumb-link').forEach(function (link) {
+    link.addEventListener('click', function () {
+      document.getElementById('caseDetailOverlay').style.display = 'none';
+      A.navigateTo(link.dataset.section);
+    });
+  });
 
   document.getElementById('cdArchiveBtn')?.addEventListener('click', async () => {
     if (!A.state.currentCaseId) return;

@@ -37,11 +37,11 @@ A._renderHearingRows = function (displayed) {
                 : e.date === today
                   ? '<span class="badge badge-gold">' + _t('hearingsToday') + '</span>'
                   : '<span class="badge badge-active">' + _t('hearingsUpcoming') + '</span>';
-            const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
+            const typeIcons = { hearing: '<i class="ri-scales-line"></i>', deadline: '<i class="ri-alarm-warning-line"></i>', meeting: '<i class="ri-group-line"></i>', task: '<i class="ri-checkbox-circle-line"></i>', document: '<i class="ri-file-text-line"></i>', payment: '<i class="ri-coins-line"></i>' };
             return `<tr>
       <td style="font-size:11px;">${esc(A.formatDate(e.date))}</td>
       <td style="font-size:11px;">${esc(e.time || '-')}</td>
-      <td>${typeIcons[e.type] || '📌'} ${esc(e.type)}</td>
+      <td>${typeIcons[e.type] || '<i class="ri-pushpin-line"></i>'} ${esc(e.type)}</td>
       <td><strong style="cursor:pointer;color:var(--foreground);" data-click="event:open:${e.id}">${esc(e.title)}</strong></td>
       <td style="font-size:11px;">${esc(e.case_number || '-')}</td>
       <td style="font-size:11px;">${esc(e.client_name || '-')}</td>
@@ -71,5 +71,8 @@ A.renderHearingsTable = function () {
 };
 
 A.initHearings = function () {
-  // Listeners are registered in initCalendar – no duplicate needed here
+  document.getElementById('hearingsFilterBtn')?.addEventListener('click', () => {
+    const bar = document.getElementById('hearingsFilterBar');
+    if (bar) bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+  });
 };

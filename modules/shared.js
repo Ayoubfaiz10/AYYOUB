@@ -61,7 +61,7 @@ A.showEmpty = function (containerId, icon, message) {
   if (!el) return;
   A.safeSet(
     el,
-    esc => `<div class="empty-state"><i class="${icon || 'ri-inbox-line'} empty-state-icon"></i><p class="empty-state-text">${esc(message)}</p></div>`
+    esc => `<div class="empty-state"><i class="${icon || 'ri-inbox-line'}"></i><p>${esc(message)}</p></div>`
   );
 };
 
@@ -136,7 +136,7 @@ A.showLoading = function (elementId) {
   if (!el) return;
   el.dataset._ldOrigHtml = el.innerHTML;
   el.innerHTML =
-    '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--muted-foreground);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:24px;"></i> جاري التحميل...</div>';
+    '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--muted-foreground);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);"></i> جاري التحميل...</div>';
 };
 
 A.hideLoading = function (elementId) {
@@ -244,29 +244,29 @@ A.formatDateTime = function (isoStr) {
 window.showToast = A.showToast;
 
 function parseClickAttr(el) {
-  var ns = el.getAttribute('data-ns');
-  var cmd = el.getAttribute('data-cmd');
-  var arg = el.getAttribute('data-arg');
+  const ns = el.getAttribute('data-ns');
+  const cmd = el.getAttribute('data-cmd');
+  const arg = el.getAttribute('data-arg');
   if (ns && cmd) return { ns: ns, cmd: cmd, arg: arg || '' };
-  var click = el.getAttribute('data-click');
+  const click = el.getAttribute('data-click');
   if (!click) return { ns: '', cmd: '', arg: '' };
-  var i1 = click.indexOf(':');
+  const i1 = click.indexOf(':');
   if (i1 === -1) return { ns: click, cmd: '', arg: '' };
-  var i2 = click.indexOf(':', i1 + 1);
+  const i2 = click.indexOf(':', i1 + 1);
   if (i2 === -1) return { ns: click.slice(0, i1), cmd: click.slice(i1 + 1), arg: '' };
   return { ns: click.slice(0, i1), cmd: click.slice(i1 + 1, i2), arg: click.slice(i2 + 1) };
 }
 
 // Global delegated click handler for data-click / data-ns attributes (CSP-compliant)
 document.addEventListener('click', function (e) {
-  var el = e.target.closest('[data-click],[data-ns]');
+  const el = e.target.closest('[data-click],[data-ns]');
   if (!el) return;
   if (el.getAttribute('data-click-stop') === 'true') e.stopPropagation();
-  var attr = parseClickAttr(el);
+  const attr = parseClickAttr(el);
   if (!attr.ns) return;
-  var ns = attr.ns;
-  var cmd = attr.cmd;
-  var arg = attr.arg;
+  const ns = attr.ns;
+  const cmd = attr.cmd;
+  const arg = attr.arg;
   if (ns === 'nav') {
     if (cmd === 'cases' && parts[2] && parts[2] === 'open') {
       window.navigateTo('cases');
@@ -275,15 +275,15 @@ document.addEventListener('click', function (e) {
       window.navigateTo(cmd);
     }
   } else if (ns === 'close') {
-    var overlay = document.getElementById(cmd);
+    const overlay = document.getElementById(cmd);
     if (overlay) overlay.style.display = 'none';
   } else if (ns === 'ai') {
     if (cmd === 'clearContext') window.clearAiContext && window.clearAiContext();
     else if (cmd === 'selectProvider') window.selectAiProvider && window.selectAiProvider(arg);
     else if (cmd === 'timeline') window.wsAiTimeline && window.wsAiTimeline();
     else if (cmd === 'risk') window.wsAiRisk && window.wsAiRisk();
-    else if (cmd === 'chat') { var tab = document.querySelector('[data-ws=ai]'); if (tab) tab.click(); }
-    else if (cmd === 'summarize') { var sid = el.getAttribute('data-id'); var sname = el.getAttribute('data-name') || ''; window.wsAiSummarizeDoc && window.wsAiSummarizeDoc(parseInt(sid, 10), sname); }
+    else if (cmd === 'chat') { const tab = document.querySelector('[data-ws=ai]'); if (tab) tab.click(); }
+    else if (cmd === 'summarize') { const sid = el.getAttribute('data-id'); const sname = el.getAttribute('data-name') || ''; window.wsAiSummarizeDoc && window.wsAiSummarizeDoc(parseInt(sid, 10), sname); }
   } else if (ns === 'support') {
     if (cmd === 'mail') window.open('mailto:support@cabinetmanager.ma');
   } else if (ns === 'case') {
@@ -325,14 +325,14 @@ document.addEventListener('click', function (e) {
     else if (cmd === 'delete') window.deleteTemplateItem && window.deleteTemplateItem(parseInt(arg, 10));
   } else if (ns === '_click') {
     if (A._trustedClicks && A._trustedClicks.some(function (p) { return cmd.indexOf(p) === 0; })) {
-      var t2 = document.querySelector(cmd);
+      const t2 = document.querySelector(cmd);
       if (t2) t2.click();
     }
   }
 });
 
 A.state.ipc.on('app:indexNotification', function (data) {
-  var typeMap = { indexSuccess: 'success', indexWarning: 'warning', indexError: 'error' };
-  var toastType = typeMap[data.type] || 'info';
+  const typeMap = { indexSuccess: 'success', indexWarning: 'warning', indexError: 'error' };
+  const toastType = typeMap[data.type] || 'info';
   A.showToast(data.message, toastType);
 });

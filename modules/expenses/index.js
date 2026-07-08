@@ -8,7 +8,7 @@ A.loadExpenses = async function () {
     let totalHonoraires = 0,
       totalPaid = 0,
       totalExpenses = 0;
-    let allPaiements = [];
+    const allPaiements = [];
     for (const c of cases) {
       totalHonoraires += parseFloat(c.total_fees || 0);
       totalExpenses += parseFloat(c.expenses || 0);

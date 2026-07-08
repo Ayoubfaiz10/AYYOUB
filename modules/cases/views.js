@@ -23,7 +23,7 @@ A.renderTableView = function (list) {
   </tr>`
           )
           .join('')
-      : `<tr><td colspan="9"><div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>`
+      : `<tr><td colspan="9"><div class="empty-state"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>`
   );
   A.attachCaseActions();
 };
@@ -46,7 +46,7 @@ A.renderCardView = function (list) {
   </div>`
           )
           .join('')
-      : `<div class="empty-state-v2"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div>`
+      : `<div class="empty-state"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div>`
   );
 };
 

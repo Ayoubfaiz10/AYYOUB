@@ -36,7 +36,7 @@ A.initSessionTimeout = function () {
     sessionTimer = setTimeout(
       () => {
         if (A.state.ipc) {
-          var token = A.state.currentSessionToken;
+          const token = A.state.currentSessionToken;
           A.state.ipc.invoke('auth:logout', { token: token, reason: 'timeout' }).catch(function (e) {
             console.error('logout error:', e);
           });

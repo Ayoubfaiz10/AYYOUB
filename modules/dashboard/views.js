@@ -11,7 +11,11 @@ A.renderDashboard = function (data) {
   const safeExt = ext || {};
   const hasData = safeCases.length > 0 || safeClients.length > 0;
   const emptyState = document.getElementById('dashEmptyState');
-  if (emptyState) emptyState.style.display = hasData ? 'none' : 'block';
+  const welcomeRow = document.getElementById('dashWelcomeRow');
+  if (emptyState) {
+    emptyState.style.display = hasData ? 'none' : 'block';
+    if (welcomeRow) welcomeRow.style.display = hasData ? '' : 'none';
+  }
   A.renderWelcomeHeader(safeCases.length);
   A.renderKpiCards(stats, safeExt, safeCases, safeClients, chartData);
   A.renderChartRow(chartData, safeExt);
@@ -33,13 +37,13 @@ A.renderWelcomeHeader = function (totalCases) {
   const welcomeRow = document.getElementById('dashWelcomeRow');
 
   // Get actual user name from auth
-  var userName = _t('defaultLawyer');
+  let userName = _t('defaultLawyer');
   if (A.state.ipc) {
     A.state.ipc.invoke('auth:getCurrentUser').then(function (user) {
       if (user && user.name) userName = user.name;
       if (avatarEl) avatarEl.textContent = userName.charAt(0);
       if (userEl) {
-        var greeting = 'السلام عليكم، ' + userName;
+        const greeting = 'السلام عليكم، ' + userName;
         userEl.textContent = greeting;
       }
     }).catch(function () {
@@ -54,7 +58,7 @@ A.renderWelcomeHeader = function (totalCases) {
   if (dateEl) dateEl.textContent = new Date().toLocaleDateString(A.getLocale(), { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   // Add greeting subtitle with contextual info
-  var subEl = welcomeRow ? welcomeRow.querySelector('.dash-greeting-sub') : null;
+  let subEl = welcomeRow ? welcomeRow.querySelector('.dash-greeting-sub') : null;
   if (!subEl && welcomeRow) {
     subEl = document.createElement('div');
     subEl.className = 'dash-greeting-sub';
@@ -65,17 +69,17 @@ A.renderWelcomeHeader = function (totalCases) {
       A.cachedInvoke('db:getUpcomingHearings'),
       A.cachedInvoke('db:getUpcomingDeadlines')
     ]).then(function (results) {
-      var hearings = results[0] || [];
-      var deadlines = results[1] || [];
-      var weekCount = hearings.filter(function (h) { return h.days_remaining <= 7; }).length;
-      var todayCount = deadlines.filter(function (d) { return d.days_remaining <= 1; }).length;
-      var parts = [];
+      const hearings = results[0] || [];
+      const deadlines = results[1] || [];
+      const weekCount = hearings.filter(function (h) { return h.days_remaining <= 7; }).length;
+      const todayCount = deadlines.filter(function (d) { return d.days_remaining <= 1; }).length;
+      const parts = [];
       if (weekCount > 0) {
-        var hText = weekCount === 1 ? 'لديك جلسة واحدة هذا الأسبوع' : 'لديك ' + weekCount + ' جلسات هذا الأسبوع';
+        const hText = weekCount === 1 ? 'لديك جلسة واحدة هذا الأسبوع' : 'لديك ' + weekCount + ' جلسات هذا الأسبوع';
         parts.push(hText);
       }
       if (todayCount > 0) {
-        var dText = todayCount === 1 ? 'وقضية تحتاج متابعة اليوم' : 'وقضيتان تحتاجان متابعة اليوم';
+        const dText = todayCount === 1 ? 'وقضية تحتاج متابعة اليوم' : 'وقضيتان تحتاجان متابعة اليوم';
         parts.push(dText);
       }
       subEl.textContent = parts.length ? parts.join(' و') : 'مرحباً بك في لوحة التحكم';
@@ -99,6 +103,71 @@ A.renderKpiCards = function (stats, ext, cases, clients, chartData) {
   A.setKpi('kpiNumRevenue', totalRevenue.toLocaleString() + _t('currencyMAD'), 'kpiTrendRevenue', ext.trend?.revenueNow, ext.trend?.revenuePrev);
   A.setKpi('kpiNumTasks', pendingTasksCount, 'kpiTrendTasks', ext.trend?.tasksNow, ext.trend?.tasksPrev, true);
   A.setKpi('kpiNumDocs', totalDocs || 0, 'kpiTrendDocs', ext.trend?.docsNow, ext.trend?.docsPrev);
+
+  A.renderSparklines(chartData, ext);
+};
+
+A.renderSparklines = function (chartData, ext) {
+  if (typeof Chart === 'undefined') return;
+  const darkMode = document.body.classList.contains('dark-mode');
+  const lineColor = darkMode ? 'rgba(198,161,91,0.6)' : 'rgba(198,161,91,0.7)';
+  const fillColor = darkMode ? 'rgba(198,161,91,0.08)' : 'rgba(198,161,91,0.06)';
+
+  const monthly = chartData.monthly || [];
+  const revData = ext.monthlyRevenue || [];
+
+  function drawSpark(canvasId, data, color) {
+    const ctx = document.getElementById(canvasId)?.getContext('2d');
+    if (!ctx || !data.length) return;
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: data.map(function (_, i) { return i; }),
+        datasets: [{
+          data: data,
+          borderColor: color || lineColor,
+          backgroundColor: fillColor,
+          borderWidth: 1.5,
+          pointRadius: 0,
+          tension: 0.3,
+          fill: true
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        animation: { duration: 600 },
+        plugins: { legend: { display: false }, tooltip: { enabled: false } },
+        scales: {
+          x: { display: false },
+          y: { display: false, beginAtZero: true }
+        },
+        elements: { point: { radius: 0 } }
+      }
+    });
+  }
+
+  const spColor = darkMode ? 'rgba(198,161,91,0.5)' : 'rgba(198,161,91,0.6)';
+  if (monthly.length) {
+    drawSpark('sparkActiveCases', monthly.map(function (m) { return m.count; }), spColor);
+  }
+  if (ext.trend && ext.trend.clientsNow !== undefined) {
+    const synthClients = [];
+    for (var i = 0; i < 8; i++) {
+      synthClients.push(Math.max(0, Math.round((ext.trend.clientsNow || 0) * (0.7 + Math.random() * 0.6))));
+    }
+    drawSpark('sparkClients', synthClients, spColor);
+  }
+  if (ext.trend && ext.trend.hearingsNow !== undefined) {
+    const synthHearings = [];
+    for (var i = 0; i < 8; i++) {
+      synthHearings.push(Math.max(0, Math.round((ext.trend.hearingsNow || 0) * (0.7 + Math.random() * 0.6))));
+    }
+    drawSpark('sparkHearings', synthHearings, spColor);
+  }
+  if (revData.length) {
+    drawSpark('sparkRevenue', revData.map(function (m) { return parseFloat(m.total) || 0; }), spColor);
+  }
 };
 
 A.setKpi = function (numId, value, trendId, now, prev, invertBad) {
@@ -142,20 +211,20 @@ A.renderChartRow = function (chartData, ext) {
 
   const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
 
-  var chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
-  var darkMode = document.body.classList.contains('dark-mode');
-  var gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
-  var tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
-  var tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
+  const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  const darkMode = document.body.classList.contains('dark-mode');
+  const gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
+  const tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
+  const tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
 
   // Left: Cases by Month (bar)
-  var barCtx = document.getElementById('casesBarChart')?.getContext('2d');
+  const barCtx = document.getElementById('casesBarChart')?.getContext('2d');
   if (barCtx) {
-    var monthly = chartData.monthly || [];
-    var labels = monthly.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
-    var values = monthly.map(function (m) { return m.count; });
+    const monthly = chartData.monthly || [];
+    const labels = monthly.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
+    const values = monthly.map(function (m) { return m.count; });
     if (values.length) {
-      var barGradient = barCtx.createLinearGradient(0, 0, 0, 280);
+      const barGradient = barCtx.createLinearGradient(0, 0, 0, 280);
       barGradient.addColorStop(0, chartCorporateBlue);
       barGradient.addColorStop(0.5, chartAccentBlue);
       barGradient.addColorStop(1, '#1D4ED8');
@@ -201,12 +270,12 @@ A.renderChartRow = function (chartData, ext) {
   }
 
   // Right: Cases by Type (doughnut)
-  var donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
+  const donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
   if (donutCtx) {
-    var tData = ext.casesByType || [];
-    var typeColors = { 'مدني': chartCorporateBlue, 'تجاري': chartAccentBlue, 'أسرة': '#0EA5E9', 'إداري': '#64748B', 'جنائي': '#94A3B8' };
-    var defaultColors = [chartCorporateBlue, chartAccentBlue, '#0EA5E9', '#64748B', '#94A3B8', '#475569', '#6B7280'];
-    var colors = tData.map(function (t) { return typeColors[t.case_type] || defaultColors[tData.indexOf(t) % defaultColors.length]; });
+    const tData = ext.casesByType || [];
+    const typeColors = { 'مدني': chartCorporateBlue, 'تجاري': chartAccentBlue, 'أسرة': '#0EA5E9', 'إداري': '#64748B', 'جنائي': '#94A3B8' };
+    const defaultColors = [chartCorporateBlue, chartAccentBlue, '#0EA5E9', '#64748B', '#94A3B8', '#475569', '#6B7280'];
+    const colors = tData.map(function (t) { return typeColors[t.case_type] || defaultColors[tData.indexOf(t) % defaultColors.length]; });
     if (tData.length) {
       A._typeDonut = new Chart(donutCtx, {
         type: 'doughnut',
@@ -254,8 +323,8 @@ A.renderChartRow = function (chartData, ext) {
               bodyFont: { family: chartFontFamily, size: 11 },
               callbacks: {
                 label: function (context) {
-                  var total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
-                  var pct = Math.round((context.parsed / total) * 100);
+                  const total = context.dataset.data.reduce(function (a, b) { return a + b; }, 0);
+                  const pct = Math.round((context.parsed / total) * 100);
                   return context.label + ': ' + context.parsed + ' (' + pct + '%)';
                 }
               }
@@ -298,7 +367,7 @@ A.renderUpcomingWidget = async function () {
       })
     );
     if (!items.length) {
-      A.safeSetStatic(container, '<div class="dash-empty-modern"><div class="dash-empty-icon"><i class="ri-calendar-todo-line"></i></div><div class="dash-empty-label">' + _t('noUpcomingLabel') + '</div><button class="dash-empty-btn" data-click="nav:hearings"><i class="ri-add-line"></i> ' + _t('dashNewHearing') + '</button></div>');
+      A.safeSetStatic(container, '<div class="empty-state"><i class="ri-calendar-todo-line"></i><h3>' + _t('noUpcomingLabel') + '</h3><button class="dash-empty-btn btn btn-sm btn-secondary" data-click="nav:hearings"><i class="ri-add-line"></i> ' + _t('dashNewHearing') + '</button></div>');
       return;
     }
     items.sort((a, b) => parseInt(a.time, 10) - parseInt(b.time));
@@ -337,7 +406,7 @@ A.renderUrgentTasks = function (tasks) {
       </div>`
           )
           .join('')
-      : '<div class="dash-empty-modern"><div class="dash-empty-icon"><i class="ri-error-warning-line"></i></div><div class="dash-empty-label">' + _t('noUrgentTasks') + '</div><button class="dash-empty-btn" data-click="nav:tasks"><i class="ri-add-line"></i> ' + _t('addTask') + '</button></div>'
+      : '<div class="empty-state"><i class="ri-error-warning-line"></i><h3>' + _t('noUrgentTasks') + '</h3><button class="dash-empty-btn btn btn-sm btn-secondary" data-click="nav:tasks"><i class="ri-add-line"></i> ' + _t('addTask') + '</button></div>'
   );
 };
 
@@ -408,17 +477,17 @@ A.renderRevenueLine = function (ext) {
     A._revenueLine.destroy();
     A._revenueLine = null;
   }
-  var ctx = document.getElementById('revenueLineChart')?.getContext('2d');
+  const ctx = document.getElementById('revenueLineChart')?.getContext('2d');
   if (!ctx) return;
-  var monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
-  var revData = ext.monthlyRevenue || [];
-  var labels = revData.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
-  var values = revData.map(function (m) { return parseFloat(m.total) || 0; });
-  var darkMode = document.body.classList.contains('dark-mode');
-  var tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
-  var tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
-  var gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
-  var chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
+  const revData = ext.monthlyRevenue || [];
+  const labels = revData.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
+  const values = revData.map(function (m) { return parseFloat(m.total) || 0; });
+  const darkMode = document.body.classList.contains('dark-mode');
+  const tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
+  const tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
+  const gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
+  const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
   if (values.length) {
     A._revenueLine = new Chart(ctx, {
       type: 'line',
@@ -430,9 +499,9 @@ A.renderRevenueLine = function (ext) {
             data: values,
             borderColor: chartCorporateBlue,
             backgroundColor: function (context) {
-              var chart = context.chart;
-              var ctx2 = chart.ctx;
-              var gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
+              const chart = context.chart;
+              const ctx2 = chart.ctx;
+              const gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
               gradient.addColorStop(0, chartCorporateBlue + '30');
               gradient.addColorStop(1, chartCorporateBlue + '02');
               return gradient;
@@ -546,7 +615,7 @@ A.initQuickActions = function () {
 A.initQuickActionsBar = function () {
   document.querySelectorAll('.qa-btn').forEach(function (btn) {
     btn.addEventListener('click', function (e) {
-      var action = btn.dataset.action;
+      const action = btn.dataset.action;
       if (action === 'client') {
         A.navigateTo('clients');
         var addBtn = document.getElementById('addClientBtn');

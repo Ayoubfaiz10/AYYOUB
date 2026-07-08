@@ -23,8 +23,8 @@ if (!process.env.MASTER_KEY) {
 /* â”€â”€â”€ Path security: prevent directory traversal â”€â”€â”€ */
 function isPathSafe(targetPath, allowedBase) {
   try {
-    var resolved = fs.realpathSync(path.resolve(targetPath));
-    var base = fs.realpathSync(path.resolve(allowedBase));
+    const resolved = fs.realpathSync(path.resolve(targetPath));
+    const base = fs.realpathSync(path.resolve(allowedBase));
     return resolved === base || resolved.startsWith(base + path.sep);
   } catch (e) { return false; }
 }
@@ -203,13 +203,13 @@ function checkOfflineGrace(license) {
 /* â”€â”€â”€ License IPC Handlers â”€â”€â”€ */
 
 ipcMain.handle('license:getStatus', function() {
-  var license = getLicense();
+  const license = getLicense();
   if (!license) return { valid: false };
   return { valid: checkOfflineGrace(license), key: license.key, machineId: license.machineId, lastValidated: license.lastValidated };
 });
 
 ipcMain.handle('license:check', async function() {
-  var license = getLicense();
+  const license = getLicense();
   if (!license) return { valid: false, message: 'لا يوجد ترخيص' };
 
   if (checkOfflineGrace(license)) {
@@ -217,7 +217,7 @@ ipcMain.handle('license:check', async function() {
   }
 
   try {
-    var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
+    const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
       licenseKey: license.key,
       machineId: license.machineId
     });
@@ -242,10 +242,10 @@ ipcMain.handle('license:check', async function() {
 
 ipcMain.handle('license:activate', async function(_e, data) {
   if (!data || !data.key) return { ok: false, error: 'مفتاح الترخيص مطلوب' };
-  var key = data.key.trim();
-  var machineId = getMachineId();
+  const key = data.key.trim();
+  const machineId = getMachineId();
   try {
-    var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/register', {
+    const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/register', {
       licenseKey: key,
       machineId: machineId
     });
@@ -266,12 +266,12 @@ ipcMain.handle('license:activate', async function(_e, data) {
 });
 
 ipcMain.handle('license:deactivate', async function() {
-  var license = getLicense();
-  var unregistered = false;
+  const license = getLicense();
+  let unregistered = false;
 
   if (license && license.key && license.machineId) {
     try {
-      var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/unregister', {
+      const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/unregister', {
         licenseKey: license.key,
         machineId: license.machineId
       });
@@ -290,11 +290,11 @@ ipcMain.handle('license:deactivate', async function() {
 
 function startLicenseRevalidation() {
   setInterval(async function() {
-    var license = getLicense();
+    const license = getLicense();
     if (!license) return;
     if (checkOfflineGrace(license)) {
       try {
-        var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
+        const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
           licenseKey: license.key,
           machineId: license.machineId
         });
@@ -1108,7 +1108,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     currentUser = sessionUser;
     db.updateUser(user.id, { last_login: new Date().toISOString() });
     db.addLog('login', `تسجيل دخول: ${user.name}`, user.id, user.name);
-    var sessionToken = remember ? signToken(user.id, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+    const sessionToken = remember ? signToken(user.id, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
     return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('login', e);
@@ -1128,8 +1128,8 @@ ipcMain.handle('auth:setup', (_e, { officeName, adminName, password, openAtLogin
     const cleanEmail = 'admin@' + officeName.trim().replace(/\s+/g, '') + '.ma';
     db.setOfficeSetting('office_name', officeName.trim());
     db.setOfficeSetting('setup_date', new Date().toISOString());
-    var existingAdmin = existing.find(u => !u.password_hash || u.password_hash === '');
-    var id;
+    const existingAdmin = existing.find(u => !u.password_hash || u.password_hash === '');
+    let id;
     if (existingAdmin) {
       db.updateUser(existingAdmin.id, { name: adminName.trim(), email: cleanEmail, password_hash: hash, role: 'admin', active: 1 });
       id = existingAdmin.id;
@@ -1147,7 +1147,7 @@ ipcMain.handle('auth:setup', (_e, { officeName, adminName, password, openAtLogin
     if (openAtLogin && app.setLoginItemSettings) {
       try { app.setLoginItemSettings({ openAtLogin: true }); } catch (e) { /* best effort */ }
     }
-    var sessionToken = signToken(id, Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const sessionToken = signToken(id, Date.now() + 30 * 24 * 60 * 60 * 1000);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('setup', e);
@@ -1194,7 +1194,7 @@ ipcMain.handle('auth:resetPassword', (_e, { userId, newPassword, remember }) => 
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر للمستخدم ${user.name}`, user.id, user.name);
-    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
+    const sessionToken = (remember !== false) ? signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000) : null;
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetPassword', e);
@@ -1216,7 +1216,7 @@ if (mkBuf.length !== inBuf.length || !crypto.timingSafeEqual(mkBuf, inBuf)) retu
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر (مفتاح الاستعادة) للمستخدم ${user.name}`, user.id, user.name);
-    var sessionToken = signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000);
+    const sessionToken = signToken(userId, Date.now() + 30 * 24 * 60 * 60 * 1000);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetWithMasterKey', e);
@@ -1786,7 +1786,7 @@ ipcMain.handle('ai:summarizeDocument', safeIpc('ai:summarizeDocument', withPerm(
   const txt = db.getDocumentText(docId);
   const text = txt ? txt.extracted_text?.slice(0, 4000) : '';
   if (!text || text.length < 50) return { text: '', error: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص', friendlyError: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص' };
-  let context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
+  const context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
   return callAI('أنت خبير في تحليل وثائق المحاماة. لخص هذه الوثيقة القانونية بالعربية في 3-5 نقاط واضحة.', 'لخص هذه الوثيقة بالعربية.', context);
 })));
 

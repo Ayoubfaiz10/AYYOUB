@@ -65,7 +65,7 @@ A.renderWeekView = function () {
   A.state.allEvents.forEach(e => {
     if (e.status !== 'cancelled') (eventsByDate[e.date] || (eventsByDate[e.date] = [])).push(e);
   });
-  var shortDays = A.getShortDayNames();
+  const shortDays = A.getShortDayNames();
   let html =
     '<div class="cal-week-header" data-i18n="calendarTimeHeader">الوقت</div>' +
     Array.from({ length: 7 }, (_, i) => {
@@ -136,7 +136,7 @@ A.renderAgendaView = function () {
     document: '#7c3aed',
     payment: 'var(--success)'
   };
-  const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
+  const typeIcons = { hearing: '<i class="ri-scales-line"></i>', deadline: '<i class="ri-alarm-warning-line"></i>', meeting: '<i class="ri-group-line"></i>', task: '<i class="ri-checkbox-circle-line"></i>', document: '<i class="ri-file-text-line"></i>', payment: '<i class="ri-coins-line"></i>' };
   A.safeSet(container, esc =>
     Object.keys(grouped).length
       ? Object.entries(grouped)
@@ -152,7 +152,7 @@ A.renderAgendaView = function () {
         <div class="cal-agenda-dot" style="background:${typeColors[e.type] || 'var(--muted-foreground)'};"></div>
         <div class="cal-agenda-time">${esc(e.time || _t('eventAllDayLabel'))}</div>
         <div class="cal-agenda-info">
-          <div class="cal-agenda-title">${typeIcons[e.type] || '📌'} ${esc(e.title)}</div>
+          <div class="cal-agenda-title">${typeIcons[e.type] || '<i class="ri-pushpin-line"></i>'} ${esc(e.title)}</div>
           <div class="cal-agenda-meta">${esc(e.case_number || '')} ${e.court ? '· ' + esc(e.court) : ''}</div>
         </div>
       </div>`
@@ -161,7 +161,7 @@ A.renderAgendaView = function () {
     </div>`;
           })
           .join('')
-      : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:48px;color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">' +
+      : '<div style="text-align:center;padding:60px 20px;"><i class="ri-calendar-check-line" style="font-size:var(--icon-xl);color:var(--border);display:block;margin-bottom:12px;"></i><p style="color:var(--muted-foreground);">' +
         _t('noUpcomingEventsLabel') +
         '</p></div>'
   );
@@ -191,7 +191,7 @@ A.renderMiniCalendar = function () {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const today = now.getDate();
   const monthName = new Intl.DateTimeFormat(A.getLocale(), { month: 'long' }).format(now);
-  var shortDays = A.getShortDayNames();
+  const shortDays = A.getShortDayNames();
   const eventDates = new Set(events.filter(e => e.status !== 'cancelled').map(e => e.date));
   let html = `<div style="text-align:center;font-weight:var(--font-weight-semibold);color:var(--foreground);margin-bottom:var(--spacing-1-5);">${monthName} ${year}</div>`;
   html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;font-size:10px;text-align:center;">';

@@ -6,7 +6,7 @@
     <title>مدير مكتب المحامي</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
     <link href="fonts/remixicon.css" rel="stylesheet" />
     <script defer src="node_modules/chart.js/dist/chart.umd.min.js"></script>
     <script defer src="node_modules/dompurify/dist/purify.min.js"></script>
@@ -16,7 +16,7 @@
       body {
         font-family: 'Inter', sans-serif;
         margin: 0;
-        background: var(--bg);
+        background: var(--surface-canvas);
       }
       #app {
         display: flex;
@@ -298,8 +298,8 @@
 
     <div id="app" style="display: none">
       <header id="topbar">
-        <div class="topbar-brand">
-          <span class="topbar-brand-text" data-i18n="startupName">مدير المكتب</span>
+        <div class="topbar-breadcrumbs" id="topbarBreadcrumbs">
+          <span class="breadcrumb-item" data-section="dashboard" data-i18n="breadcrumbDashboard">الرئيسية</span>
         </div>
         <div class="topbar-search">
           <i class="ri-search-line"></i>
@@ -335,7 +335,7 @@
               </div>
             </div>
           </div>
-          <nav id="nav">
+          <nav id="nav" class="nav-list">
             <div class="nav-section-label" data-i18n="navMain">الرئيسية</div>
             <button class="nav-item active" data-section="dashboard">
               <i class="ri-dashboard-3-line nav-icon"></i><span class="nav-label" data-i18n="navDashboard">الرئيسية</span>
@@ -388,13 +388,14 @@
               <i class="ri-settings-3-line nav-icon"></i><span class="nav-label" data-i18n="navSettings">الإعدادات</span>
             </button>
 
-            <div style="flex: 1; min-height: 8px"></div>
-            <button class="nav-item" id="licenseManageBtn">
-              <i class="ri-key-2-line nav-icon"></i><span class="nav-label" data-i18n="navLicense">الترخيص</span>
-            </button>
-            <button class="nav-item" id="lockAppBtn"><i class="ri-lock-line nav-icon"></i><span class="nav-label" data-i18n="navLock">قفل</span></button>
           </nav>
           <div class="sidebar-footer">
+            <button class="sidebar-footer-btn" id="licenseManageBtn" title="الترخيص" data-i18n="navLicense" data-i18n-attr="title">
+              <i class="ri-key-2-line"></i>
+            </button>
+            <button class="sidebar-footer-btn" id="lockAppBtn" title="قفل" data-i18n="navLock" data-i18n-attr="title">
+              <i class="ri-lock-line"></i>
+            </button>
             <button class="sidebar-footer-btn" id="darkModeToggle" title="الوضع الليلي" data-i18n="settingsAppearance" data-i18n-attr="title">
               <i class="ri-moon-line"></i>
             </button>
@@ -424,41 +425,56 @@
                 <div class="dash-date" id="dashDate"></div>
               </div>
               <div class="dash-welcome-actions">
-                <button class="qa-btn dash-action-btn dash-action-primary" data-action="case"><i class="ri-briefcase-add-line"></i> <span>إضافة قضية</span></button>
-                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="client"><i class="ri-user-add-line"></i> <span>إضافة موكل</span></button>
-                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="hearing"><i class="ri-calendar-add-line"></i> <span>إضافة جلسة</span></button>
-                <button class="qa-btn dash-action-btn dash-action-secondary" data-action="document"><i class="ri-upload-2-line"></i> <span>رفع وثيقة</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-primary" data-action="case"><i class="ri-briefcase-add-line"></i> <span>إضافة قضية</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="client"><i class="ri-user-add-line"></i> <span>إضافة موكل</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="hearing"><i class="ri-calendar-add-line"></i> <span>إضافة جلسة</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="document"><i class="ri-upload-2-line"></i> <span>رفع وثيقة</span></button>
               </div>
             </div>
 
-            <!-- KPI Cards -->
+            <!-- Primary KPI Grid (4 columns) -->
             <div class="dash-kpi-grid" id="dashKpiRow">
-              <div class="dash-kpi-card" id="kpiActiveCases">
+              <div class="dash-kpi-card dash-kpi-primary" id="kpiActiveCases">
                 <span class="dash-kpi-label" data-i18n="dashActiveCases">قضايا نشطة</span>
                 <span class="dash-kpi-number" id="kpiNumActiveCases">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendActiveCases"></span>
+                <div class="dash-kpi-sparkline"><canvas id="sparkActiveCases" width="200" height="96"></canvas></div>
               </div>
-              <div class="dash-kpi-card" id="kpiClients">
+              <div class="dash-kpi-card dash-kpi-primary" id="kpiClients">
                 <span class="dash-kpi-label" data-i18n="dashClients">الموكلين</span>
                 <span class="dash-kpi-number" id="kpiNumClients">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendClients"></span>
+                <div class="dash-kpi-sparkline"><canvas id="sparkClients" width="200" height="96"></canvas></div>
               </div>
-              <div class="dash-kpi-card" id="kpiHearings">
+              <div class="dash-kpi-card dash-kpi-primary" id="kpiHearings">
                 <span class="dash-kpi-label" data-i18n="dashTodayHearings">جلسات هذا الأسبوع</span>
                 <span class="dash-kpi-number" id="kpiNumHearings">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendHearings"></span>
+                <div class="dash-kpi-sparkline"><canvas id="sparkHearings" width="200" height="96"></canvas></div>
               </div>
-              <div class="dash-kpi-card" id="kpiRevenue">
+              <div class="dash-kpi-card dash-kpi-primary" id="kpiRevenue">
                 <span class="dash-kpi-label" data-i18n="dashRevenue">الإيرادات</span>
                 <span class="dash-kpi-number" id="kpiNumRevenue">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendRevenue"></span>
+                <div class="dash-kpi-sparkline"><canvas id="sparkRevenue" width="200" height="96"></canvas></div>
               </div>
-              <div class="dash-kpi-card" id="kpiTasks">
+            </div>
+
+            <!-- Operations Divider -->
+            <div class="dash-kpi-divider">
+              <span class="dash-kpi-divider-line"></span>
+              <span class="dash-kpi-divider-label" data-i18n="dashOperations">العمليات</span>
+              <span class="dash-kpi-divider-line"></span>
+            </div>
+
+            <!-- Secondary KPI Row (2 cards, quieter) -->
+            <div class="dash-kpi-ops" id="dashKpiOps">
+              <div class="dash-kpi-card dash-kpi-secondary" id="kpiTasks">
                 <span class="dash-kpi-label" data-i18n="dashPendingTasks">مهام معلقة</span>
                 <span class="dash-kpi-number" id="kpiNumTasks">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendTasks"></span>
               </div>
-              <div class="dash-kpi-card" id="kpiDocs">
+              <div class="dash-kpi-card dash-kpi-secondary" id="kpiDocs">
                 <span class="dash-kpi-label" data-i18n="dashDocs">الوثائق</span>
                 <span class="dash-kpi-number" id="kpiNumDocs">0</span>
                 <span class="dash-kpi-trend" id="kpiTrendDocs"></span>
@@ -732,23 +748,28 @@
                   <i class="ri-search-line input-icon"></i
                   ><input type="text" id="searchHearings" placeholder="بحث في الجلسات..." class="input" data-i18n="searchPlaceholderHearings" />
                 </div>
+                <button id="hearingsFilterBtn" class="btn btn-secondary btn-sm"><i class="ri-filter-3-line"></i> <span data-i18n="filterBtn">فلاتر</span></button>
+              </div>
+              <div class="toolbar-right">
+                <select id="hearingsFilterType" class="input input-sm" style="width: 130px">
+                  <option value="all">جميع الأنواع</option>
+                  <option value="hearing">جلسات</option>
+                  <option value="deadline">مواعيد نهائية</option>
+                  <option value="meeting">اجتماعات</option>
+                  <option value="task">مهام</option>
+                  <option value="document">تقديم وثائق</option>
+                  <option value="payment">دفعات</option>
+                </select>
+                <button id="addHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> <span data-i18n="cdNewHearing">حدث جديد</span></button>
+              </div>
+            </div>
+            <div id="hearingsFilterBar" class="cases-filter-bar" style="display: none">
+              <div class="filter-row">
                 <div class="filter-group">
                   <button class="filter-btn active" data-filter="all" data-i18n="allLabel">الكل</button>
                   <button class="filter-btn" data-filter="upcoming" data-i18n="upcomingLabel">القادمة</button>
                   <button class="filter-btn" data-filter="past" data-i18n="pastLabel">السابقة</button>
                 </div>
-              </div>
-              <div class="toolbar-right">
-                <select id="hearingsFilterType" class="input input-sm" style="width: 130px">
-                  <option value="all">جميع الأنواع</option>
-                  <option value="hearing">⚖️ جلسات</option>
-                  <option value="deadline">⏰ مواعيد نهائية</option>
-                  <option value="meeting">📋 اجتماعات</option>
-                  <option value="task">✅ مهام</option>
-                  <option value="document">📄 تقديم وثائق</option>
-                  <option value="payment">💰 دفعات</option>
-                </select>
-                <button id="addHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> <span data-i18n="cdNewHearing">حدث جديد</span></button>
               </div>
             </div>
             <div class="table-wrap">
@@ -1047,7 +1068,7 @@
                   <button class="modal-close" style="position: static" data-click="close:docViewerOverlay"><i class="ri-close-line"></i></button>
                 </div>
               </div>
-              <div class="ws-body" style="display: grid; grid-template-columns: 1fr 320px; gap: 0; padding: 0">
+              <div class="ws-body doc-viewer-body">
                 <div
                   style="
                     padding: var(--spacing-3-5);
@@ -1060,7 +1081,7 @@
                   "
                 >
                   <div style="text-align: center; color: var(--muted-foreground)">
-                    <i class="ri-file-4-line" style="font-size: 64px; display: block; margin-bottom: 16px"></i>
+                    <i class="ri-file-4-line" style="font-size: var(--icon-2xl); display: block; margin-bottom: 16px"></i>
                     <p id="docViewerPreview">معاينة الملف</p>
                   </div>
                 </div>
@@ -1260,7 +1281,7 @@
             <div class="card ai-container">
               <div id="aiSetup">
                 <div style="text-align: center; padding: 40px 20px">
-                  <i class="ri-robot-3-line" style="font-size: 48px; color: var(--gold); display: block; margin-bottom: 16px"></i>
+                   <i class="ri-robot-3-line" style="font-size: var(--icon-xl); color: var(--gold); display: block; margin-bottom: 16px"></i>
                   <h3 style="color: var(--foreground); font-size: 18px; margin-bottom: 6px" data-i18n="aiSetupTitle">المساعد الذكي</h3>
                   <p style="color: var(--muted-foreground); font-size: 13px; margin-bottom: 20px" data-i18n="aiSetupDesc">
                     اختر مزود الذكاء الاصطناعي المفضل لديك
@@ -1270,89 +1291,29 @@
                     style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-2); max-width: 450px; margin: 0 auto var(--spacing-3-5)"
                   >
                     <button class="ai-provider-btn active" data-provider="groq" data-click="ai:selectProvider:groq">
-                      <div
-                        class="ai-provider-logo"
-                        style="
-                          font-weight: 700;
-                          font-size: 16px;
-                          background: #1a1a2e;
-                          color: #fff;
-                          border-radius: 8px;
-                          width: 40px;
-                          height: 40px;
-                          display: flex;
-                          align-items: center;
-                          justify-content: center;
-                          margin: 0 auto 6px;
-                        "
-                      >
+                      <div class="ai-provider-logo" style="background: var(--brand-groq)">
                         G
                       </div>
                       <span style="font-size: 12px; font-weight: 600">Groq</span>
                       <span style="font-size: 9px; color: var(--muted-foreground)">مجاني، سريع</span>
                     </button>
                     <button class="ai-provider-btn" data-provider="openai" data-click="ai:selectProvider:openai">
-                      <div
-                        class="ai-provider-logo"
-                        style="
-                          font-weight: 700;
-                          font-size: 16px;
-                          background: #10a37f;
-                          color: #fff;
-                          border-radius: 8px;
-                          width: 40px;
-                          height: 40px;
-                          display: flex;
-                          align-items: center;
-                          justify-content: center;
-                          margin: 0 auto 6px;
-                        "
-                      >
+                      <div class="ai-provider-logo" style="background: var(--brand-openai)">
                         O
                       </div>
                       <span style="font-size: 12px; font-weight: 600">OpenAI</span>
                       <span style="font-size: 9px; color: var(--muted-foreground)">GPT-4o, GPT-4</span>
                     </button>
                     <button class="ai-provider-btn" data-provider="anthropic" data-click="ai:selectProvider:anthropic">
-                      <div
-                        class="ai-provider-logo"
-                        style="
-                          font-weight: 700;
-                          font-size: 16px;
-                          background: #d97757;
-                          color: #fff;
-                          border-radius: 8px;
-                          width: 40px;
-                          height: 40px;
-                          display: flex;
-                          align-items: center;
-                          justify-content: center;
-                          margin: 0 auto 6px;
-                        "
-                      >
+                      <div class="ai-provider-logo" style="background: var(--brand-anthropic)">
                         C
                       </div>
                       <span style="font-size: 12px; font-weight: 600">Anthropic</span>
                       <span style="font-size: 9px; color: var(--muted-foreground)">Claude 3, Sonnet</span>
                     </button>
                     <button class="ai-provider-btn" data-provider="gemini" data-click="ai:selectProvider:gemini">
-                      <div
-                        class="ai-provider-logo"
-                        style="
-                          font-weight: 700;
-                          font-size: 16px;
-                          background: #4285f4;
-                          color: #fff;
-                          border-radius: 8px;
-                          width: 40px;
-                          height: 40px;
-                          display: flex;
-                          align-items: center;
-                          justify-content: center;
-                          margin: 0 auto 6px;
-                        "
-                      >
-                        G+
+                      <div class="ai-provider-logo" style="background: var(--brand-gemini)">
+                        G
                       </div>
                       <span style="font-size: 12px; font-weight: 600">Gemini</span>
                       <span style="font-size: 9px; color: var(--muted-foreground)">Google، مجاني</span>
@@ -1374,7 +1335,7 @@
                   </div>
                 </div>
               </div>
-              <div id="aiChat" style="display: none; flex-direction: column; height: 550px">
+              <div id="aiChat" class="ai-chat-container" style="display: none">
                 <div class="ai-model-bar" id="aiModelBar" style="display: none">
                   <i class="ri-flashlight-line"></i>
                   <span id="aiModelLabel">Groq · Llama 3.1 8B</span>
@@ -1662,7 +1623,7 @@
               <p class="section-sub" data-i18n="settingsDesc">تخصيص إعدادات التطبيق</p>
             </div>
             <div class="settings-layout">
-              <div class="settings-nav">
+              <div class="settings-nav nav-list">
                 <button class="settings-nav-item active" data-setting="general">
                   <i class="ri-settings-3-line"></i> <span data-i18n="settingsGeneral">عام</span>
                 </button>
@@ -1919,7 +1880,7 @@
                 </div>
                 <div class="setting-panel" id="setting-about">
                   <div class="card" style="text-align: center; padding: 40px">
-                    <i class="ri-shield-keyhole-line" style="font-size: 48px; color: var(--gold); display: block; margin-bottom: 16px"></i>
+                    <i class="ri-shield-keyhole-line" style="font-size: var(--icon-xl); color: var(--gold); display: block; margin-bottom: 16px"></i>
                     <h3 style="color: var(--foreground); font-size: 18px">مدير مكتب المحامي</h3>
                     <p style="color: var(--muted-foreground); font-size: 13px">Cabinet Manager v2.0</p>
                     <p style="color: var(--muted-foreground); font-size: 13px; margin-top: 12px">تطبيق متكامل لإدارة مكاتب المحاماة في المغرب</p>
@@ -1980,6 +1941,13 @@
             <button class="btn btn-primary btn-xs" id="cdAiBtn"><i class="ri-robot-3-line"></i> AI</button>
             <button class="modal-close" id="caseDetailCloseBtn" style="position: static"><i class="ri-close-line"></i></button>
           </div>
+        </div>
+        <div class="ws-breadcrumb">
+          <a class="ws-breadcrumb-link" data-section="dashboard" data-i18n="navDashboard">الرئيسية</a>
+          <span class="ws-breadcrumb-sep">›</span>
+          <a class="ws-breadcrumb-link" data-section="cases" data-i18n="navCases">القضايا</a>
+          <span class="ws-breadcrumb-sep">›</span>
+          <span class="ws-breadcrumb-current" id="cdBreadcrumbLeaf">القضية</span>
         </div>
         <div class="ws-tabs">
           <button class="ws-tab active" data-ws="overview"><i class="ri-grid-line"></i><span data-i18n="caseOverview">نظرة عامة</span></button>
@@ -2044,6 +2012,13 @@
             <button class="modal-close" style="position: static" id="clientDetailCloseBtn"><i class="ri-close-line"></i></button>
           </div>
         </div>
+        <div class="ws-breadcrumb">
+          <a class="ws-breadcrumb-link" data-section="dashboard" data-i18n="navDashboard">الرئيسية</a>
+          <span class="ws-breadcrumb-sep">›</span>
+          <a class="ws-breadcrumb-link" data-section="clients" data-i18n="navClients">الموكلين</a>
+          <span class="ws-breadcrumb-sep">›</span>
+          <span class="ws-breadcrumb-current" id="clBreadcrumbLeaf">الموكل</span>
+        </div>
         <div class="ws-tabs">
           <button class="ws-tab active" data-ws="cloverview"><i class="ri-grid-line"></i><span data-i18n="cdOverview">نظرة عامة</span></button>
           <button class="ws-tab" data-ws="clcases"><i class="ri-briefcase-4-line"></i><span data-i18n="cdCases">القضايا</span></button>
@@ -2063,6 +2038,31 @@
           <div id="wsClTimeline" class="ws-panel"></div>
           <div id="wsClNotes" class="ws-panel"></div>
           <div id="wsClAnalytics" class="ws-panel"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ KEYBOARD SHORTCUTS HELP ═══ -->
+    <div id="shortcutsHelpOverlay" class="modal-overlay" style="display: none">
+      <div class="modal" style="max-width: 420px">
+        <div class="modal-header">
+          <h3 data-i18n="keyboardShortcuts">اختصارات لوحة المفاتيح</h3>
+          <button class="modal-close" id="shortcutsHelpClose"><i class="ri-close-line"></i></button>
+        </div>
+        <div class="modal-body" id="shortcutsHelpBody">
+          <div class="shortcut-row"><kbd>Ctrl+1</kbd><span data-i18n="navDashboard">الرئيسية</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+2</kbd><span data-i18n="navAdvancedSearch">بحث متقدم</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+3</kbd><span data-i18n="navNotifications">الإشعارات</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+4</kbd><span data-i18n="navClients">الموكلين</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+5</kbd><span data-i18n="navCases">القضايا</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+6</kbd><span data-i18n="navHearings">الجلسات</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+7</kbd><span data-i18n="navDocuments">الوثائق</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+8</kbd><span data-i18n="navCalendar">التقويم</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+9</kbd><span data-i18n="navTasks">المهام</span></div>
+          <div class="shortcut-row"><kbd>Ctrl+0</kbd><span data-i18n="navSettings">الإعدادات</span></div>
+          <div class="shortcut-sep"></div>
+          <div class="shortcut-row"><kbd>Ctrl+K</kbd><span data-i18n="helpCmdPalette">لوحة الأوامر</span></div>
+          <div class="shortcut-row"><kbd>?</kbd><span data-i18n="helpShortcuts">عرض الاختصارات</span></div>
         </div>
       </div>
     </div>

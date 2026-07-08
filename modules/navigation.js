@@ -45,17 +45,17 @@ var ROLE_ACCESS = {
 };
 
 A.canAccess = function (sectionId) {
-  var role = (A.state.currentUser && A.state.currentUser.role) || 'admin';
-  var allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
+  const role = (A.state.currentUser && A.state.currentUser.role) || 'admin';
+  const allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
   return allowed.indexOf(sectionId) !== -1;
 };
 
 A.applyRoleRestrictions = function () {
   if (!A.state.navItems) return;
-  var role = (A.state.currentUser && A.state.currentUser.role) || 'admin';
-  var allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
+  const role = (A.state.currentUser && A.state.currentUser.role) || 'admin';
+  const allowed = ROLE_ACCESS[role] || ROLE_ACCESS.admin;
   A.state.navItems.forEach(function (item) {
-    var section = item.dataset.section;
+    const section = item.dataset.section;
     if (section && allowed.indexOf(section) === -1) {
       item.style.display = 'none';
     } else {
@@ -76,10 +76,11 @@ A.navigateTo = function (sectionId) {
   A.state.sections.forEach(function (s) {
     s.classList.remove('active');
   });
-  var tn = document.querySelector('.nav-item[data-section="' + sectionId + '"]');
-  var ts = document.getElementById('section-' + sectionId);
+  const tn = document.querySelector('.nav-item[data-section="' + sectionId + '"]');
+  const ts = document.getElementById('section-' + sectionId);
   if (tn) tn.classList.add('active');
   if (ts) ts.classList.add('active');
+  A.updateBreadcrumbs(sectionId);
   document.querySelectorAll('.search-results').forEach(function (r) {
     r.style.display = 'none';
   });
@@ -108,6 +109,31 @@ A.navigateTo = function (sectionId) {
   }
 };
 
+A.updateBreadcrumbs = function (sectionId) {
+  const container = document.getElementById('topbarBreadcrumbs');
+  if (!container) return;
+  const labels = {
+    dashboard: 'الرئيسية',
+    clients: 'الموكلين',
+    cases: 'القضايا',
+    hearings: 'الجلسات',
+    documents: 'الوثائق',
+    calendar: 'التقويم',
+    tasks: 'المهام',
+    expenses: 'المصاريف',
+    reports: 'التقارير',
+    ai: 'المساعد الذكي',
+    archive: 'الأرشيف',
+    search: 'بحث متقدم',
+    notifications: 'الإشعارات',
+    settings: 'الإعدادات',
+    support: 'الدعم',
+    profile: 'الملف الشخصي'
+  };
+  const leaf = labels[sectionId] || sectionId;
+  container.innerHTML = '<span class="breadcrumb-item" data-section="dashboard">الرئيسية</span><span class="breadcrumb-item">' + leaf + '</span>';
+};
+
 window.navigateTo = A.navigateTo;
 
 A.initNavigation = function () {
@@ -120,3 +146,38 @@ A.initNavigation = function () {
     });
   });
 };
+
+A.initKeyboardShortcuts = function () {
+  var sectionKeys = ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'settings'];
+  document.addEventListener('keydown', function (e) {
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key >= '0' && e.key <= '9') {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+        e.preventDefault();
+        var idx = e.key === '0' ? 9 : parseInt(e.key, 10) - 1;
+        if (sectionKeys[idx]) A.navigateTo(sectionKeys[idx]);
+      }
+    }
+    if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return;
+      e.preventDefault();
+      A.showShortcutsHelp();
+    }
+  });
+
+  document.getElementById('shortcutsHelpClose')?.addEventListener('click', A.hideShortcutsHelp);
+  document.getElementById('shortcutsHelpOverlay')?.addEventListener('click', function (e) {
+    if (e.target === this) A.hideShortcutsHelp();
+  });
+};
+
+A.showShortcutsHelp = function () {
+  var el = document.getElementById('shortcutsHelpOverlay');
+  if (el) el.style.display = 'flex';
+};
+
+A.hideShortcutsHelp = function () {
+  var el = document.getElementById('shortcutsHelpOverlay');
+  if (el) el.style.display = 'none';
+};
+

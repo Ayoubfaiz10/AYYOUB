@@ -21,11 +21,11 @@ A.SECURITY_QUESTIONS = [
 ];
 
 A.populateSecurityQuestions = function () {
-  var sel = document.getElementById('sq1');
+  const sel = document.getElementById('sq1');
   if (!sel) return;
   sel.innerHTML = '<option value="">اختر سؤال الأمان...</option>';
-  for (var j = 0; j < A.SECURITY_QUESTIONS.length; j++) {
-    var opt = document.createElement('option');
+  for (let j = 0; j < A.SECURITY_QUESTIONS.length; j++) {
+    const opt = document.createElement('option');
     opt.value = A.SECURITY_QUESTIONS[j];
     opt.textContent = A.SECURITY_QUESTIONS[j];
     sel.appendChild(opt);
@@ -36,28 +36,28 @@ A._currentSetupStep = 1;
 
 A.goToSetupStep = function (n) {
   A._currentSetupStep = n;
-  for (var i = 1; i <= 3; i++) {
-    var content = document.getElementById('setupStep' + i + 'Content');
+  for (let i = 1; i <= 3; i++) {
+    const content = document.getElementById('setupStep' + i + 'Content');
     if (content) content.classList.toggle('active', i === n);
-    var step = document.querySelector('.setup-step[data-step="' + i + '"]');
+    const step = document.querySelector('.setup-step[data-step="' + i + '"]');
     if (step) step.classList.toggle('active', i === n);
   }
-  var pct = Math.round((n / 3) * 100);
-  var fill = document.querySelector('.setup-progress-fill');
+  const pct = Math.round((n / 3) * 100);
+  const fill = document.querySelector('.setup-progress-fill');
   if (fill) fill.style.width = pct + '%';
-  var text = document.querySelector('.setup-progress-text');
+  const text = document.querySelector('.setup-progress-text');
   if (text) text.textContent = 'الخطوة ' + n + ' من 3';
-  var pctEl = document.querySelector('.setup-progress-pct');
+  const pctEl = document.querySelector('.setup-progress-pct');
   if (pctEl) pctEl.textContent = pct + '%';
 };
 
 A.nextSetupStep = function () {
-  var errorEl = document.getElementById('setupError');
+  const errorEl = document.getElementById('setupError');
   if (errorEl) errorEl.style.display = 'none';
-  var step = A._currentSetupStep;
+  const step = A._currentSetupStep;
   if (step === 1) {
-    var officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
-    var adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
+    const officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
+    const adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
     if (!officeName) {
       if (errorEl) {
         errorEl.style.display = 'block';
@@ -77,8 +77,8 @@ A.nextSetupStep = function () {
     A.goToSetupStep(2);
     document.getElementById('setupPassword').focus();
   } else if (step === 2) {
-    var pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
-    var confirm = document.getElementById('setupConfirmPassword') ? document.getElementById('setupConfirmPassword').value : '';
+    const pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
+    const confirm = document.getElementById('setupConfirmPassword') ? document.getElementById('setupConfirmPassword').value : '';
     if (!pw || pw.length < 8) {
       if (errorEl) {
         errorEl.style.display = 'block';
@@ -101,7 +101,7 @@ A.nextSetupStep = function () {
 };
 
 A.prevSetupStep = function () {
-  var errorEl = document.getElementById('setupError');
+  const errorEl = document.getElementById('setupError');
   if (errorEl) errorEl.style.display = 'none';
   if (A._currentSetupStep > 1) {
     A.goToSetupStep(A._currentSetupStep - 1);
@@ -112,9 +112,9 @@ A.showSetupScreen = function () {
   document.getElementById('authSetupScreen').style.display = 'flex';
   document.getElementById('authLoginScreen').style.display = 'none';
   document.getElementById('forgotPasswordModal').style.display = 'none';
-  var overlay = document.getElementById('loginOverlay');
+  const overlay = document.getElementById('loginOverlay');
   if (overlay) overlay.style.display = 'flex';
-  var appEl = document.getElementById('app');
+  const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
   A.populateSecurityQuestions();
   A.goToSetupStep(1);
@@ -124,27 +124,27 @@ A.showLoginScreen = function (users) {
   document.getElementById('authSetupScreen').style.display = 'none';
   document.getElementById('authLoginScreen').style.display = 'flex';
   document.getElementById('forgotPasswordModal').style.display = 'none';
-  var overlay = document.getElementById('loginOverlay');
+  const overlay = document.getElementById('loginOverlay');
   if (overlay) overlay.style.display = 'flex';
-  var appEl = document.getElementById('app');
+  const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
   A._selectedUserId = null;
   if (users) A.renderUserCards(users);
 };
 
 A.renderUserCards = function (users) {
-  var container = document.getElementById('userCardsContainer');
+  const container = document.getElementById('userCardsContainer');
   if (!container) return;
   if (!users || !users.length) {
     A.safeSetStatic(container,
       '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>');
     return;
   }
-  var html = '';
-  for (var i = 0; i < users.length; i++) {
-    var u = users[i];
-    var initial = u.name ? u.name.charAt(0) : '?';
-    var roleLabel = _t('role_' + u.role) || u.role;
+  let html = '';
+  for (let i = 0; i < users.length; i++) {
+    const u = users[i];
+    const initial = u.name ? u.name.charAt(0) : '?';
+    const roleLabel = _t('role_' + u.role) || u.role;
     html += '<div class="user-card" data-user-id="' + A.escapeHtml(String(u.id)) + '" data-user-email="' + A.escapeHtml(u.email || '') + '">';
     html += '<div class="user-card-avatar">' + A.escapeHtml(initial) + '</div>';
     html += '<div class="user-card-info">';
@@ -153,15 +153,15 @@ A.renderUserCards = function (users) {
     html += '</div></div>';
   }
   A.safeSetStatic(container, html);
-  var cards = container.querySelectorAll('.user-card');
-  for (var j = 0; j < cards.length; j++) {
+  const cards = container.querySelectorAll('.user-card');
+  for (let j = 0; j < cards.length; j++) {
     (function (card) {
       card.addEventListener('click', function () {
-        var prev = container.querySelector('.user-card.selected');
+        const prev = container.querySelector('.user-card.selected');
         if (prev) prev.classList.remove('selected');
         card.classList.add('selected');
         A._selectedUserId = parseInt(card.dataset.userId, 10);
-        var pw = document.getElementById('loginPassword');
+        const pw = document.getElementById('loginPassword');
         if (pw) pw.focus();
       });
     })(cards[j]);
@@ -169,18 +169,18 @@ A.renderUserCards = function (users) {
 };
 
 A.renderForgotUserCards = function (users) {
-  var container = document.getElementById('forgotUserCardsContainer');
+  const container = document.getElementById('forgotUserCardsContainer');
   if (!container) return;
   if (!users || !users.length) {
     A.safeSetStatic(container,
       '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>');
     return;
   }
-  var html = '';
-  for (var i = 0; i < users.length; i++) {
-    var u = users[i];
-    var initial = u.name ? u.name.charAt(0) : '?';
-    var roleLabel = _t('role_' + u.role) || u.role;
+  let html = '';
+  for (let i = 0; i < users.length; i++) {
+    const u = users[i];
+    const initial = u.name ? u.name.charAt(0) : '?';
+    const roleLabel = _t('role_' + u.role) || u.role;
     html += '<div class="user-card" data-user-id="' + A.escapeHtml(String(u.id)) + '">';
     html += '<div class="user-card-avatar">' + A.escapeHtml(initial) + '</div>';
     html += '<div class="user-card-info">';
@@ -189,11 +189,11 @@ A.renderForgotUserCards = function (users) {
     html += '</div></div>';
   }
   A.safeSetStatic(container, html);
-  var cards = container.querySelectorAll('.user-card');
-  for (var j = 0; j < cards.length; j++) {
+  const cards = container.querySelectorAll('.user-card');
+  for (let j = 0; j < cards.length; j++) {
     (function (card) {
       card.addEventListener('click', function () {
-        var prev = container.querySelector('.user-card.selected');
+        const prev = container.querySelector('.user-card.selected');
         if (prev) prev.classList.remove('selected');
         card.classList.add('selected');
         A._forgotUserId = parseInt(card.dataset.userId, 10);
@@ -204,18 +204,18 @@ A.renderForgotUserCards = function (users) {
 };
 
 A.hideAuth = function () {
-  var overlay = document.getElementById('loginOverlay');
+  const overlay = document.getElementById('loginOverlay');
   if (overlay) overlay.style.display = 'none';
-  var appEl = document.getElementById('app');
+  const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'flex';
 };
 
 A.checkAuth = async function () {
   if (!A.state.ipc) return;
   try {
-    var token = localStorage.getItem('session_token') || A.state.currentSessionToken;
+    const token = localStorage.getItem('session_token') || A.state.currentSessionToken;
     if (token) {
-      var user = await A.state.ipc.invoke('auth:checkRemembered', token);
+      const user = await A.state.ipc.invoke('auth:checkRemembered', token);
       if (user) {
         A.state.currentUser = user;
         if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
@@ -232,7 +232,7 @@ A.checkAuth = async function () {
     /* token check failed, continue to boot */
   }
   try {
-    var boot = await A.state.ipc.invoke('auth:boot');
+    const boot = await A.state.ipc.invoke('auth:boot');
     if (boot.hasPassword) {
       A.showLoginScreen(boot.users);
     } else {
@@ -244,12 +244,12 @@ A.checkAuth = async function () {
 };
 
 A.doSetup = function () {
-  var officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
-  var adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
-  var pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
-  var confirm = document.getElementById('setupConfirmPassword') ? document.getElementById('setupConfirmPassword').value : '';
-  var openAtLogin = document.getElementById('setupOpenAtLogin') ? document.getElementById('setupOpenAtLogin').checked : false;
-  var errorEl = document.getElementById('setupError');
+  const officeName = document.getElementById('setupOfficeName') ? document.getElementById('setupOfficeName').value.trim() : '';
+  const adminName = document.getElementById('setupAdminName') ? document.getElementById('setupAdminName').value.trim() : '';
+  const pw = document.getElementById('setupPassword') ? document.getElementById('setupPassword').value : '';
+  const confirm = document.getElementById('setupConfirmPassword') ? document.getElementById('setupConfirmPassword').value : '';
+  const openAtLogin = document.getElementById('setupOpenAtLogin') ? document.getElementById('setupOpenAtLogin').checked : false;
+  const errorEl = document.getElementById('setupError');
 
   if (!officeName) {
     if (errorEl) {
@@ -280,12 +280,12 @@ A.doSetup = function () {
     return;
   }
 
-  var sq1 = document.getElementById('sq1') ? document.getElementById('sq1').value : '';
-  var sa1 = document.getElementById('sa1') ? document.getElementById('sa1').value.trim() : '';
-  var sq2 = document.getElementById('sq2') ? document.getElementById('sq2').value : '';
-  var sa2 = document.getElementById('sa2') ? document.getElementById('sa2').value.trim() : '';
-  var sq3 = document.getElementById('sq3') ? document.getElementById('sq3').value : '';
-  var sa3 = document.getElementById('sa3') ? document.getElementById('sa3').value.trim() : '';
+  const sq1 = document.getElementById('sq1') ? document.getElementById('sq1').value : '';
+  const sa1 = document.getElementById('sa1') ? document.getElementById('sa1').value.trim() : '';
+  const sq2 = document.getElementById('sq2') ? document.getElementById('sq2').value : '';
+  const sa2 = document.getElementById('sa2') ? document.getElementById('sa2').value.trim() : '';
+  const sq3 = document.getElementById('sq3') ? document.getElementById('sq3').value : '';
+  const sa3 = document.getElementById('sa3') ? document.getElementById('sa3').value.trim() : '';
 
   if (!sq1 || !sa1) {
     if (errorEl) {
@@ -295,14 +295,14 @@ A.doSetup = function () {
     return;
   }
 
-  var setupPayload = { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 };
+  const setupPayload = { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 };
     if (sq2 && sa2) { setupPayload.securityQ2 = sq2; setupPayload.securityA2 = sa2; }
     if (sq3 && sa3) { setupPayload.securityQ3 = sq3; setupPayload.securityA3 = sa3; }
     A.state.ipc.invoke('auth:setup', setupPayload)
     .then(function (result) {
       if (result && result.ok) {
         if (errorEl) errorEl.style.display = 'none';
-        var token = result.sessionToken;
+        const token = result.sessionToken;
         if (token) {
           A.state.currentSessionToken = token;
           localStorage.setItem('session_token', token);
@@ -334,10 +334,10 @@ A.doSetup = function () {
 };
 
 A.doLogin = function () {
-  var password = document.getElementById('loginPassword') ? document.getElementById('loginPassword').value : '';
-  var errorEl = document.getElementById('loginError');
-  var remember = document.getElementById('loginRemember') ? document.getElementById('loginRemember').checked : true;
-  var email = '';
+  const password = document.getElementById('loginPassword') ? document.getElementById('loginPassword').value : '';
+  const errorEl = document.getElementById('loginError');
+  const remember = document.getElementById('loginRemember') ? document.getElementById('loginRemember').checked : true;
+  let email = '';
 
   if (!password) {
     if (errorEl) {
@@ -348,7 +348,7 @@ A.doLogin = function () {
   }
 
   if (A._selectedUserId) {
-    var card = document.querySelector('.user-card[data-user-id="' + A._selectedUserId + '"]');
+    const card = document.querySelector('.user-card[data-user-id="' + A._selectedUserId + '"]');
     if (card) email = card.dataset.userEmail || '';
   }
 
@@ -417,14 +417,14 @@ A.showForgotPassword = function () {
       if (boot && boot.users && boot.users.length) {
         A.renderForgotUserCards(boot.users);
       } else {
-        var container = document.getElementById('forgotUserCardsContainer');
+        const container = document.getElementById('forgotUserCardsContainer');
         if (container)
           container.innerHTML =
             '<div style="text-align:center;padding:var(--spacing-3);color:var(--muted-foreground);font-size:var(--type-body);">' + _t('noUsers') + '</div>';
       }
     })
     .catch(function () {
-      var container = document.getElementById('forgotUserCardsContainer');
+      const container = document.getElementById('forgotUserCardsContainer');
       if (container)
         container.innerHTML =
           '<div style="text-align:center;padding:var(--spacing-3);color:var(--destructive);font-size:var(--type-body);">' + _t('errorOccurred') + '</div>';
@@ -432,8 +432,8 @@ A.showForgotPassword = function () {
 };
 
 A.doForgotCheckAnswer = function () {
-  var answer = document.getElementById('forgotAnswer') ? document.getElementById('forgotAnswer').value.trim() : '';
-  var errorEl = document.getElementById('forgotAnswerError');
+  const answer = document.getElementById('forgotAnswer') ? document.getElementById('forgotAnswer').value.trim() : '';
+  const errorEl = document.getElementById('forgotAnswerError');
   if (!A._forgotUserId) {
     if (errorEl) {
       errorEl.style.display = 'block';
@@ -479,9 +479,9 @@ A.doForgotCheckAnswer = function () {
 };
 
 A.doForgotReset = function () {
-  var newPw = document.getElementById('forgotNewPassword') ? document.getElementById('forgotNewPassword').value : '';
-  var confirmPw = document.getElementById('forgotConfirmPassword') ? document.getElementById('forgotConfirmPassword').value : '';
-  var errorEl = document.getElementById('forgotResetError');
+  const newPw = document.getElementById('forgotNewPassword') ? document.getElementById('forgotNewPassword').value : '';
+  const confirmPw = document.getElementById('forgotConfirmPassword') ? document.getElementById('forgotConfirmPassword').value : '';
+  const errorEl = document.getElementById('forgotResetError');
   if (!newPw || newPw.length < 8) {
     if (errorEl) {
       errorEl.style.display = 'block';
@@ -561,10 +561,10 @@ A.doForgotSelectUser = function () {
 };
 
 A.doForgotMasterReset = function () {
-  var masterKey = document.getElementById('forgotMasterKey') ? document.getElementById('forgotMasterKey').value.trim() : '';
-  var newPw = document.getElementById('forgotMasterNewPassword') ? document.getElementById('forgotMasterNewPassword').value : '';
-  var confirmPw = document.getElementById('forgotMasterConfirmPassword') ? document.getElementById('forgotMasterConfirmPassword').value : '';
-  var errorEl = document.getElementById('forgotMasterError');
+  const masterKey = document.getElementById('forgotMasterKey') ? document.getElementById('forgotMasterKey').value.trim() : '';
+  const newPw = document.getElementById('forgotMasterNewPassword') ? document.getElementById('forgotMasterNewPassword').value : '';
+  const confirmPw = document.getElementById('forgotMasterConfirmPassword') ? document.getElementById('forgotMasterConfirmPassword').value : '';
+  const errorEl = document.getElementById('forgotMasterError');
   if (!masterKey) {
     if (errorEl) {
       errorEl.style.display = 'block';
@@ -586,7 +586,7 @@ A.doForgotMasterReset = function () {
     }
     return;
   }
-  var userId = A._forgotUserId;
+  const userId = A._forgotUserId;
   if (!userId) {
     if (errorEl) {
       errorEl.style.display = 'block';
@@ -633,13 +633,13 @@ A.backToLogin = function () {
 };
 
 A.initAuth = function () {
-  var loginBtn = document.getElementById('loginBtn');
-  var loginPw = document.getElementById('loginPassword');
-  var lockBtn = document.getElementById('lockAppBtn');
-  var forgotLink = document.getElementById('forgotPasswordLink');
-  var forgotCheckBtn = document.getElementById('forgotCheckAnswerBtn');
-  var forgotResetBtn = document.getElementById('forgotResetBtn');
-  var forgotBackLink = document.getElementById('forgotBackToLogin');
+  const loginBtn = document.getElementById('loginBtn');
+  const loginPw = document.getElementById('loginPassword');
+  const lockBtn = document.getElementById('lockAppBtn');
+  const forgotLink = document.getElementById('forgotPasswordLink');
+  const forgotCheckBtn = document.getElementById('forgotCheckAnswerBtn');
+  const forgotResetBtn = document.getElementById('forgotResetBtn');
+  const forgotBackLink = document.getElementById('forgotBackToLogin');
   function onLoginKeydown(e) {
     if (e.key === 'Enter') A.doLogin();
   }
@@ -672,12 +672,12 @@ A.initAuth = function () {
 
   if (lockBtn)
     lockBtn.addEventListener('click', function () {
-      var pw = document.getElementById('loginPassword');
+      const pw = document.getElementById('loginPassword');
       if (pw) pw.value = '';
-      var errorEl = document.getElementById('loginError');
+      const errorEl = document.getElementById('loginError');
       if (errorEl) errorEl.style.display = 'none';
       A._selectedUserId = null;
-      var token = localStorage.getItem('session_token') || A.state.currentSessionToken;
+      const token = localStorage.getItem('session_token') || A.state.currentSessionToken;
       A.state.currentSessionToken = null;
       localStorage.removeItem('session_token');
       A.state.ipc.invoke('auth:logout', { token: token, reason: 'lock' }).catch(function () {});
@@ -699,7 +699,7 @@ A.initAuth = function () {
 
   // When a user card is clicked in forgot step 1, auto-proceed
   document.getElementById('forgotUserCardsContainer')?.addEventListener('click', function (e) {
-    var card = e.target.closest('.user-card');
+    const card = e.target.closest('.user-card');
     if (card) {
       A._forgotUserId = parseInt(card.dataset.userId, 10);
       document.getElementById('forgotError').style.display = 'none';
@@ -712,15 +712,15 @@ A.initAuth = function () {
   document.getElementById('forgotMasterResetBtn')?.addEventListener('click', A.doForgotMasterReset);
 
   // Enter key in forgot answer field
-  var forgotAnswer = document.getElementById('forgotAnswer');
+  const forgotAnswer = document.getElementById('forgotAnswer');
   if (forgotAnswer)
     forgotAnswer.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') A.doForgotCheckAnswer();
     });
 
   // Enter key in forgot new password fields
-  var forgotNewPw = document.getElementById('forgotNewPassword');
-  var forgotConfirmPw = document.getElementById('forgotConfirmPassword');
+  const forgotNewPw = document.getElementById('forgotNewPassword');
+  const forgotConfirmPw = document.getElementById('forgotConfirmPassword');
   if (forgotConfirmPw)
     forgotConfirmPw.addEventListener('keydown', function (e) {
       if (e.key === 'Enter') A.doForgotReset();
@@ -731,8 +731,8 @@ A.initAuth = function () {
   });
 
   /* ─── Onboarding ─── */
-  var onbStep = 0;
-  var onbData = [
+  let onbStep = 0;
+  const onbData = [
     { title: _t('onbTitle'), desc: _t('onbDesc') },
     { title: _t('onbTitleStep1'), desc: _t('onbDescStep1') },
     { title: _t('onbTitleStep2'), desc: _t('onbDescStep2') },
@@ -740,10 +740,10 @@ A.initAuth = function () {
   ];
 
   function updateOnbStep() {
-    var title = document.getElementById('onbTitle');
-    var desc = document.getElementById('onbDesc');
-    var dots = document.querySelectorAll('.onboarding-dot');
-    var next = document.getElementById('onbNext');
+    const title = document.getElementById('onbTitle');
+    const desc = document.getElementById('onbDesc');
+    const dots = document.querySelectorAll('.onboarding-dot');
+    const next = document.getElementById('onbNext');
     if (title) title.textContent = onbData[onbStep].title;
     if (desc) desc.textContent = onbData[onbStep].desc;
     dots.forEach(function (d, i) {
@@ -753,7 +753,7 @@ A.initAuth = function () {
   }
 
   function showOnboarding() {
-    var overlay = document.getElementById('onboardingOverlay');
+    const overlay = document.getElementById('onboardingOverlay');
     if (!overlay) return;
     if (localStorage.getItem('onboardingDone')) return;
     overlay.style.display = 'flex';
@@ -763,7 +763,7 @@ A.initAuth = function () {
   document.getElementById('onbNext')?.addEventListener('click', function () {
     onbStep++;
     if (onbStep >= onbData.length) {
-      var overlay = document.getElementById('onboardingOverlay');
+      const overlay = document.getElementById('onboardingOverlay');
       if (overlay) overlay.style.display = 'none';
       localStorage.setItem('onboardingDone', 'true');
     } else {
@@ -772,7 +772,7 @@ A.initAuth = function () {
   });
 
   document.getElementById('onbSkip')?.addEventListener('click', function () {
-    var overlay = document.getElementById('onboardingOverlay');
+    const overlay = document.getElementById('onboardingOverlay');
     if (overlay) overlay.style.display = 'none';
     localStorage.setItem('onboardingDone', 'true');
   });

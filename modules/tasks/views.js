@@ -28,9 +28,9 @@ A._renderTaskCards = function (displayed, container) {
       <div class="task-body">
         <div class="task-title">${esc(t.title)}</div>
         <div class="task-meta">
-          ${t.case_number ? `<span>📁 ${esc(t.case_number)}</span>` : ''}
-          ${t.due_date ? `<span style="color:${isOverdue ? 'var(--destructive)' : 'var(--muted-foreground)'};">⏰ ${esc(t.due_date)}${isOverdue ? ' (متأخرة)' : ''}</span>` : ''}
-          ${t.assigned_to ? `<span>👤 ${esc(t.assigned_to)}</span>` : ''}
+          ${t.case_number ? `<span><i class="ri-folder-2-line"></i> ${esc(t.case_number)}</span>` : ''}
+          ${t.due_date ? `<span style="color:${isOverdue ? 'var(--destructive)' : 'var(--muted-foreground)'};"><i class="ri-alarm-warning-line"></i> ${esc(t.due_date)}${isOverdue ? ' (متأخرة)' : ''}</span>` : ''}
+          ${t.assigned_to ? `<span><i class="ri-user-line"></i> ${esc(t.assigned_to)}</span>` : ''}
         </div>
         ${
           tags.length
@@ -48,7 +48,7 @@ A._renderTaskCards = function (displayed, container) {
     </div>`;
           })
           .join('')
-      : '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-checkbox-line" style="font-size:48px;display:block;margin-bottom:8px;"></i>لا توجد مهام</div>'
+      : '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-checkbox-line" style="font-size:var(--icon-xl);display:block;margin-bottom:8px;"></i>لا توجد مهام</div>'
   );
 };
 
@@ -125,7 +125,7 @@ A.renderPriorityView = function () {
         <div class="priority-indicator" style="background:${g.color};height:24px;"></div>
         <div class="task-body">
           <div class="task-title">${esc(t.title)}</div>
-          <div class="task-meta">${esc(t.case_number || '')} ${t.due_date ? '⏰ ' + esc(t.due_date) : ''}</div>
+          <div class="task-meta">${esc(t.case_number || '')} ${t.due_date ? '<i class="ri-alarm-warning-line"></i> ' + esc(t.due_date) : ''}</div>
         </div>
       </div>`
         )

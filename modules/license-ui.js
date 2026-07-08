@@ -30,7 +30,7 @@ A.showLicenseActivation = function (status) {
   A.showLicenseOverlay();
   document.getElementById('licenseActivateBtn').disabled = false;
   document.getElementById('licenseActivateBtn').textContent = _t('licenseActivateBtn');
-  var skipEl = document.getElementById('licenseDevSkip');
+  const skipEl = document.getElementById('licenseDevSkip');
   if (skipEl) skipEl.style.display = window.electron && window.electron.isDev ? 'block' : 'none';
   A.state.ipc
     .invoke('license:getStatus')
@@ -49,13 +49,13 @@ A.showLicenseDeactivation = function () {
   A.state.ipc
     .invoke('license:getStatus')
     .then(function (local) {
-      var infoEl = document.getElementById('licenseCurrentInfo');
+      const infoEl = document.getElementById('licenseCurrentInfo');
       if (local && local.key) {
-        var text = '<strong>' + _t('licenseValidStatus') + '</strong><br>';
+        let text = '<strong>' + _t('licenseValidStatus') + '</strong><br>';
         text += _t('licenseKeyLabel') + ' ' + A.escapeHtml(local.key) + '<br>';
         text += _t('licenseDeviceLabel') + ' ' + A.escapeHtml(local.machineId || '').slice(0, 16) + '...<br>';
         if (local.lastValidated) {
-          var days = Math.floor((Date.now() - local.lastValidated) / (24 * 60 * 60 * 1000));
+          const days = Math.floor((Date.now() - local.lastValidated) / (24 * 60 * 60 * 1000));
           text += _t('licenseGraceLabel') + ' ' + (7 - days) + ' ' + _t('licenseDays');
         }
         A.safeSetStatic(infoEl, text);
@@ -67,26 +67,26 @@ A.showLicenseDeactivation = function () {
 };
 
 A.hideLicense = function () {
-  var overlay = document.getElementById('licenseOverlay');
+  const overlay = document.getElementById('licenseOverlay');
   if (overlay) overlay.style.display = 'none';
-  var loginOverlay = document.getElementById('loginOverlay');
+  const loginOverlay = document.getElementById('loginOverlay');
   if (loginOverlay) loginOverlay.style.display = 'flex';
 };
 
 A.showLicenseOverlay = function () {
   document.getElementById('licenseOverlay').style.display = 'flex';
   document.getElementById('loginOverlay').style.display = 'none';
-  var appEl = document.getElementById('app');
+  const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
-  var startupOverlay = document.getElementById('startupOverlay');
+  const startupOverlay = document.getElementById('startupOverlay');
   if (startupOverlay) startupOverlay.style.display = 'none';
 };
 
 A.doActivateLicense = function () {
-  var key = document.getElementById('licenseKeyInput') ? document.getElementById('licenseKeyInput').value.trim() : '';
-  var errorEl = document.getElementById('licenseError');
-  var infoEl = document.getElementById('licenseInfo');
-  var btn = document.getElementById('licenseActivateBtn');
+  const key = document.getElementById('licenseKeyInput') ? document.getElementById('licenseKeyInput').value.trim() : '';
+  const errorEl = document.getElementById('licenseError');
+  const infoEl = document.getElementById('licenseInfo');
+  const btn = document.getElementById('licenseActivateBtn');
   if (errorEl) errorEl.style.display = 'none';
   if (infoEl) infoEl.style.display = 'none';
   if (!key || key.length < 10) {
@@ -140,8 +140,8 @@ A.doActivateLicense = function () {
 
 A.doDeactivateLicense = function () {
   if (!confirm(_t('licenseDeactivateConfirm'))) return;
-  var msgEl = document.getElementById('licenseDeactivationMessage');
-  var btn = document.getElementById('licenseDeactivateBtn');
+  const msgEl = document.getElementById('licenseDeactivationMessage');
+  const btn = document.getElementById('licenseDeactivateBtn');
   if (btn) btn.disabled = true;
   A.state.ipc
     .invoke('license:deactivate')
@@ -178,12 +178,12 @@ A.skipLicense = function (e) {
 };
 
 A.initLicenseUI = function () {
-  var btn = document.getElementById('licenseActivateBtn');
-  var deactBtn = document.getElementById('licenseDeactivateBtn');
-  var skipBtn = document.getElementById('licenseSkipBtn');
-  var manageBtn = document.getElementById('licenseManageBtn');
-  var backBtn = document.getElementById('licenseDeactivateBackBtn');
-  var input = document.getElementById('licenseKeyInput');
+  const btn = document.getElementById('licenseActivateBtn');
+  const deactBtn = document.getElementById('licenseDeactivateBtn');
+  const skipBtn = document.getElementById('licenseSkipBtn');
+  const manageBtn = document.getElementById('licenseManageBtn');
+  const backBtn = document.getElementById('licenseDeactivateBackBtn');
+  const input = document.getElementById('licenseKeyInput');
   if (btn) btn.addEventListener('click', A.doActivateLicense);
   if (deactBtn) deactBtn.addEventListener('click', A.doDeactivateLicense);
   if (skipBtn) skipBtn.addEventListener('click', A.skipLicense);
@@ -201,7 +201,7 @@ A.initLicenseUI = function () {
       if (e.key === 'Enter') A.doActivateLicense();
     });
     input.addEventListener('input', function () {
-      var errorEl = document.getElementById('licenseError');
+      const errorEl = document.getElementById('licenseError');
       if (errorEl) errorEl.style.display = 'none';
     });
   }

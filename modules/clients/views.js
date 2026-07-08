@@ -20,7 +20,7 @@ A.renderClientTable = function (list) {
   </tr>`
           )
           .join('')
-      : `<tr><td colspan="7"><div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>${_t('noResultsSearch')}</h3><p>${_t('searchClientsHint')}</p></div></td></tr>`
+      : `<tr><td colspan="7"><div class="empty-state"><i class="ri-user-3-line"></i><h3>${_t('noResultsSearch')}</h3><p>${_t('searchClientsHint')}</p></div></td></tr>`
   );
   document.querySelectorAll('.client-open-btn').forEach(b => b.addEventListener('click', () => A.openClientDetail(parseInt(b.dataset.id, 10))));
   document.querySelectorAll('.client-del-btn').forEach(b =>
@@ -62,7 +62,7 @@ A.renderClientCards = function (list) {
   </div>`
           )
           .join('')
-      : `<div class="empty-state-v2"><i class="ri-user-3-line"></i><h3>${_t('noClientsLabel')}</h3><p>${_t('addFirstClient')}</p></div>`
+      : `<div class="empty-state"><i class="ri-user-3-line"></i><h3>${_t('noClientsLabel')}</h3><p>${_t('addFirstClient')}</p></div>`
   );
 };
 
@@ -192,7 +192,7 @@ A.loadWsClDocs = async function (c, _token) {
   const el = document.getElementById('wsClDocs');
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
   if (_token !== undefined && _token !== A.state._clientDetailToken) return;
-  let allDocs = [];
+  const allDocs = [];
   for (const ca of cases) {
     const docs = await A.cachedInvoke('db:getDocuments', ca.id);
     docs.forEach(d => allDocs.push({ ...d, case_number: ca.case_number }));
@@ -277,7 +277,7 @@ A.loadWsClPayments = async function (c, _token) {
     const cases = (await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId)) || [];
     if (_token !== undefined && _token !== A.state._clientDetailToken) return;
     const results = await Promise.allSettled(cases.map(ca => A.cachedInvoke('db:getPaiements', ca.id)));
-    let allPayments = [];
+    const allPayments = [];
     results.forEach((r, i) => {
       if (r.status === 'fulfilled' && Array.isArray(r.value)) {
         r.value.forEach(p => allPayments.push({ ...p, case_number: cases[i].case_number }));

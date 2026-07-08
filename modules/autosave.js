@@ -143,7 +143,7 @@ A.AutoSave = {
     });
     const esc = A.escapeHtml;
     banner.innerHTML = `
-      <i class="ri-history-line" style="font-size:20px;"></i>
+      <i class="ri-history-line" style="font-size:var(--icon-md);"></i>
       <span style="flex:1;">${_t('autosaveFoundDrafts').replace('{count}', `<strong>${esc(drafts.length)}</strong>`)}</span>
       <button id="asRestoreBtn" class="btn btn-gold btn-xs" style="white-space:nowrap;">${_t('autosaveRestoreAll')}</button>
       <button id="asDismissBtn" class="btn btn-xs" style="background:rgba(255,255,255,0.15);color:#fff;border:none;white-space:nowrap;">${_t('autosaveDismiss')}</button>
@@ -190,13 +190,13 @@ A.AutoSave = {
     if (!el) return;
     if (this._dirty.size > 0) {
       el.style.display = 'inline-flex';
-      el.innerHTML = '<i class="ri-edit-line" style="font-size:12px;"></i> <span>' + _t('autosaveUnsaved') + '</span>';
+      el.innerHTML = '<i class="ri-edit-line" style="font-size:var(--icon-xs);"></i> <span>' + _t('autosaveUnsaved') + '</span>';
       el.style.color = 'var(--gold)';
     } else {
       const drafts = this.getAllDrafts();
       if (drafts.length > 0) {
         el.style.display = 'inline-flex';
-        el.innerHTML = '<i class="ri-save-3-line" style="font-size:12px;"></i> <span>' + _t('autosaveLocalDrafts') + '</span>';
+        el.innerHTML = '<i class="ri-save-3-line" style="font-size:var(--icon-xs);"></i> <span>' + _t('autosaveLocalDrafts') + '</span>';
         el.style.color = 'var(--info)';
       } else {
         el.style.display = 'none';

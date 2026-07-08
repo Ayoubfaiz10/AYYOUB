@@ -25,7 +25,7 @@ const PATH_CACHE = new Map();
 
 function cachedRealpath(p) {
   if (PATH_CACHE.has(p)) return PATH_CACHE.get(p);
-  var r = fs.realpathSync(p);
+  const r = fs.realpathSync(p);
   if (PATH_CACHE.size > 1024) PATH_CACHE.clear();
   PATH_CACHE.set(p, r);
   return r;
@@ -33,8 +33,8 @@ function cachedRealpath(p) {
 
 function isPathSafe(targetPath, allowedBase) {
   try {
-    var resolved = cachedRealpath(path.resolve(targetPath));
-    var base = cachedRealpath(path.resolve(allowedBase));
+    const resolved = cachedRealpath(path.resolve(targetPath));
+    const base = cachedRealpath(path.resolve(allowedBase));
     return resolved === base || resolved.startsWith(base + path.sep);
   } catch (e) { return false; }
 }
@@ -50,7 +50,7 @@ function getPinnedCertsPath() {
 
 function loadPinnedCerts() {
   try {
-    var p = getPinnedCertsPath();
+    const p = getPinnedCertsPath();
     if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch (e) { /* ignore */ }
   return {};
@@ -58,8 +58,8 @@ function loadPinnedCerts() {
 
 function savePinnedCerts(pins) {
   try {
-    var p = getPinnedCertsPath();
-    var dir = path.dirname(p);
+    const p = getPinnedCertsPath();
+    const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(p, JSON.stringify(pins, null, 2), { mode: 0o600 });
   } catch (e) { /* ignore */ }
@@ -67,7 +67,7 @@ function savePinnedCerts(pins) {
 
 function loadPendingPinApprovals() {
   try {
-    var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+    const p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
     if (fs.existsSync(p)) return JSON.parse(fs.readFileSync(p, 'utf8'));
   } catch (e) { /* ignore */ }
   return {};
@@ -75,21 +75,21 @@ function loadPendingPinApprovals() {
 
 function savePendingPinApprovals(pending) {
   try {
-    var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
-    var dir = path.dirname(p);
+    const p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+    const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
     fs.writeFileSync(p, JSON.stringify(pending, null, 2), { mode: 0o600 });
   } catch (e) { /* ignore */ }
 }
 
 function setupCertPinning() {
-  var pinnedCerts = loadPinnedCerts();
-  var pendingPins = loadPendingPinApprovals();
+  const pinnedCerts = loadPinnedCerts();
+  const pendingPins = loadPendingPinApprovals();
   session.defaultSession.setCertificateVerifyProc(function (req, cb) {
     if (PINNED_DOMAINS.indexOf(req.hostname) === -1) { cb(0); return; }
-    var fingerprint = req.certificate && req.certificate.fingerprint;
+    const fingerprint = req.certificate && req.certificate.fingerprint;
     if (!fingerprint) { cb(0); return; }
-    var expected = pinnedCerts[req.hostname];
+    const expected = pinnedCerts[req.hostname];
     if (!expected) {
       pinnedCerts[req.hostname] = fingerprint;
       savePinnedCerts(pinnedCerts);
@@ -341,13 +341,13 @@ function checkOfflineGrace(license) {
 /* ─── License IPC Handlers ─── */
 
 ipcMain.handle('license:getStatus', function() {
-  var license = getLicense();
+  const license = getLicense();
   if (!license) return { valid: false };
   return { valid: checkOfflineGrace(license), key: license.key, machineId: license.machineId, lastValidated: license.lastValidated };
 });
 
 ipcMain.handle('license:check', async function() {
-  var license = getLicense();
+  const license = getLicense();
   if (!license) return { valid: false, message: 'لا يوجد ترخيص' };
 
   if (checkOfflineGrace(license)) {
@@ -355,7 +355,7 @@ ipcMain.handle('license:check', async function() {
   }
 
   try {
-    var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
+    const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
       licenseKey: license.key,
       machineId: license.machineId
     });
@@ -380,10 +380,10 @@ ipcMain.handle('license:check', async function() {
 
 ipcMain.handle('license:activate', async function(_e, data) {
   if (!data || !data.key) return { ok: false, error: 'مفتاح الترخيص مطلوب' };
-  var key = data.key.trim();
-  var machineId = getMachineId();
+  const key = data.key.trim();
+  const machineId = getMachineId();
   try {
-    var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/register', {
+    const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/register', {
       licenseKey: key,
       machineId: machineId
     });
@@ -404,12 +404,12 @@ ipcMain.handle('license:activate', async function(_e, data) {
 });
 
 ipcMain.handle('license:deactivate', async function() {
-  var license = getLicense();
-  var unregistered = false;
+  const license = getLicense();
+  let unregistered = false;
 
   if (license && license.key && license.machineId) {
     try {
-      var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/unregister', {
+      const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/unregister', {
         licenseKey: license.key,
         machineId: license.machineId
       });
@@ -428,11 +428,11 @@ ipcMain.handle('license:deactivate', async function() {
 
 function startLicenseRevalidation() {
   setInterval(async function() {
-    var license = getLicense();
+    const license = getLicense();
     if (!license) return;
     if (checkOfflineGrace(license)) {
       try {
-        var result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
+        const result = await licenseHttpPost(LICENSE_SERVER + '/api/v1/devices/validate', {
           licenseKey: license.key,
           machineId: license.machineId
         });
@@ -564,8 +564,8 @@ function wrapDbCall(name, fn) {
     try {
       return fn(...args);
     } catch (err) {
-      var msg = err.message || String(err);
-      var sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
+      const msg = err.message || String(err);
+      const sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
       logToLogger(2, 'db:' + name, sanitized, { stack: (err.stack || '').slice(0, 300) });
       throw err;
     }
@@ -581,8 +581,8 @@ function protectedIpc(name, handler) {
     try {
       return await handler(event, ...args);
     } catch (err) {
-      var msg = err.message || String(err);
-      var sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
+      const msg = err.message || String(err);
+      const sanitized = msg.replace(/(FROM|INTO|UPDATE|TABLE|INSERT|CREATE|ALTER|DROP)\s+\w+/gi, '$1 [REDACTED]');
       logToLogger(2, 'ipc:' + name, sanitized, { stack: (err.stack || '').slice(0, 300) });
       return { error: 'حدث خطأ داخلي. الرجاء المحاولة مرة أخرى' };
     }
@@ -732,7 +732,7 @@ async function init() {
     if (stats.size > 50 * 1024 * 1024) return { error: 'الملف كبير جداً (الحد 50MB)' };
     const caseDir = path.join(db.STORAGE_DIR, String(caseId));
     try { await fsp.access(caseDir); } catch { await fsp.mkdir(caseDir, { recursive: true }); }
-    let filename = path.basename(sourcePath).normalize('NFKC').replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
+    const filename = path.basename(sourcePath).normalize('NFKC').replace(/[^a-zA-Z0-9_\-.\u0600-\u06FF\s()]/g, '_');
     if (!filename || filename === '.' || filename === '..') return { error: 'اسم ملف غير صالح' };
     const finalPath = await getUniqueFilePath(caseDir, filename);
     await fsp.copyFile(sourcePath, finalPath);
@@ -785,9 +785,9 @@ async function init() {
       const SAFE_EXTS = new Set(['.pdf', '.docx', '.jpg', '.jpeg', '.png', '.txt', '.doc']);
       const doc = db.getDocument(docId);
       if (doc && doc.file_path && fs.existsSync(doc.file_path) && isPathSafe(doc.file_path, db.STORAGE_DIR)) {
-        var ext = path.extname(doc.file_path).toLowerCase();
+        const ext = path.extname(doc.file_path).toLowerCase();
         if (!SAFE_EXTS.has(ext)) return { error: 'نوع ملف غير مسموح / Type de fichier non autorisé' };
-        var current = fs.realpathSync(doc.file_path);
+        const current = fs.realpathSync(doc.file_path);
         shell.openPath(current);
       }
     } catch (e) { logToLogger(2, 'openDocument', e.message); }
@@ -933,7 +933,7 @@ async function init() {
     logToLogger(1, 'guard', 'renderer attempted db:addLog', { action });
     return { error: 'forbidden' };
   });
-  var AUDIT_ALLOWED_PREFIXES = ['error', 'renderer_'];
+  const AUDIT_ALLOWED_PREFIXES = ['error', 'renderer_'];
   safeIpc('audit:log', (_e, action, details) => {
     if (!AUDIT_ALLOWED_PREFIXES.some(function (p) { return action && action.indexOf(p) === 0; })) return { error: 'action not allowed' };
     if (action) db.addLog(action, (details || '').slice(0, 500));
@@ -982,13 +982,13 @@ async function init() {
 
   // ───── Cert Pinning ─────
   ipcMain.handle('cert:getPinnedStatus', () => {
-    var pins = loadPinnedCerts();
+    const pins = loadPinnedCerts();
     return Object.keys(pins).map(function (h) { return { hostname: h, fingerprint: pins[h] }; });
   });
   ipcMain.handle('cert:approveNewPin', (_e, hostname, newFingerprint) => {
     if (PINNED_DOMAINS.indexOf(hostname) === -1) return { ok: false, error: 'النطاق غير مدعوم' };
     if (!newFingerprint || typeof newFingerprint !== 'string') return { ok: false, error: 'بصمة غير صالحة' };
-    var pending = loadPendingPinApprovals();
+    const pending = loadPendingPinApprovals();
     pending[hostname] = newFingerprint;
     savePendingPinApprovals(pending);
     return { ok: true };
@@ -996,7 +996,7 @@ async function init() {
   ipcMain.handle('cert:resetPins', () => {
     savePinnedCerts({});
     try {
-      var p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
+      const p = path.join(app.getPath('userData'), 'storage', 'pending_pins.json');
       if (fs.existsSync(p)) fs.unlinkSync(p);
     } catch (e) { /* ignore */ }
     return { ok: true };
@@ -1359,7 +1359,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
     currentUser = sessionUser;
     db.updateUser(user.id, { last_login: new Date().toISOString() });
     db.addLog('login', `تسجيل دخول: ${user.name}`, user.id, user.name);
-    var sessionToken = remember ? signToken(user.id, Date.now() + SESSION_DURATION_MS) : null;
+    const sessionToken = remember ? signToken(user.id, Date.now() + SESSION_DURATION_MS) : null;
     return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('login', e);
@@ -1379,8 +1379,8 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
     const cleanEmail = 'admin@' + officeName.trim().replace(/\s+/g, '') + '.ma';
     db.setOfficeSetting('office_name', officeName.trim());
     db.setOfficeSetting('setup_date', new Date().toISOString());
-    var existingAdmin = existing.find(u => !u.password_hash || u.password_hash === '');
-    var id;
+    const existingAdmin = existing.find(u => !u.password_hash || u.password_hash === '');
+    let id;
     if (existingAdmin) {
       db.updateUser(existingAdmin.id, { name: adminName.trim(), email: cleanEmail, password_hash: hash, role: 'admin', active: 1 });
       id = existingAdmin.id;
@@ -1390,7 +1390,7 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
     if (!id) return { ok: false, error: 'فشل إنشاء حساب المدير' };
     const user = db.getUserById(id);
     if (!user) return { ok: false, error: 'فشل استرجاع المستخدم' };
-    var questions = [];
+    const questions = [];
     if (securityQ1 && securityA1) questions.push({ question: securityQ1, answerHash: await hashBcrypt(securityA1) });
     if (securityQ2 && securityA2) questions.push({ question: securityQ2, answerHash: await hashBcrypt(securityA2) });
     if (securityQ3 && securityA3) questions.push({ question: securityQ3, answerHash: await hashBcrypt(securityA3) });
@@ -1403,7 +1403,7 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
       try { app.setLoginItemSettings({ openAtLogin: true }); } catch (e) { /* best effort */ }
     }
     await db.flushWrites();
-    var sessionToken = signToken(id, Date.now() + SESSION_DURATION_MS);
+    const sessionToken = signToken(id, Date.now() + SESSION_DURATION_MS);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('setup', e);
@@ -1475,7 +1475,7 @@ safeIpc('auth:resetPassword', withPerm('manage_users')(async (_e, { userId, newP
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
-    var sessionToken = (remember !== false) ? signToken(userId, Date.now() + SESSION_DURATION_MS) : null;
+    const sessionToken = (remember !== false) ? signToken(userId, Date.now() + SESSION_DURATION_MS) : null;
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetPassword', e);
@@ -1496,7 +1496,7 @@ safeIpc('auth:resetWithMasterKey', withPerm('manage_users')(async (_e, { userId,
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('reset_password', `إعادة تعيين كلمة السر (مفتاح الاستعادة) للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
-    var sessionToken = signToken(userId, Date.now() + SESSION_DURATION_MS);
+    const sessionToken = signToken(userId, Date.now() + SESSION_DURATION_MS);
     return { ok: true, user: currentUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetWithMasterKey', e);
@@ -1928,10 +1928,10 @@ async function callAI(systemPrompt, message, context) {
 
 function sanitizeContext(text) {
   if (!text) return '';
-  var norm = text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) & 0xF); });
+  const norm = text.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, function (d) { return String.fromCharCode(d.charCodeAt(0) & 0xF); });
   return norm
     .replace(/\+?[\d][\d\s\-().]{7,}[\d]/g, function (m) {
-      var digits = m.replace(/\D/g, '');
+      const digits = m.replace(/\D/g, '');
       if (/^(0|00212|\+212)?[567]\d{8}$/.test(digits)) return '[رقم هاتف]';
       if (digits.length >= 14 && digits.length <= 19) return '[رقم بطاقة]';
       return m;
@@ -2091,7 +2091,7 @@ safeIpc('ai:summarizeDocument', withPerm('use_ai')(async (_e, { docId }) => {
   const txt = db.getDocumentText(docId);
   const text = txt ? txt.extracted_text?.slice(0, 4000) : '';
   if (!text || text.length < 50) return { text: '', error: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص', friendlyError: 'هذه الوثيقة لا تحتوي على نص كافٍ للتلخيص' };
-  let context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
+  const context = `الملف: ${doc.filename}\nالنوع: ${doc.doc_type||'غير محدد'}\nتاريخ الرفع: ${doc.upload_date||''}\nالوسوم: ${doc.tags||''}\n\nالنص:\n${text}`;
   return callAI('أنت خبير في تحليل وثائق المحاماة. لخص هذه الوثيقة القانونية بالعربية في 3-5 نقاط واضحة.', 'لخص هذه الوثيقة بالعربية.', context);
 }));
 

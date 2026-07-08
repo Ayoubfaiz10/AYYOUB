@@ -13,7 +13,7 @@ window.addEventListener('unhandledrejection', function (e) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-  var A = window.App;
+  const A = window.App;
   A.state.ipc = window.ipcRenderer;
 
   if (A.Logger) A.Logger.init();
@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initLicenseUI);
   safeInit(A.initModal);
   safeInit(A.initNavigation);
+  safeInit(A.initKeyboardShortcuts);
   safeInit(A.initDarkMode);
   safeInit(A.initDate);
   safeInit(A.initAuth);

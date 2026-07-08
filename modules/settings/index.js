@@ -516,7 +516,7 @@ A.loadSettingsActivity = async function (loadMore = false) {
     A.safeSet(body, esc => currentHtml + logHtml);
   }
 
-  let loadMoreBtn = document.getElementById('settingsLogLoadMore');
+  const loadMoreBtn = document.getElementById('settingsLogLoadMore');
   const container = document.getElementById('settingsLogLoadMoreContainer');
   if (logs.length === LOG_LIMIT) {
     if (!loadMoreBtn && container) {
@@ -574,7 +574,7 @@ A.loadSettingsLogs = async function (loadMore) {
     A.safeSet(body, esc => currentHtml + logHtml);
   }
 
-  let loadMoreBtn = document.getElementById('settingsLogsLoadMore');
+  const loadMoreBtn = document.getElementById('settingsLogsLoadMore');
   const container = document.getElementById('settingsLogsLoadMoreContainer');
   if (logs.length === LOG_LIMIT2) {
     if (!loadMoreBtn && container) {

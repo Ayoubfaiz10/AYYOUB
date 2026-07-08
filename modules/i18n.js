@@ -845,12 +845,12 @@ A.i18n = {
 
   // ─── Calendar ───
   failedLoadCalendar: { ar: 'تعذر تحميل التقويم.', fr: 'Échec du chargement' },
-  eventTypeHearing: { ar: '⚖️ جلسة', fr: '⚖️ Audience' },
-  eventTypeDeadline: { ar: '⏰ موعد نهائي', fr: '⏰ Date limite' },
-  eventTypeMeeting: { ar: '📋 اجتماع', fr: '📋 Réunion' },
-  eventTypeTask: { ar: '✅ مهمة', fr: '✅ Tâche' },
-  eventTypeDocument: { ar: '📄 تقديم وثائق', fr: '📄 Documents' },
-  eventTypePayment: { ar: '💰 دفعة', fr: '💰 Paiement' },
+  eventTypeHearing: { ar: 'جلسة', fr: 'Audience' },
+  eventTypeDeadline: { ar: 'موعد نهائي', fr: 'Date limite' },
+  eventTypeMeeting: { ar: 'اجتماع', fr: 'Réunion' },
+  eventTypeTask: { ar: 'مهمة', fr: 'Tâche' },
+  eventTypeDocument: { ar: 'تقديم وثائق', fr: 'Documents' },
+  eventTypePayment: { ar: 'دفعة', fr: 'Paiement' },
   eventStatusScheduled: { ar: 'مجدول', fr: 'Programmé' },
   eventStatusPostponed: { ar: 'مؤجل', fr: 'Reporté' },
   eventStatusCompleted: { ar: 'مكتمل', fr: 'Terminé' },
@@ -1098,27 +1098,30 @@ A.i18n = {
   taskDescLabel: { ar: 'الوصف', fr: 'Description' },
   editTask: { ar: 'تعديل المهمة', fr: 'Modifier la tâche' },
   priority_high: { ar: 'مرتفع', fr: 'Haute' },
-  priority_critical: { ar: 'حرج', fr: 'Critique' }
+  priority_critical: { ar: 'حرج', fr: 'Critique' },
+  keyboardShortcuts: { ar: 'اختصارات لوحة المفاتيح', fr: 'Raccourcis clavier' },
+  helpCmdPalette: { ar: 'لوحة الأوامر', fr: 'Palette de commandes' },
+  helpShortcuts: { ar: 'عرض الاختصارات', fr: 'Afficher les raccourcis' }
 };
 
 function _t(key) {
-  var lang = A._currentLang || 'ar';
-  var entry = A.i18n[key];
+  const lang = A._currentLang || 'ar';
+  const entry = A.i18n[key];
   return entry ? entry[lang] || entry.en || entry.ar || key : key;
 }
 
 A.getLocale = function () {
-  var lang = A._currentLang || 'ar';
+  const lang = A._currentLang || 'ar';
   return lang === 'fr' ? 'fr-FR' : lang === 'en' ? 'en-US' : 'ar-MA';
 };
 
 A.getDayNames = function (len) {
-  var locale = A.getLocale();
+  const locale = A.getLocale();
   len = len || 'long';
-  var base = new Date(2024, 0, 1);
-  var days = [];
-  for (var i = 0; i < 7; i++) {
-    var d = new Date(base);
+  const base = new Date(2024, 0, 1);
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(base);
     d.setDate(base.getDate() + i);
     days.push(new Intl.DateTimeFormat(locale, { weekday: len }).format(d));
   }
@@ -1159,13 +1162,13 @@ A.getLanguage = function () {
 };
 
 A.updateUI = function () {
-  var lang = A._currentLang || 'ar';
+  const lang = A._currentLang || 'ar';
   document.querySelectorAll('[data-i18n]').forEach(function (el) {
-    var key = el.getAttribute('data-i18n');
-    var entry = A.i18n[key];
+    const key = el.getAttribute('data-i18n');
+    const entry = A.i18n[key];
     if (!entry) return;
-    var text = entry[lang] || entry.en || entry.ar || key;
-    var attr = el.getAttribute('data-i18n-attr');
+    const text = entry[lang] || entry.en || entry.ar || key;
+    const attr = el.getAttribute('data-i18n-attr');
     if (attr) {
       el.setAttribute(attr, text);
     } else if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT') {
@@ -1175,17 +1178,17 @@ A.updateUI = function () {
     }
   });
   document.querySelectorAll('[data-i18n-html]').forEach(function (el) {
-    var key = el.getAttribute('data-i18n-html');
-    var entry = A.i18n[key];
+    const key = el.getAttribute('data-i18n-html');
+    const entry = A.i18n[key];
     if (!entry) return;
-    var html = entry[lang] || entry.en || entry.ar || key;
+    let html = entry[lang] || entry.en || entry.ar || key;
     html = window.DOMPurify ? window.DOMPurify.sanitize(html) : html;
     el.innerHTML = html;
   });
 };
 
 A.initI18n = function () {
-  var saved = 'ar';
+  let saved = 'ar';
   try {
     saved = localStorage.getItem('app_lang') || 'ar';
   } catch (e) {}

@@ -943,8 +943,8 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
       return Promise.reject(new Error(isDev ? 'Invalid channel: ' + channel : 'Invalid channel'));
     }
 
-    var approx = 0;
-    for (var idx = 0; idx < args.length; idx++) {
+    let approx = 0;
+    for (let idx = 0; idx < args.length; idx++) {
       if (typeof args[idx] === 'string') { approx += args[idx].length * 2; }
       else if (typeof args[idx] === 'number') { approx += 8; }
       else if (args[idx] && args[idx].length) { approx += args[idx].length * (typeof args[idx] === 'string' ? 2 : 8); }
@@ -957,7 +957,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     const now = Date.now();
     const key = channel;
     if (rateLimits.size >= RATE_LIMIT_MAX_KEYS) {
-      var oldest = rateLimits.keys().next().value;
+      const oldest = rateLimits.keys().next().value;
       rateLimits.delete(oldest);
     }
     if (!rateLimits.has(key)) rateLimits.set(key, []);

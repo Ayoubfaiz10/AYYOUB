@@ -360,7 +360,7 @@ function execCmdItem() {
 A.initCommandPalette = function () {
   A.loadRecentItems();
   let cmdIndex = -1;
-  let cmdAbort = false;
+  const cmdAbort = false;
 
   const palette = document.getElementById('commandPalette');
   const input = document.getElementById('cmdInput');
@@ -389,7 +389,7 @@ A.initCommandPalette = function () {
     // Empty state
     if (!hasQuery && !recent.length && !createItems.length) {
       return (
-        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-search-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
+        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-search-line" style="font-size:var(--icon-xl);display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
         _t('cmdEmptyTitle') +
         '</p><p style="font-size:11px;margin-top:4px;">' +
         _t('cmdEmptyDesc') +
@@ -398,7 +398,7 @@ A.initCommandPalette = function () {
     }
     if (hasQuery && !searchResults.length && !navItems.length && !createItems.length && !quickItems.length) {
       return (
-        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-inbox-line" style="font-size:48px;display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
+        '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-inbox-line" style="font-size:var(--icon-xl);display:block;margin-bottom:12px;"></i><p style="font-size:14px;">' +
         _t('cmdNoResults').replace('{q}', '<strong style="color:var(--muted-foreground);">' + A.escapeHtml(query) + '</strong>') +
         '</p><p style="font-size:11px;margin-top:4px;">' +
         _t('cmdTryDifferent') +
@@ -619,8 +619,8 @@ A.initAdvancedSearch = function () {
       });
     }
     if (items.length) {
-      var _hlTerms = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split(/\s+/).filter(Boolean).slice(0, 20);
-      var _hlPattern = _hlTerms.length ? _hlTerms.join('|') : null;
+      const _hlTerms = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').split(/\s+/).filter(Boolean).slice(0, 20);
+      const _hlPattern = _hlTerms.length ? _hlTerms.join('|') : null;
       const hl = t =>
         t && _hlPattern
           ? esc(t).replace(

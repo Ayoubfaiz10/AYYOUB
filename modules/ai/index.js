@@ -356,7 +356,7 @@ A.loadSmartInsights = async function () {
       A.safeSet(
         el,
         esc => `<div style="margin-bottom:var(--spacing-1-5);font-size:var(--type-caption);color:var(--muted-foreground);line-height:1.6;">${esc(data.summary)}</div>
-        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--spacing-1-5);padding:6px 0;border-bottom:1px solid var(--muted);font-size:var(--type-caption);color:var(--foreground);"><i class="ri-information-line" style="color:var(--gold);font-size:14px;"></i>${esc(i)}</div>`).join('')}`
+        ${data.insights.map(i => `<div style="display:flex;align-items:center;gap:var(--spacing-1-5);padding:6px 0;border-bottom:1px solid var(--muted);font-size:var(--type-caption);color:var(--foreground);"><i class="ri-information-line" style="color:var(--gold);font-size:var(--icon-sm);"></i>${esc(i)}</div>`).join('')}`
       );
     }
   } catch (e) {
@@ -387,7 +387,7 @@ A.analyzeDoc = async function (docId) {
   }
   A.showModal(
     'تحليل الوثيقة بالذكاء الاصطناعي',
-    '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:32px;color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>',
+    '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>',
     null,
     'إغلاق'
   );
@@ -396,7 +396,7 @@ A.analyzeDoc = async function (docId) {
     const content = document.getElementById('docAnalysisContent');
     if (!content) return;
     if (result.error) {
-      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-alert-line" style="font-size:32px;"></i><p>${A.escapeHtml(result.error)}</p></div>`;
+      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-alert-line" style="font-size:var(--icon-lg);"></i><p>${A.escapeHtml(result.error)}</p></div>`;
       return;
     }
     const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">(من الذاكرة المخبأة)</span>' : '';
@@ -413,7 +413,7 @@ A.analyzeDoc = async function (docId) {
     A.logError('analyzeDoc', e);
     const content = document.getElementById('docAnalysisContent');
     if (content)
-      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:32px;"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
+      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:var(--icon-lg);"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
   }
 };
 

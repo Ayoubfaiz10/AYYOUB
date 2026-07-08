@@ -160,8 +160,8 @@ A.openEventDetail = async function (eventId) {
   const overlay = document.getElementById('eventDetailOverlay');
   if (!titleEl || !bodyEl || !editBtn || !deleteBtn || !overlay) return;
   titleEl.textContent = e.title;
-  const typeIcons = { hearing: '⚖️', deadline: '⏰', meeting: '📋', task: '✅', document: '📄', payment: '💰' };
-  badgeEl.textContent = `${typeIcons[e.type] || '📌'} ${e.type}`;
+  const typeIcons = { hearing: '<i class="ri-scales-line"></i>', deadline: '<i class="ri-alarm-warning-line"></i>', meeting: '<i class="ri-group-line"></i>', task: '<i class="ri-checkbox-circle-line"></i>', document: '<i class="ri-file-text-line"></i>', payment: '<i class="ri-coins-line"></i>' };
+  badgeEl.innerHTML = `${typeIcons[e.type] || '<i class="ri-pushpin-line"></i>'} ${e.type}`;
   const statusColors = { scheduled: 'badge-active', postponed: 'badge-gold', completed: 'badge-closed', cancelled: 'badge-closed' };
   A.safeSet(
     bodyEl,

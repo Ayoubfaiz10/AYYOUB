@@ -37,7 +37,7 @@ const FIELD_MAX_SIZES = {
 };
 function enforceSize(data) {
   if (!data || typeof data !== 'object') return data;
-  for (var k in data) {
+  for (const k in data) {
     if (data.hasOwnProperty(k) && FIELD_MAX_SIZES.hasOwnProperty(k) && typeof data[k] === 'string' && data[k].length > FIELD_MAX_SIZES[k]) {
       data[k] = data[k].slice(0, FIELD_MAX_SIZES[k]);
     }
@@ -70,7 +70,7 @@ function createEncryptStream() {
           this.push(Buffer.concat([DB_ENC_MAGIC, salt, iv]));
           headerWritten = true;
         }
-        var enc = cipher.update(Buffer.from(chunk));
+        const enc = cipher.update(Buffer.from(chunk));
         if (enc.length) this.push(enc);
         callback();
       } catch (e) { callback(e); }
@@ -98,11 +98,11 @@ function encryptDbBuffer(buffer) {
 
 function decryptDbBuffer(buffer) {
   if (!_encryptionKey) return buffer;
-  var magicLen = DB_ENC_MAGIC.length;
-  var magicOldLen = DB_ENC_MAGIC_OLD.length;
-  var usesOldMagic = buffer.length >= magicOldLen && buffer.slice(0, magicOldLen).equals(DB_ENC_MAGIC_OLD);
+  const magicLen = DB_ENC_MAGIC.length;
+  const magicOldLen = DB_ENC_MAGIC_OLD.length;
+  const usesOldMagic = buffer.length >= magicOldLen && buffer.slice(0, magicOldLen).equals(DB_ENC_MAGIC_OLD);
   if (!buffer.slice(0, magicLen).equals(DB_ENC_MAGIC) && !usesOldMagic) return buffer;
-  var offset = usesOldMagic ? magicOldLen : magicLen;
+  let offset = usesOldMagic ? magicOldLen : magicLen;
   const salt = buffer.slice(offset, offset + 32);
   offset += 32;
   const iv = buffer.slice(offset, offset + 16);
@@ -439,7 +439,7 @@ let _savePending = false;
 function queueSave() {
   if (_savePending) return _dbWriteQueue;
   _savePending = true;
-  var next = _dbWriteQueue.then(
+  const next = _dbWriteQueue.then(
     function () {
       _savePending = false;
       return saveDbSync();
@@ -458,23 +458,23 @@ function flushWrites() {
 
 function rotateBackups() {
   try {
-    var files = fs.readdirSync(BACKUP_DIR).filter(function (f) { return f.endsWith('.db') && f.startsWith('auto'); })
+    const files = fs.readdirSync(BACKUP_DIR).filter(function (f) { return f.endsWith('.db') && f.startsWith('auto'); })
       .map(function (f) {
-        var s = fs.statSync(path.join(BACKUP_DIR, f));
-        var d = new Date(s.mtimeMs);
-        var pad = function (n) { return String(n).padStart(2, '0'); };
-        var dayKey = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
-        var temp = new Date(d.valueOf());
+        const s = fs.statSync(path.join(BACKUP_DIR, f));
+        const d = new Date(s.mtimeMs);
+        const pad = function (n) { return String(n).padStart(2, '0'); };
+        const dayKey = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        const temp = new Date(d.valueOf());
         temp.setDate(temp.getDate() + 3 - ((d.getDay() + 6) % 7));
-        var jan4 = new Date(temp.getFullYear(), 0, 4);
-        var weekNum = 1 + Math.round(((temp - jan4) / 86400000 + (jan4.getDay() + 6) % 7 - 3) / 7);
-        var weekKey = temp.getFullYear() + '-W' + pad(weekNum);
-        var monthKey = d.getFullYear() + '-' + pad(d.getMonth() + 1);
+        const jan4 = new Date(temp.getFullYear(), 0, 4);
+        const weekNum = 1 + Math.round(((temp - jan4) / 86400000 + (jan4.getDay() + 6) % 7 - 3) / 7);
+        const weekKey = temp.getFullYear() + '-W' + pad(weekNum);
+        const monthKey = d.getFullYear() + '-' + pad(d.getMonth() + 1);
         return { name: f, mtime: s.mtimeMs, dayKey: dayKey, weekKey: weekKey, monthKey: monthKey };
       })
       .sort(function (a, b) { return b.mtime - a.mtime; });
-    var keep = {}, seenDays = {}, seenWeeks = {}, seenMonths = {};
-    var dailyCount = 0, weeklyCount = 0, monthlyCount = 0;
+    const keep = {}, seenDays = {}, seenWeeks = {}, seenMonths = {};
+    let dailyCount = 0, weeklyCount = 0, monthlyCount = 0;
     for (var i = 0; i < files.length; i++) {
       var f = files[i];
       if (dailyCount < 5 && !seenDays[f.dayKey]) { seenDays[f.dayKey] = 1; dailyCount++; keep[f.name] = 1; }
@@ -496,11 +496,11 @@ function rotateBackups() {
 function autoBackup() {
   if (!fs.existsSync(DB_PATH) || Date.now() - _lastAutoBackup <= BACKUP_INTERVAL_MS) return;
   _lastAutoBackup = Date.now();
-  var now = new Date();
-  var pad = function (n) { return String(n).padStart(2, '0'); };
-  var ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
+  const now = new Date();
+  const pad = function (n) { return String(n).padStart(2, '0'); };
+  const ts = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate()) +
            '_' + pad(now.getHours()) + '-' + pad(now.getMinutes()) + '-' + pad(now.getSeconds());
-  var backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
+  const backupPath = path.join(BACKUP_DIR, 'auto_backup_' + ts + '.db');
   try { fs.copyFileSync(DB_PATH, backupPath); } catch (e) { /* best effort */ }
   rotateBackups();
 }
@@ -509,30 +509,30 @@ function saveDbSync() {
   if (!db) return;
   try {
     autoBackup();
-    var tmpPath = DB_PATH + '.tmp';
-    var data = db.export();
+    const tmpPath = DB_PATH + '.tmp';
+    const data = db.export();
     if (!_encryptionKey) {
       fs.writeFileSync(tmpPath, Buffer.from(data), { mode: 0o600 });
     } else {
-      var iv = crypto.randomBytes(16);
-      var salt = crypto.randomBytes(32);
-      var key = crypto.scryptSync(_encryptionKey, salt, 32);
-      var cipher = crypto.createCipheriv(DB_ENC_ALGO, key, iv);
-      var fd = fs.openSync(tmpPath, 'w', 0o600);
+      const iv = crypto.randomBytes(16);
+      const salt = crypto.randomBytes(32);
+      const key = crypto.scryptSync(_encryptionKey, salt, 32);
+      const cipher = crypto.createCipheriv(DB_ENC_ALGO, key, iv);
+      const fd = fs.openSync(tmpPath, 'w', 0o600);
       try {
         fs.writeSync(fd, DB_ENC_MAGIC);
         fs.writeSync(fd, salt);
         fs.writeSync(fd, iv);
-        var chunkSize = 65536;
-        var offset = 0;
+        const chunkSize = 65536;
+        let offset = 0;
         while (offset < data.length) {
-          var end = Math.min(offset + chunkSize, data.length);
-          var chunk = Buffer.from(data.subarray(offset, end));
-          var enc = cipher.update(chunk);
+          const end = Math.min(offset + chunkSize, data.length);
+          const chunk = Buffer.from(data.subarray(offset, end));
+          const enc = cipher.update(chunk);
           if (enc.length) fs.writeSync(fd, enc);
           offset = end;
         }
-        var final = cipher.final();
+        const final = cipher.final();
         if (final.length) fs.writeSync(fd, final);
         fs.writeSync(fd, cipher.getAuthTag());
         fs.closeSync(fd);
@@ -555,15 +555,15 @@ async function saveDb() {
   if (!db) return;
   try {
     autoBackup();
-    var tmpPath = DB_PATH + '.tmp';
-    var data = db.export();
-    var source = new (require('stream').Readable)({
+    const tmpPath = DB_PATH + '.tmp';
+    const data = db.export();
+    const source = new (require('stream').Readable)({
       read: function () {
         this.push(Buffer.from(data.buffer, data.byteOffset, data.byteLength));
         this.push(null);
       }
     });
-    var dest = fs.createWriteStream(tmpPath, { mode: 0o600 });
+    const dest = fs.createWriteStream(tmpPath, { mode: 0o600 });
     await require('stream/promises').pipeline(source, createEncryptStream(), dest);
     fs.renameSync(tmpPath, DB_PATH);
     try { fs.chmodSync(DB_PATH, 0o600); } catch (e) {}
@@ -747,9 +747,9 @@ function getArchivedCases() {
 }
 
 function autoArchive() {
-  var stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days') LIMIT 100");
+  const stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days') LIMIT 100");
   if (!stale.length) return 0;
-  for (var i = 0; i < stale.length; i++) {
+  for (let i = 0; i < stale.length; i++) {
     db.run('UPDATE cases SET archived = 1 WHERE id = ?', [stale[i].id]);
   }
   return stale.length;
@@ -1774,7 +1774,7 @@ function globalSearch(queryTerm, userId, userRole) {
     .map(t => t + '*')
     .join(' ');
 
-  let ftsResults = [];
+  const ftsResults = [];
   if (ftsQuery) {
     try {
       const stmt = db.prepare('SELECT case_id, search_rank(matchinfo(search_index)) as score FROM search_index WHERE search_index MATCH ? ORDER BY score DESC');
@@ -1863,7 +1863,7 @@ function getSearchIndex(userId, userRole) {
       text: (e.title || '') + ' ' + (e.case_number || '') + ' ' + (e.court || '') + ' ' + (e.notes || '') + ' ' + (e.type || '')
     }));
   const allCases = getAllCases(false, userId, userRole);
-  let docs = [];
+  const docs = [];
   for (const c of allCases) {
     const d = getDocuments(c.id);
     d.forEach(doc =>
@@ -1885,7 +1885,7 @@ function getSearchIndex(userId, userRole) {
     nav: 'tasks',
     text: (t.title || '') + ' ' + (t.description || '') + ' ' + (t.case_number || '') + ' ' + (t.tags || '') + ' ' + (t.status || '') + ' ' + (t.priority || '')
   }));
-  let payments = [];
+  const payments = [];
   for (const c of allCases) {
     const p = getPaiements(c.id);
     p.forEach(pay =>
@@ -2152,8 +2152,8 @@ function setOfficeSetting(key, value) {
 }
 function setSecurityQuestions(userId, questions) {
   mutate('DELETE FROM security_questions WHERE user_id=?', [userId]);
-  for (var i = 0; i < questions.length; i++) {
-    var q = questions[i];
+  for (let i = 0; i < questions.length; i++) {
+    const q = questions[i];
     mutate('INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)', [
       userId,
       i + 1,
@@ -2166,7 +2166,7 @@ function getSecurityQuestions(userId) {
   return query('SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
 }
 function getSecurityAnswer(userId, questionIndex) {
-  var r = query('SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
+  const r = query('SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
   return r.length ? r[0].answer_hash : null;
 }
 function checkPermission(role, permission) {
@@ -2338,7 +2338,7 @@ function restoreFromBuffer(buffer) {
 }
 
 function exportTableCSV(tableName) {
-  var sql;
+  let sql;
   switch (tableName) {
     case 'cases':
       sql = 'SELECT * FROM cases';
@@ -2370,11 +2370,11 @@ function validateBackupFile(filename) {
   const stat = fs.statSync(filepath);
   if (stat.size === 0) throw new Error('الملف فارغ / Fichier vide');
   if (stat.size > 500 * 1024 * 1024) throw new Error('الملف كبير جداً / Fichier trop volumineux');
-  var fd = fs.openSync(filepath, 'r');
-  var header = Buffer.alloc(8);
+  const fd = fs.openSync(filepath, 'r');
+  const header = Buffer.alloc(8);
   fs.readSync(fd, header, 0, 8, 0);
   fs.closeSync(fd);
-  var magicStr = header.toString('utf8');
+  const magicStr = header.toString('utf8');
   if (magicStr !== 'LAWDB01' && !header.slice(0, DB_ENC_MAGIC_OLD.length).equals(DB_ENC_MAGIC_OLD)) {
     throw new Error('صيغة غير معروفة / Format inconnu');
   }
@@ -2399,7 +2399,7 @@ var WINDOWS_RESERVED = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\..*)?$/i;
 function safeBackupName(name) {
   if (typeof name !== 'string') throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (name.includes('\0') || name.includes(':')) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
-  var base = path.basename(name);
+  const base = path.basename(name);
   if (base !== name) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (WINDOWS_RESERVED.test(base)) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
   if (name.length > 255) throw new Error('اسم ملف غير صالح / Nom de fichier invalide');
@@ -2501,7 +2501,7 @@ function isTokenRevoked(jti) {
 function cleanExpiredRevokedTokens() {
   try {
     query('DELETE FROM revoked_tokens WHERE expiry < ?', [Date.now()]);
-    var count = query('SELECT COUNT(*) as c FROM revoked_tokens');
+    const count = query('SELECT COUNT(*) as c FROM revoked_tokens');
     if (count && count[0] && count[0].c > 10000) {
       mutate('DELETE FROM revoked_tokens WHERE rowid IN (SELECT rowid FROM revoked_tokens ORDER BY expiry ASC LIMIT ' + (count[0].c - 10000) + ')');
     }
