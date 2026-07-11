@@ -57,14 +57,32 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initAI);
   safeInit(A.initClients);
   safeInit(A.initCases);
+  safeInit(A.initKanbanDragDrop);
+  safeInit(A.initCalendar);
   safeInit(A.initHearings);
+  safeInit(A.initTasks);
   safeInit(A.initDocuments);
+  safeInit(A.initExpenses);
   safeInit(A.initArchive);
+  safeInit(A.initReports);
+  safeInit(A.initSettings);
+  safeInit(A.initHelp);
   safeInit(A.initNotifications);
   safeInit(A.initProfile);
   safeInit(A.initSessionTimeout);
   safeInit(A.AutoSave ? A.AutoSave.init : null);
 
+  // Patch navigateTo to load settings data when navigating to settings
+  const origNav = A.navigateTo;
+  A.navigateTo = function (sectionId) {
+    origNav(sectionId);
+    if (sectionId === 'settings') {
+      setTimeout(() => {
+        A.loadSettingsUsers();
+        A.loadSettingsActivity();
+      }, 100);
+    }
+  };
   window.navigateTo = A.navigateTo;
 
   // Patch loadDashboard to update user badge
