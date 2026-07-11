@@ -109,7 +109,7 @@ A.initClients = function () {
       btn.classList.add('active');
       document.querySelectorAll('#section-clients .case-view-panel').forEach(p => p.classList.remove('active'));
       const viewMap = { table: 'clientsTableView', card: 'clientsCardView', segment: 'clientsSegmentView' };
-      document.getElementById(viewMap[btn.dataset.view]).classList.add('active');
+      document.getElementById(viewMap[btn.dataset.view])?.classList.add('active');
       A._ensureClientViews();
     })
   );
@@ -167,7 +167,7 @@ A.initClients = function () {
       btn.classList.add('active');
       document.querySelectorAll('#clientDetailBody .ws-panel').forEach(p => p.classList.remove('active'));
       const id = 'ws' + btn.dataset.ws.charAt(0).toUpperCase() + btn.dataset.ws.slice(1);
-      document.getElementById(id).classList.add('active');
+      document.getElementById(id)?.classList.add('active');
     })
   );
   document.getElementById('clientDetailClose')?.addEventListener('click', () => (document.getElementById('clientDetailOverlay').style.display = 'none'));

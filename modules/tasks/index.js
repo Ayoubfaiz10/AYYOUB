@@ -362,7 +362,7 @@ A.initTasks = function () {
       btn.classList.add('active');
       document.querySelectorAll('#section-tasks .case-view-panel').forEach(p => p.classList.remove('active'));
       const map = { list: 'taskListPanel', kanban: 'taskKanbanPanel', priority: 'taskPriorityPanel', analytics: 'taskAnalyticsPanel' };
-      document.getElementById(map[btn.dataset.view]).classList.add('active');
+      document.getElementById(map[btn.dataset.view])?.classList.add('active');
     })
   );
 
