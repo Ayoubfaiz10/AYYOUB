@@ -54,6 +54,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initCommandPalette);
   safeInit(A.initAdvancedSearch);
   safeInit(A.initDashboard);
+  safeInit(A.initAI);
   safeInit(A.initClients);
   safeInit(A.initCases);
   safeInit(A.initHearings);
