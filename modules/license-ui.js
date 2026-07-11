@@ -56,7 +56,7 @@ A.showLicenseDeactivation = function () {
         text += _t('licenseDeviceLabel') + ' ' + A.escapeHtml(local.machineId || '').slice(0, 16) + '...<br>';
         if (local.lastValidated) {
           const days = Math.floor((Date.now() - local.lastValidated) / (24 * 60 * 60 * 1000));
-          text += _t('licenseGraceLabel') + ' ' + (7 - days) + ' ' + _t('licenseDays');
+          text += _t('licenseGraceLabel') + ' ' + Math.max(0, 7 - days) + ' ' + _t('licenseDays');
         }
         A.safeSetStatic(infoEl, text);
       } else {
@@ -69,8 +69,13 @@ A.showLicenseDeactivation = function () {
 A.hideLicense = function () {
   const overlay = document.getElementById('licenseOverlay');
   if (overlay) overlay.style.display = 'none';
-  const loginOverlay = document.getElementById('loginOverlay');
-  if (loginOverlay) loginOverlay.style.display = 'flex';
+  if (A.state.currentUser) {
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.style.display = 'flex';
+  } else {
+    const loginOverlay = document.getElementById('loginOverlay');
+    if (loginOverlay) loginOverlay.style.display = 'flex';
+  }
 };
 
 A.showLicenseOverlay = function () {

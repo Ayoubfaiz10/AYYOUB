@@ -4,7 +4,7 @@ const path = require('path');
 
 const APP_DIR = path.resolve(__dirname, '../..');
 
-test.describe('مدير مكتب المحامي — Smoke Test', () => {
+test.describe('LexOffece — Smoke Test', () => {
   let app;
   let window;
 
@@ -21,7 +21,7 @@ test.describe('مدير مكتب المحامي — Smoke Test', () => {
   });
 
   test('يُظهر نافذة التطبيق بالعنوان الصحيح', async () => {
-    await expect(window).toHaveTitle('مدير مكتب المحامي');
+    await expect(window).toHaveTitle('LexOffece');
   });
 
   test('النافذة مرئية ولها أبعاد صحيحة', async () => {

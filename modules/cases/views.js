@@ -25,7 +25,6 @@ A.renderTableView = function (list) {
           .join('')
       : `<tr><td colspan="9"><div class="empty-state"><i class="ri-briefcase-4-line"></i><h3>${_t('noCasesInList')}</h3><p>${_t('createFirstCase')}</p></div></td></tr>`
   );
-  A.attachCaseActions();
 };
 
 A.renderCardView = function (list) {
@@ -56,9 +55,16 @@ A.renderKanbanView = function (list) {
     const s = c.archived ? 'archived' : cols[c.status] ? c.status : 'new';
     cols[s].push(c);
   });
+  const _kanbanCols = {};
+  const _kanbanCounts = {};
+  ['New', 'Active', 'Pending', 'Appeal', 'Closed', 'Archived'].forEach(name => {
+    _kanbanCols[name] = document.getElementById('kanban' + name);
+    _kanbanCounts[name] = document.getElementById('kanbanCount' + name);
+  });
   Object.keys(cols).forEach(status => {
-    const el = document.getElementById('kanban' + status.charAt(0).toUpperCase() + status.slice(1));
-    const count = document.getElementById('kanbanCount' + status.charAt(0).toUpperCase() + status.slice(1));
+    const name = status.charAt(0).toUpperCase() + status.slice(1);
+    const el = _kanbanCols[name];
+    const count = _kanbanCounts[name];
     if (count) count.textContent = cols[status].length;
     if (el)
       A.safeSet(el, esc =>
@@ -79,10 +85,16 @@ A.renderKanbanView = function (list) {
 };
 
 A.attachCaseActions = function () {
-  document.querySelectorAll('.ws-open-btn').forEach(b => b.addEventListener('click', () => A.openCaseDetail(parseInt(b.dataset.id, 10))));
-  document.querySelectorAll('.ws-archive-btn').forEach(b =>
-    b.addEventListener('click', async () => {
-      const id = parseInt(b.dataset.id, 10);
+  const container = document.getElementById('section-cases');
+  if (!container || container.dataset._caseActions) return;
+  container.dataset._caseActions = '1';
+  container.addEventListener('click', async e => {
+    const btn = e.target.closest('[class*="ws-"]');
+    if (!btn) return;
+    if (btn.classList.contains('ws-open-btn')) {
+      A.openCaseDetail(parseInt(btn.dataset.id, 10));
+    } else if (btn.classList.contains('ws-archive-btn')) {
+      const id = parseInt(btn.dataset.id, 10);
       const c = A.state.allCases.find(x => x.id === id);
       try {
         if (c && c.archived) await A.mutate('db:unarchiveCase', id);
@@ -93,13 +105,10 @@ A.attachCaseActions = function () {
         A.showToast(_t('archiveToggleFailed'), 'error');
       }
       A.loadCases();
-    })
-  );
-  document.querySelectorAll('.ws-delete-btn').forEach(b =>
-    b.addEventListener('click', async () => {
+    } else if (btn.classList.contains('ws-delete-btn')) {
       if (await A.showConfirm(_t('deleteCaseConfirm'))) {
         try {
-          await A.mutate('db:deleteCase', parseInt(b.dataset.id, 10));
+          await A.mutate('db:deleteCase', parseInt(btn.dataset.id, 10));
           A.showToast(_t('caseDeleted'), 'success');
         } catch (e) {
           A.logError('deleteCase', e);
@@ -107,11 +116,11 @@ A.attachCaseActions = function () {
         }
         A.loadCases();
       }
-    })
-  );
+    }
+  });
 };
 
-A.loadWsOverview = function (c) {
+A.loadWsOverview = function (c, _token) {
   const el = document.getElementById('wsOverview');
   const total = parseFloat(c.total_fees) || 0;
   const paid = parseFloat(c.paid_fees) || 0;
@@ -150,18 +159,7 @@ A.loadWsOverview = function (c) {
     </div>
   </div>`
   );
-  A.loadWsOverviewDocs();
-  el.querySelector('.ws-add-doc')?.addEventListener('click', () => {
-    document.querySelector('[data-ws="documents"]')?.click();
-    setTimeout(() => document.getElementById('wsUploadDocBtn')?.click(), 100);
-  });
-  el.querySelector('.ws-add-hearing')?.addEventListener('click', () => A.wsAddHearing());
-  el.querySelector('.ws-add-task')?.addEventListener('click', () => A.wsAddTask());
-  el.querySelector('.ws-add-note')?.addEventListener('click', () => {
-    document.querySelector('[data-ws="notes"]')?.click();
-    document.getElementById('wsNotesText')?.focus();
-  });
-  el.querySelector('.ws-add-expense')?.addEventListener('click', () => A.wsAddExpense());
+  A.loadWsOverviewDocs(_token);
 };
 
 A.loadWsOverviewDocs = async function (_token) {
@@ -275,7 +273,7 @@ A.loadWsHearings = async function (_token) {
     const procs = await A.cachedInvoke('db:getProcedures', A.state.currentCaseId);
     if (_token !== undefined && _token !== A.state._caseDetailToken) return;
     const hearings = (procs || []).filter(p => p.type === 'Audience').sort((a, b) => b.date?.localeCompare(a.date));
-    const today = new Date().toISOString().slice(0, 10);
+    const today = A.todayLocal();
     A.safeSet(
       el,
       esc => `<div class="toolbar"><button id="wsAddHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newHearingBtn')}</button></div>
@@ -305,7 +303,7 @@ A.wsAddHearing = function () {
   A.showModal(
     _t('newHearingBtn'),
     `
-    <div class="input-group"><label class="input-label">${_t('hearingDateLabel')}</label><input type="date" id="fWsHearingDate" class="input" value="${new Date().toISOString().slice(0, 10)}"></div>
+    <div class="input-group"><label class="input-label">${_t('hearingDateLabel')}</label><input type="date" id="fWsHearingDate" class="input" value="${A.todayLocal()}"></div>
     <div class="input-group"><label class="input-label">${_t('hearingTypeLabel')}</label><select id="fWsHearingType" class="input"><option value="Audience">${_t('hearingSession')}</option><option value="Plaidoirie">${_t('hearingPleading')}</option><option value="Mise en délibéré">${_t('hearingDeliberation')}</option></select></div>
     <div class="input-group"><label class="input-label">${_t('hearingNotesLabel')}</label><textarea id="fWsHearingNotes" class="input" rows="3"></textarea></div>
   `,
@@ -412,8 +410,12 @@ A.loadWsNotes = async function (_token) {
       </div>
     </div>`
     );
-    document.getElementById('wsSaveNotesBtn')?.addEventListener('click', async () => {
-      const text = document.getElementById('wsNotesText').value;
+    const _notesText = document.getElementById('wsNotesText');
+    const _notesSaveBtn = document.getElementById('wsSaveNotesBtn');
+    const _notesStatus = document.getElementById('wsNotesStatus');
+    if (!_notesText || !_notesSaveBtn) return;
+    _notesSaveBtn.addEventListener('click', async () => {
+      const text = _notesText.value;
       try {
         await A.mutate('db:updateCaseNotes', { id: A.state.currentCaseId, notes: text });
         if (A.AutoSave) A.AutoSave.clear('case_notes_' + A.state.currentCaseId);
@@ -421,31 +423,23 @@ A.loadWsNotes = async function (_token) {
         A.logError('saveNotes', e);
         A.showToast(_t('notesSaveFailed'), 'error');
       }
-      document.getElementById('wsNotesStatus').textContent = _t('savedStatus');
-      setTimeout(() => (document.getElementById('wsNotesStatus').textContent = ''), 2000);
+      _notesStatus.textContent = _t('savedStatus');
+      setTimeout(() => (_notesStatus.textContent = ''), 2000);
     });
-    const saveNotes = A.debounce(() => {
-      document.getElementById('wsSaveNotesBtn')?.click();
-    }, 500);
-    const wsNotesText = document.getElementById('wsNotesText');
-    if (wsNotesText) {
-      wsNotesText.addEventListener('input', () => {
-        document.getElementById('wsNotesStatus').textContent = _t('notSavedYet');
-        saveNotes();
-        if (A.AutoSave) A.AutoSave.markDirty('case_notes_' + A.state.currentCaseId);
+    const saveNotes = A.debounce(() => _notesSaveBtn.click(), 500);
+    _notesText.addEventListener('input', () => {
+      _notesStatus.textContent = _t('notSavedYet');
+      saveNotes();
+      if (A.AutoSave) A.AutoSave.markDirty('case_notes_' + A.state.currentCaseId);
+    });
+    if (A.AutoSave) {
+      A.AutoSave.register('case_notes_' + A.state.currentCaseId, {
+        getValue: () => _notesText?.value || '',
+        setValue: v => { if (_notesText) _notesText.value = v; },
+        indicator: () => _notesStatus,
+        debounce: 2000,
+        onSave: val => localStorage.setItem('autosave_last_note_case_' + A.state.currentCaseId, val)
       });
-      if (A.AutoSave) {
-        A.AutoSave.register('case_notes_' + A.state.currentCaseId, {
-          getValue: () => document.getElementById('wsNotesText')?.value || '',
-          setValue: v => {
-            const el = document.getElementById('wsNotesText');
-            if (el) el.value = v;
-          },
-          indicator: () => document.getElementById('wsNotesStatus'),
-          debounce: 2000,
-          onSave: val => localStorage.setItem('autosave_last_note_case_' + A.state.currentCaseId, val)
-        });
-      }
     }
   } catch (e) {
     A.logError('loadWsNotes', e);
@@ -484,7 +478,7 @@ A.wsAddExpense = function () {
     _t('addPaymentBtn'),
     `
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">${_t('paymentDateLabel')}</label><input type="date" id="fWsPayDate" class="input" value="${new Date().toISOString().slice(0, 10)}"></div>
+      <div class="input-group"><label class="input-label">${_t('paymentDateLabel')}</label><input type="date" id="fWsPayDate" class="input" value="${A.todayLocal()}"></div>
       <div class="input-group"><label class="input-label">${_t('paymentAmountLabel')}</label><input type="number" id="fWsPayMontant" class="input" step="0.01" min="0"></div>
     </div>
     <div class="input-group"><label class="input-label">${_t('paymentModeLabel')}</label><select id="fWsPayMode" class="input"><option value="Espèces">${_t('paymentCash')}</option><option value="Virement bancaire">${_t('paymentBank')}</option><option value="Chèque">${_t('paymentCheque')}</option></select></div>

@@ -12,7 +12,7 @@ A.renderClientTable = function (list) {
     <td>${esc(c.email || '-')}</td>
     <td>${c._caseCount || 0}</td>
     <td style="font-size:11px;color:var(--muted-foreground);">${esc(c._lastActivity || '-')}</td>
-    <td>${c._balance ? c._balance + ' د.م.' : '-'}</td>
+    <td>${c._balance ? c._balance + _t('currencyMAD') : '-'}</td>
     <td>
       <button class="btn-icon client-open-btn" data-id="${c.id}"><i class="ri-eye-line"></i></button>
       <button class="btn-icon client-del-btn" data-id="${c.id}"><i class="ri-delete-bin-line"></i></button>
@@ -69,7 +69,7 @@ A.renderClientCards = function (list) {
 A.renderClientSegments = function (list) {
   const container = document.getElementById('clientsSegments');
   const segments = [
-    { label: _t('segmentActive'), icon: 'ri-user-star-line', color: '#1A8A5C', filter: c => c._caseCount > 0 },
+    { label: _t('segmentActive'), icon: 'ri-user-star-line', color: '#C6A15B', filter: c => c._caseCount > 0 },
     { label: _t('segmentNew'), icon: 'ri-user-add-line', color: '#4A8BC2', filter: c => c._caseCount === 0 },
     { label: _t('segmentMultipleCases'), icon: 'ri-briefcase-4-line', color: '#C6A15B', filter: c => c._caseCount >= 3 },
     { label: _t('segmentHighValue'), icon: 'ri-vip-crown-line', color: '#8B5CF6', filter: c => c._balance > 5000 }
@@ -193,10 +193,13 @@ A.loadWsClDocs = async function (c, _token) {
   const cases = await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId);
   if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const allDocs = [];
-  for (const ca of cases) {
-    const docs = await A.cachedInvoke('db:getDocuments', ca.id);
-    docs.forEach(d => allDocs.push({ ...d, case_number: ca.case_number }));
-  }
+  const results = await Promise.allSettled(cases.map(ca => A.cachedInvoke('db:getDocuments', ca.id)));
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
+  results.forEach((r, i) => {
+    if (r.status === 'fulfilled' && Array.isArray(r.value)) {
+      r.value.forEach(d => allDocs.push({ ...d, case_number: cases[i].case_number }));
+    }
+  });
   A.safeSet(
     el,
     esc => `<div class="ws-docs-header"><span style="font-size:13px;color:var(--muted-foreground);">${_t('docCountLabel').replace('{n}', allDocs.length)}</span></div>
@@ -221,7 +224,7 @@ A.loadWsClComms = async function (c, _token) {
   const comms = await A.cachedInvoke('db:getClientCommunications', A.state.currentClientId);
   if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   const iconMap = { call: 'ri-phone-line', email: 'ri-mail-line', meeting: 'ri-group-line', message: 'ri-chat-1-line', default: 'ri-chat-3-line' };
-  const colorMap = { call: '#4A8BC2', email: '#8B5CF6', meeting: '#1A8A5C', message: '#C6A15B', default: '#8C8A84' };
+  const colorMap = { call: '#4A8BC2', email: '#8B5CF6', meeting: '#2A3A4C', message: '#C6A15B', default: '#8C8A84' };
   A.safeSet(
     el,
     esc => `<div class="toolbar"><button id="clAddCommBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> ${_t('newCommLabel')}</button></div>
@@ -247,7 +250,7 @@ A.clAddComm = function () {
     `
     <div class="info-grid-2">
       <div class="input-group"><label class="input-label">${_t('commTypeLabel')}</label><select id="fClCommType" class="input"><option value="call">${_t('commCall')}</option><option value="email">${_t('commEmail')}</option><option value="meeting">${_t('commMeeting')}</option><option value="message">${_t('commMessage')}</option></select></div>
-      <div class="input-group"><label class="input-label">${_t('commDateLabel')}</label><input type="date" id="fClCommDate" class="input" value="${new Date().toISOString().slice(0, 10)}"></div>
+      <div class="input-group"><label class="input-label">${_t('commDateLabel')}</label><input type="date" id="fClCommDate" class="input" value="${A.todayLocal()}"></div>
     </div>
     <div class="input-group"><label class="input-label">${_t('commSummaryLabel')}</label><textarea id="fClCommSummary" class="input" rows="3"></textarea></div>
   `,
@@ -277,6 +280,7 @@ A.loadWsClPayments = async function (c, _token) {
     const cases = (await A.cachedInvoke('db:getCasesByClient', A.state.currentClientId)) || [];
     if (_token !== undefined && _token !== A.state._clientDetailToken) return;
     const results = await Promise.allSettled(cases.map(ca => A.cachedInvoke('db:getPaiements', ca.id)));
+    if (_token !== undefined && _token !== A.state._clientDetailToken) return;
     const allPayments = [];
     results.forEach((r, i) => {
       if (r.status === 'fulfilled' && Array.isArray(r.value)) {
@@ -292,9 +296,9 @@ A.loadWsClPayments = async function (c, _token) {
       esc => `<div class="cl-payments-chart">
       <canvas id="clPieChart" width="80" height="80"></canvas>
       <div class="cl-payments-numbers">
-        <div class="cl-pay-row"><span class="cl-pay-label">${_t('feesLabel')}</span><span class="cl-pay-value">${totalFees.toFixed(0)} د.م.</span></div>
-        <div class="cl-pay-row"><span class="cl-pay-label">${_t('paidLabel')}</span><span class="cl-pay-value" style="color:var(--success);">${totalPaid.toFixed(0)} د.م.</span></div>
-        <div class="cl-pay-row"><span class="cl-pay-label">${_t('remainingLabel')}</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)} د.م.</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('feesLabel')}</span><span class="cl-pay-value">${totalFees.toFixed(0)}${_t('currencyMAD')}</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('paidLabel')}</span><span class="cl-pay-value" style="color:var(--success);">${totalPaid.toFixed(0)}${_t('currencyMAD')}</span></div>
+        <div class="cl-pay-row"><span class="cl-pay-label">${_t('remainingLabel')}</span><span class="cl-pay-value" style="color:var(--gold);">${(totalFees - totalPaid).toFixed(0)}${_t('currencyMAD')}</span></div>
       </div>
     </div>
     ${allPayments.length ? `<div class="table-wrap" style="box-shadow:none;border:1px solid var(--border);margin-top:var(--spacing-2);"><table class="table"><thead><tr><th>${_t('paymentDateHeader')}</th><th>${_t('paymentCaseHeader')}</th><th>${_t('paymentAmountHeader')}</th><th>${_t('paymentMethodHeader')}</th></tr></thead><tbody>${allPayments.map(p => `<tr><td>${esc(A.formatDate(p.date))}</td><td>${esc(p.case_number || '')}</td><td>${esc(p.montant)}</td><td>${esc(p.mode_paiement)}</td></tr>`).join('')}</tbody></table></div>` : `<p class="empty-state-sm" style="text-align:center;padding:40px;">${_t('noPaymentsLabel')}</p>`}`
@@ -320,7 +324,7 @@ A.drawClPieChart = function (total, paid) {
     return;
   }
   const items = [
-    { value: paid, color: '#1A8A5C' },
+    { value: paid, color: '#C6A15B' },
     { value: remaining, color: '#D4D3D0' }
   ];
   const cx = 40,
@@ -365,8 +369,9 @@ A.loadWsClTimeline = async function (c, _token) {
   );
 };
 
-A.loadWsClNotes = async function (c) {
+A.loadWsClNotes = async function (c, _token) {
   const el = document.getElementById('wsClNotes');
+  if (_token !== undefined && _token !== A.state._clientDetailToken) return;
   A.safeSet(
     el,
     esc => `<div class="ws-notes-area">
@@ -377,29 +382,27 @@ A.loadWsClNotes = async function (c) {
     </div>
   </div>`
   );
-  document.getElementById('clSaveNotesBtn')?.addEventListener('click', async () => {
+  const _clNotesText = document.getElementById('clNotesText');
+  const _clNotesSaveBtn = document.getElementById('clSaveNotesBtn');
+  const _clNotesStatus = document.getElementById('clNotesStatus');
+  if (!_clNotesText || !_clNotesSaveBtn) return;
+  _clNotesSaveBtn.addEventListener('click', async () => {
     try {
-      await A.mutate('db:updateClientNotes', { id: A.state.currentClientId, notes: document.getElementById('clNotesText').value });
+      await A.mutate('db:updateClientNotes', { id: A.state.currentClientId, notes: _clNotesText.value });
       if (A.AutoSave) A.AutoSave.clear('client_notes_' + A.state.currentClientId);
     } catch (e) {
       A.logError('saveClNotes', e);
       A.showToast(_t('notesSaveFailed'), 'error');
     }
-    document.getElementById('clNotesStatus').textContent = _t('savedStatus');
-    setTimeout(() => (document.getElementById('clNotesStatus').textContent = ''), 2000);
+    _clNotesStatus.textContent = _t('savedStatus');
+    setTimeout(() => (_clNotesStatus.textContent = ''), 2000);
   });
-  const clNotesText = document.getElementById('clNotesText');
-  if (clNotesText && A.AutoSave) {
-    clNotesText.addEventListener('input', () => {
-      if (A.AutoSave) A.AutoSave.markDirty('client_notes_' + A.state.currentClientId);
-    });
+  if (A.AutoSave) {
+    _clNotesText.addEventListener('input', () => A.AutoSave.markDirty('client_notes_' + A.state.currentClientId));
     A.AutoSave.register('client_notes_' + A.state.currentClientId, {
-      getValue: () => document.getElementById('clNotesText')?.value || '',
-      setValue: v => {
-        const el = document.getElementById('clNotesText');
-        if (el) el.value = v;
-      },
-      indicator: () => document.getElementById('clNotesStatus'),
+      getValue: () => _clNotesText?.value || '',
+      setValue: v => { if (_clNotesText) _clNotesText.value = v; },
+      indicator: () => _clNotesStatus,
       debounce: 2000
     });
   }

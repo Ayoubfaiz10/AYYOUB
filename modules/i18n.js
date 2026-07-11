@@ -2,13 +2,13 @@ var A = (window.App = window.App || {});
 
 A.i18n = {
   // ─── App ───
-  appName: { ar: 'مدير مكتب المحامي', fr: 'Cabinet Manager' },
-  appSub: { ar: 'Cabinet Manager v2.0', fr: 'Cabinet Manager v2.0' },
-  startupName: { ar: 'مدير المكتب', fr: 'Cabinet Manager' },
-  startupSub: { ar: 'Cabinet Manager — منصة إدارة المكاتب القانونية', fr: 'Cabinet Manager — Plateforme de gestion juridique' },
+  appName: { ar: 'LexOffece', fr: 'LexOffece' },
+  appSub: { ar: 'LexOffece v2.0', fr: 'LexOffece v2.0' },
+  startupName: { ar: 'LexOffece', fr: 'LexOffece' },
+  startupSub: { ar: 'منصة إدارة المكاتب القانونية', fr: 'Plateforme de gestion juridique' },
 
   // ─── Onboarding ───
-  onbTitle: { ar: 'مرحباً بك في مدير المكتب', fr: 'Bienvenue dans Cabinet Manager' },
+  onbTitle: { ar: 'مرحباً بك في LexOffece', fr: 'Bienvenue dans LexOffece' },
   onbDesc: {
     ar: 'منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد.',
     fr: 'Plateforme de gestion juridique — organisez vos dossiers, clients, documents et audiences en un seul endroit.'
@@ -47,9 +47,11 @@ A.i18n = {
   navReports: { ar: 'التقارير', fr: 'Rapports' },
   navAI: { ar: 'المساعد الذكي', fr: 'Assistant IA' },
   navArchive: { ar: 'الأرشيف', fr: 'Archive' },
+  navHelp: { ar: 'المساعدة', fr: 'Aide' },
   navSupport: { ar: 'الدعم', fr: 'Support' },
   navSettings: { ar: 'الإعدادات', fr: 'Paramètres' },
   navLock: { ar: 'قفل', fr: 'Verrouiller' },
+  navProfile: { ar: 'الملف الشخصي', fr: 'Profil' },
 
   // ─── Topbar ───
   searchPlaceholder: { ar: 'بحث في القضايا، الموكلين، الوثائق...', fr: 'Rechercher affaires, clients, documents...' },
@@ -58,7 +60,7 @@ A.i18n = {
   autoSaveStatus: { ar: 'تم الحفظ', fr: 'Enregistré' },
 
   // ─── Dashboard ───
-  dashEmptyTitle: { ar: 'مرحباً بك في مدير المكتب', fr: 'Bienvenue dans Cabinet Manager' },
+  dashEmptyTitle: { ar: 'مرحباً بك في LexOffece', fr: 'Bienvenue dans LexOffece' },
   dashEmptyDesc: { ar: 'ابدأ بإضافة موكل أو قضية جديدة للبدء', fr: 'Commencez par ajouter un client ou une nouvelle affaire' },
   dashAddClient: { ar: 'إضافة موكل', fr: 'Ajouter un client' },
   dashAddCase: { ar: 'إضافة قضية', fr: 'Ajouter une affaire' },
@@ -205,6 +207,33 @@ A.i18n = {
   archiveTitle: { ar: 'الأرشيف', fr: 'Archive' },
   archiveSub: { ar: 'القضايا المؤرشفة', fr: 'Affaires archivées' },
 
+  // ─── Help / Support ───
+  helpTitle: { ar: 'المساعدة والدعم', fr: 'Aide et support' },
+  helpDesc: { ar: 'دليل الاستخدام، الأسئلة الشائعة، قاعدة المعرفة، فحص النظام', fr: 'Guide, FAQ, base de connaissances, diagnostic' },
+  helpGuideTab: { ar: 'دليل الاستخدام', fr: "Guide d'utilisation" },
+  helpFaqTab: { ar: 'الأسئلة الشائعة', fr: 'FAQ' },
+  helpKbTab: { ar: 'قاعدة المعرفة', fr: 'Base de connaissances' },
+  helpHealthTab: { ar: 'فحص النظام', fr: 'Diagnostic système' },
+  helpKbSearch: { ar: 'بحث في قاعدة المعرفة...', fr: 'Rechercher dans la base...' },
+  healthDatabase: { ar: 'قاعدة البيانات', fr: 'Base de données' },
+  healthApiKey: { ar: 'مفتاح API', fr: 'Clé API' },
+  healthLicense: { ar: 'الترخيص', fr: 'Licence' },
+  healthBackup: { ar: 'النسخ الاحتياطي', fr: 'Sauvegarde' },
+  healthStorage: { ar: 'التخزين', fr: 'Stockage' },
+  healthNetwork: { ar: 'الشبكة', fr: 'Réseau' },
+  healthConnected: { ar: 'متصل', fr: 'Connecté' },
+  healthNotConfigured: { ar: 'غير مضبوط', fr: 'Non configuré' },
+  healthValid: { ar: 'صالح', fr: 'Valide' },
+  healthInvalid: { ar: 'غير صالح', fr: 'Invalide' },
+  healthOnline: { ar: 'متصل بالإنترنت', fr: 'En ligne' },
+  healthOffline: { ar: 'غير متصل', fr: 'Hors ligne' },
+  healthOfflineDesc: { ar: 'بعض الميزات لن تعمل', fr: 'Certaines fonctionnalités ne fonctionneront pas' },
+  healthNoBackup: { ar: 'لا توجد نسخة', fr: 'Aucune sauvegarde' },
+  healthBackupCount: { ar: 'عدد النسخ', fr: 'Nombre de sauvegardes' },
+  healthFree: { ar: 'مساحة حرة', fr: 'Espace libre' },
+  healthAutoRefresh: { ar: 'يتم التحديث تلقائياً عند فتح الصفحة', fr: 'Mise à jour automatique' },
+  healthRefresh: { ar: 'تحديث', fr: 'Actualiser' },
+
   // ─── Hearings ───
   hearingsTitle: { ar: 'الجلسات', fr: 'Audiences' },
   hearingsSub: { ar: 'تسجيل ومتابعة الجلسات', fr: 'Enregistrer et suivre les audiences' },
@@ -314,12 +343,90 @@ A.i18n = {
   kanbanClosed: { ar: 'مغلقة', fr: 'Fermée' },
 
   // ─── Task Status ───
-  taskBacklog: { ar: 'متروك', fr: 'En suspens' },
-  taskTodo: { ar: 'قيد التنفيذ', fr: 'À faire' },
-  taskInProgress: { ar: 'قيد الإنجاز', fr: 'En cours' },
-  taskWaiting: { ar: 'انتظار', fr: 'En attente' },
+  taskBacklog: { ar: 'متراكم', fr: 'En suspens' },
+  taskTodo: { ar: 'قيد الانتظار', fr: 'À faire' },
+  taskInProgress: { ar: 'قيد التنفيذ', fr: 'En cours' },
+  taskWaiting: { ar: 'معلق', fr: 'En attente' },
   taskReview: { ar: 'مراجعة', fr: 'Révision' },
   taskDone: { ar: 'منجز', fr: 'Terminé' },
+
+  // ─── Task Priority (short form for selects) ───
+  priorityCritical: { ar: 'حرج', fr: 'Critique' },
+  priorityHigh: { ar: 'عالي', fr: 'Haute' },
+  priorityMedium: { ar: 'متوسط', fr: 'Moyenne' },
+  priorityLow: { ar: 'منخفض', fr: 'Basse' },
+
+  // ─── Task Detail Labels ───
+  responsibleLabel: { ar: 'مسؤول', fr: 'Responsable' },
+  progressLabel: { ar: 'التقدم', fr: 'Progrès' },
+  timeTrackedLabel: { ar: 'الوقت المسجل', fr: 'Temps enregistré' },
+  subtasksLabel: { ar: 'المهام الفرعية', fr: 'Sous-tâches' },
+  commentsLabel: { ar: 'التعليقات', fr: 'Commentaires' },
+  noCommentsLabel: { ar: 'لا توجد تعليقات', fr: 'Aucun commentaire' },
+  subtaskPlaceholder: { ar: 'مهمة فرعية...', fr: 'Sous-tâche...' },
+  addCommentPlaceholder: { ar: 'أضف تعليقاً...', fr: 'Ajouter un commentaire...' },
+  sendBtn: { ar: 'إرسال', fr: 'Envoyer' },
+  defaultAuthorValue: { ar: 'المحامي', fr: 'Avocat' },
+
+  // ─── Task Toast / Confirm ───
+  taskSaveFailed: { ar: 'فشل حفظ المهمة', fr: "Échec de l'enregistrement de la tâche" },
+  taskLoadDetailFailed: { ar: 'فشل تحميل تفاصيل المهمة', fr: 'Échec du chargement des détails' },
+  taskUpdateFailed: { ar: 'فشل تحديث المهمة', fr: "Échec de la mise à jour de la tâche" },
+  taskDeleteFailed: { ar: 'فشل حذف المهمة', fr: 'Échec de la suppression de la tâche' },
+  taskStatusChangeFailed: { ar: 'فشل تغيير حالة المهمة', fr: 'Échec du changement de statut' },
+  deleteTaskConfirm: { ar: 'حذف هذه المهمة؟', fr: 'Supprimer cette tâche ?' },
+  subtaskToggleFailed: { ar: 'فشل تحديث المهمة الفرعية', fr: 'Échec de la mise à jour de la sous-tâche' },
+  subtaskDeleteFailed: { ar: 'فشل حذف المهمة الفرعية', fr: 'Échec de la suppression de la sous-tâche' },
+  subtaskAddFailed: { ar: 'فشل إضافة المهمة الفرعية', fr: "Échec de l'ajout de la sous-tâche" },
+  commentAddFailed: { ar: 'فشل إضافة التعليق', fr: "Échec de l'ajout du commentaire" },
+
+  // ─── Workflow / Template ───
+  nameLabel: { ar: 'الاسم', fr: 'Nom' },
+  nameRequired: { ar: 'الاسم مطلوب', fr: 'Nom requis' },
+  caseTypeLabel: { ar: 'نوع القضية', fr: "Type d'affaire" },
+  caseTypePlaceholder: { ar: 'مدني، أسرة، تجاري...', fr: 'Civil, Famille, Commercial...' },
+  workflowStepsLabel: { ar: 'الخطوات (اسم لكل سطر)', fr: 'Étapes (un nom par ligne)' },
+  workflowStepsPlaceholder: { ar: 'جمع معلومات الموكل\nإنشاء ملف القضية\nرفع الوثائق الأولية', fr: 'Collecte des infos client\nCréation du dossier\nDépôt des documents initiaux' },
+  tasksJsonLabel: { ar: 'المهام (JSON)', fr: 'Tâches (JSON)' },
+  tasksJsonPlaceholder: { ar: '[{"title":"مهمة 1","priority":"high"},{"title":"مهمة 2","priority":"medium","due_days":7}]', fr: '[{"title":"Tâche 1","priority":"high"},{"title":"Tâche 2","priority":"medium","due_days":7}]' },
+  newWorkflowTitle: { ar: 'سير عمل جديد', fr: 'Nouveau workflow' },
+  newTemplateTitle: { ar: 'قالب مهام جديد', fr: 'Nouveau modèle de tâches' },
+  workflowAddFailed: { ar: 'فشل إضافة سير العمل', fr: "Échec de l'ajout du workflow" },
+  templateAddFailed: { ar: 'فشل إضافة القالب', fr: "Échec de l'ajout du modèle" },
+  selectCaseAndWorkflow: { ar: 'اختر القضية وسير العمل', fr: "Choisissez l'affaire et le workflow" },
+  workflowApplyFailed: { ar: 'فشل تطبيق سير العمل', fr: "Échec de l'application du workflow" },
+  selectCaseAndTemplate: { ar: 'اختر القضية والقالب', fr: "Choisissez l'affaire et le modèle" },
+  templateApplyFailed: { ar: 'فشل تطبيق القالب', fr: "Échec de l'application du modèle" },
+  deleteWorkflowConfirm: { ar: 'حذف سير العمل؟', fr: 'Supprimer le workflow ?' },
+  workflowDeleteFailed: { ar: 'فشل حذف سير العمل', fr: "Échec de la suppression du workflow" },
+  deleteTemplateConfirm: { ar: 'حذف هذا القالب؟', fr: 'Supprimer ce modèle ?' },
+  templateDeleteFailed: { ar: 'فشل حذف القالب', fr: "Échec de la suppression du modèle" },
+  workflowsAndTemplatesTitle: { ar: 'سير العمل والقالب', fr: 'Workflows et modèles' },
+  applyWorkflowToCase: { ar: 'تطبيق سير عمل على قضية', fr: 'Appliquer un workflow à une affaire' },
+  selectWorkflowPlaceholder: { ar: 'اختر سير عمل...', fr: 'Choisir un workflow...' },
+  applyTemplateToCase: { ar: 'تطبيق قالب على قضية', fr: 'Appliquer un modèle à une affaire' },
+  selectTemplatePlaceholder: { ar: 'اختر قالب...', fr: 'Choisir un modèle...' },
+  newWorkflowBtn: { ar: 'سير عمل جديد', fr: 'Nouveau workflow' },
+  newTemplateBtn: { ar: 'قالب جديد', fr: 'Nouveau modèle' },
+  currentWorkflowsLabel: { ar: 'سير العمل الحالية', fr: 'Workflows existants' },
+  noWorkflowsLabel: { ar: 'لا توجد سير عمل', fr: 'Aucun workflow' },
+  currentTemplatesLabel: { ar: 'القوالب الحالية', fr: 'Modèles existants' },
+  noTemplatesLabel: { ar: 'لا توجد قوالب', fr: 'Aucun modèle' },
+  stepsCountLabel: { ar: 'خطوات', fr: 'étapes' },
+
+  // ─── Task Analytics ───
+  totalTasksLabel: { ar: 'إجمالي المهام', fr: 'Total des tâches' },
+  completedThisWeekLabel: { ar: 'منجز هذا الأسبوع', fr: 'Terminé cette semaine' },
+  overdueAnalyticsLabel: { ar: 'متأخرة', fr: 'En retard' },
+  backlogAnalyticsLabel: { ar: 'متروكة', fr: 'En suspens' },
+  completionRateLabel: { ar: 'معدل الإنجاز', fr: "Taux d'achèvement" },
+  failedLoadTaskAnalytics: { ar: 'تعذر تحميل تحليلات المهام', fr: 'Échec du chargement des analyses' },
+  dayLabel: { ar: 'يوم', fr: 'jour' },
+
+  // ─── Task List ───
+  noTasksLabel: { ar: 'لا توجد مهام', fr: 'Aucune tâche' },
+  allTasksDoneLabel: { ar: 'جميع المهام منجزة', fr: 'Toutes les tâches sont terminées' },
+  overdueSuffix: { ar: ' (متأخرة)', fr: ' (en retard)' },
 
   // ─── Expenses Stats ───
   expTotalHonoraires: { ar: 'إجمالي الأتعاب', fr: 'Total honoraires' },
@@ -363,6 +470,54 @@ A.i18n = {
   aiStrategyMode: { ar: 'استراتيجية', fr: 'Stratégie' },
   aiRiskMode: { ar: 'مخاطر', fr: 'Risques' },
   aiHearingPrepMode: { ar: 'تحضير جلسة', fr: 'Préparation audience' },
+  aiChangeKeyTitle: { ar: 'تغيير المفتاح', fr: 'Changer la clé' },
+  aiSendBtnTitle: { ar: 'إرسال', fr: 'Envoyer' },
+  aiFloatBtnTitle: { ar: 'المساعد الذكي (Ctrl+K)', fr: 'Assistant IA (Ctrl+K)' },
+  aiContextLabel: { ar: 'السياق: {label}', fr: 'Contexte : {label}' },
+  aiModeChat: { ar: 'اطرح سؤالك القانوني...', fr: 'Posez votre question juridique...' },
+  aiModeSummarize: { ar: 'الصق النص القانوني للتلخيص...', fr: 'Collez le texte juridique à résumer...' },
+  aiModeDraft: { ar: 'صف الوثيقة التي تريد صياغتها...', fr: 'Décrivez le document à rédiger...' },
+  aiModeAnalyze: { ar: 'الصق النص للتحليل القانوني...', fr: 'Collez le texte pour analyse juridique...' },
+  aiModeStrategy: { ar: 'صف الموقف القانوني للتحليل الاستراتيجي...', fr: 'Décrivez la situation pour analyse stratégique...' },
+  aiModeRisk: { ar: 'صف الموقف لتحديد المخاطر...', fr: 'Décrivez la situation pour identifier les risques...' },
+  aiModeHearingPrep: { ar: 'اختر قضية أو جلسة للتحضير...', fr: 'Choisissez une affaire ou audience...' },
+  aiContextCase: { ar: 'حلل هذه القضية', fr: 'Analysez cette affaire' },
+  aiContextClient: { ar: 'حلل هذا الموكل', fr: 'Analysez ce client' },
+  aiContextDocument: { ar: 'حلل هذه الوثيقة', fr: 'Analysez ce document' },
+  aiContextHearing: { ar: 'جهز لهذه الجلسة', fr: 'Préparez cette audience' },
+  aiContextGeneral: { ar: 'اسأل المساعد الذكي...', fr: 'Demandez à l\'assistant IA...' },
+  aiSendingOther: { ar: 'جاري معالجة رسالة أخرى...', fr: 'Un autre message est en cours...' },
+  aiOffline: { ar: 'يرجى التحقق من الاتصال بالإنترنت', fr: 'Vérifiez votre connexion Internet' },
+  aiErrorGeneral: { ar: 'حدث خطأ في الاتصال بالمساعد الذكي. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.', fr: 'Erreur de connexion à l\'assistant IA. Vérifiez votre connexion et réessayez.' },
+  aiSetupFirst: { ar: 'الرجاء إعداد الذكاء الاصطناعي أولاً من قسم "الذكاء الاصطناعي"', fr: 'Veuillez configurer l\'IA d\'abord dans la section "Assistant IA"' },
+  aiAnalysisTitle: { ar: 'تحليل الوثيقة بالذكاء الاصطناعي', fr: 'Analyse de document par IA' },
+  aiAnalyzing: { ar: 'جاري تحليل الوثيقة...', fr: 'Analyse du document en cours...' },
+  aiAnalysisError: { ar: 'حدث خطأ أثناء تحليل الوثيقة', fr: 'Erreur lors de l\'analyse du document' },
+  aiCachedLabel: { ar: '(من الذاكرة المخبأة)', fr: '(depuis le cache)' },
+
+  // Provider-specific labels
+  aiLabelGroq: { ar: 'مفتاح API (Groq)', fr: 'Clé API (Groq)' },
+  aiLabelOpenai: { ar: 'مفتاح API (OpenAI)', fr: 'Clé API (OpenAI)' },
+  aiLabelAnthropic: { ar: 'مفتاح API (Anthropic)', fr: 'Clé API (Anthropic)' },
+  aiLabelGemini: { ar: 'مفتاح API (Gemini)', fr: 'Clé API (Gemini)' },
+
+  // Provider-specific hints
+  aiHintGroq: { ar: 'احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Groq Console</a>', fr: 'Obtenez une clé gratuite sur <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Groq Console</a>' },
+  aiHintOpenai: { ar: 'احصل على مفتاح من <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">OpenAI Dashboard</a>', fr: 'Obtenez une clé sur <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">OpenAI Dashboard</a>' },
+  aiHintAnthropic: { ar: 'احصل على مفتاح من <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Anthropic Console</a>', fr: 'Obtenez une clé sur <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Anthropic Console</a>' },
+  aiHintGemini: { ar: 'احصل على مفتاح مجاني من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Google AI Studio</a>', fr: 'Obtenez une clé gratuite sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Google AI Studio</a>' },
+
+  // AI toast / error messages
+  aiEnterKey: { ar: 'الرجاء إدخال مفتاح API', fr: 'Veuillez entrer la clé API' },
+  aiSaveFailed: { ar: 'فشل حفظ مفتاح API', fr: 'Échec de la sauvegarde de la clé API' },
+  aiSorry: { ar: 'عذراً، لم أتمكن من معالجة طلبك.', fr: "Désolé, je n'ai pas pu traiter votre demande." },
+  aiCopyMsg: { ar: 'نسخ الرسالة', fr: 'Copier le message' },
+  aiInputGeneral: { ar: 'اكتب سؤالك...', fr: 'Écrivez votre question...' },
+
+  // Analysis section headers
+  aiAnalysisSummary: { ar: 'الخلاصة', fr: 'Résumé' },
+  aiAnalysisKeyPoints: { ar: 'النقاط الرئيسية', fr: 'Points clés' },
+  aiAnalysisLegalRecommendation: { ar: 'التوصية القانونية', fr: 'Recommandation juridique' },
 
   // ─── Settings ───
   aboutLabel: { ar: 'حول', fr: 'À propos' },
@@ -481,6 +636,14 @@ A.i18n = {
   totalClientsN: { ar: 'إجمالي الموكلين: {n}', fr: 'Total des clients : {n}' },
   failedLoadReport: { ar: 'تعذر تحميل بيانات التقرير', fr: 'Échec du chargement du rapport' },
   pdfExportComing: { ar: 'تصدير PDF سيكون متاحاً في التحديث القادم', fr: "L'export PDF sera disponible dans la prochaine mise à jour" },
+  topCourts: { ar: 'أبرز المحاكم', fr: 'Principaux tribunaux' },
+  withCases: { ar: 'لديهم قضايا', fr: 'Avec des affaires' },
+  withoutCases: { ar: 'بدون قضايا', fr: 'Sans affaires' },
+  upcomingHearings: { ar: 'جلسات قادمة', fr: 'Audiences à venir' },
+  nearestHearings: { ar: 'أقرب الجلسات', fr: 'Audiences les plus proches' },
+  casesMonthly: { ar: 'القضايا شهرياً', fr: 'Affaires par mois' },
+  totalClientsLabel: { ar: 'إجمالي الموكلين', fr: 'Total des clients' },
+  casesMonthlyDistribution: { ar: 'توزيع القضايا شهرياً', fr: 'Répartition mensuelle des affaires' },
 
   // ─── UI ───
   sessionExpired: { ar: 'انتهت الجلسة — الرجاء إعادة تسجيل الدخول', fr: 'Session expirée — veuillez vous reconnecter' },
@@ -585,6 +748,13 @@ A.i18n = {
   morningGreeting: { ar: 'صباح الخير', fr: 'Bonjour' },
   eveningGreeting: { ar: 'مساء الخير', fr: 'Bonsoir' },
   defaultLawyer: { ar: 'محامي', fr: 'Avocat' },
+  greetingHello: { ar: 'السلام عليكم، {name}', fr: 'Bonjour, {name}' },
+  weekOneHearing: { ar: 'لديك جلسة واحدة هذا الأسبوع', fr: 'Vous avez une audience cette semaine' },
+  weekHearings: { ar: 'لديك {n} جلسات هذا الأسبوع', fr: 'Vous avez {n} audiences cette semaine' },
+  todayOneFollowUp: { ar: 'وقضية تحتاج متابعة اليوم', fr: 'Et une affaire à suivre aujourd\'hui' },
+  todayTwoFollowUp: { ar: 'وقضيتان تحتاجان متابعة اليوم', fr: 'Et deux affaires à suivre aujourd\'hui' },
+  welcomeDashboard: { ar: 'مرحباً بك في لوحة التحكم', fr: 'Bienvenue sur le tableau de bord' },
+  and: { ar: 'و', fr: 'et' },
   currencyMAD: { ar: ' د.م.', fr: ' MAD' },
   noEventsToday: { ar: 'لا توجد أحداث اليوم', fr: "Aucun événement aujourd'hui" },
   hearingLabel: { ar: 'جلسة', fr: 'Audience' },
@@ -697,7 +867,7 @@ A.i18n = {
   userUpdateFailed: { ar: 'فشل تحديث المستخدم', fr: 'Échec de la mise à jour' },
   userUpdated: { ar: 'تم تحديث المستخدم بنجاح', fr: 'Utilisateur mis à jour' },
   deleteUserConfirm: { ar: 'حذف هذا المستخدم؟', fr: 'Supprimer cet utilisateur ?' },
-  langChangedToArabic: { ar: 'تم تغيير اللغة إلى العربية', fr: 'Langue changée en français' },
+  langChangedToArabic: { ar: 'تم تغيير اللغة إلى العربية', fr: 'Langue changée en arabe' },
   newUserTitle: { ar: 'مستخدم جديد', fr: 'Nouvel utilisateur' },
   userPwdLabel: { ar: 'كلمة السر', fr: 'Mot de passe' },
   enterCurrentPwd: { ar: 'الرجاء إدخال كلمة السر الحالية', fr: 'Veuillez entrer le mot de passe actuel' },
@@ -1037,7 +1207,7 @@ A.i18n = {
   profileChangePhoto: { ar: 'تغيير الصورة', fr: 'Changer la photo' },
   savedSuccessfully: { ar: 'تم الحفظ بنجاح', fr: 'Enregistré avec succès' },
   licenseTitle: { ar: 'تفعيل الترخيص', fr: 'Activation de la licence' },
-  licenseSub: { ar: 'أدخل مفتاح التفعيل لبدء استخدام مدير مكتب المحامي', fr: "Entrez la clé d'activation pour utiliser Cabinet Manager" },
+  licenseSub: { ar: 'أدخل مفتاح التفعيل لبدء استخدام LexOffece', fr: "Entrez la clé d'activation pour utiliser LexOffece" },
   licenseActivation: { ar: 'تفعيل الترخيص', fr: 'Activation de la licence' },
   licenseActivationDesc: { ar: 'الرجاء إدخال مفتاح الترخيص الخاص بك', fr: 'Veuillez entrer votre clé de licence' },
   licenseActivateBtn: { ar: 'تفعيل', fr: 'Activer' },
@@ -1068,6 +1238,18 @@ A.i18n = {
   newCaseTitle: { ar: 'إضافة قضية جديدة', fr: 'Ajouter un dossier' },
   caseNumberLabel: { ar: 'رقم القضية', fr: "N° d'affaire" },
   caseTypeLabel: { ar: 'نوع القضية', fr: 'Type de dossier' },
+  filterCourtPlaceholder: { ar: 'المحكمة', fr: 'Tribunal' },
+  filterClientPlaceholder: { ar: 'الموكل', fr: 'Client' },
+  aiTimelinePrompt: { ar: 'أنشئ جدولاً زمنياً لهذه القضية', fr: 'Générer une chronologie pour cette affaire' },
+  aiRiskPrompt: { ar: 'حلل المخاطر القانونية لهذه القضية', fr: 'Analyser les risques juridiques de cette affaire' },
+  aiSummarizePrompt: { ar: 'لخص "{docName}"', fr: 'Résumez "{docName}"' },
+  caseTypeCivil: { ar: 'مدني', fr: 'Civil' },
+  caseTypeCommercial: { ar: 'تجاري', fr: 'Commercial' },
+  caseTypeAdministrative: { ar: 'إداري', fr: 'Administratif' },
+  caseTypeCriminal: { ar: 'جنائي', fr: 'Pénal' },
+  caseTypePersonalStatus: { ar: 'أحوال شخصية', fr: 'Statut personnel' },
+  caseTypeSocial: { ar: 'اجتماعي', fr: 'Social' },
+  caseTypeRealEstate: { ar: 'عقاري', fr: 'Immobilier' },
   clientSelectLabel: { ar: 'اختر الموكل', fr: 'Sélectionner le client' },
   courtSelectLabel: { ar: 'اختر المحكمة', fr: 'Sélectionner le tribunal' },
   court1stInstance: { ar: 'محكمة الدرجة الأولى', fr: 'Tribunal de première instance' },
@@ -1101,7 +1283,324 @@ A.i18n = {
   priority_critical: { ar: 'حرج', fr: 'Critique' },
   keyboardShortcuts: { ar: 'اختصارات لوحة المفاتيح', fr: 'Raccourcis clavier' },
   helpCmdPalette: { ar: 'لوحة الأوامر', fr: 'Palette de commandes' },
-  helpShortcuts: { ar: 'عرض الاختصارات', fr: 'Afficher les raccourcis' }
+  helpShortcuts: { ar: 'عرض الاختصارات', fr: 'Afficher les raccourcis' },
+
+  // ─── Clients Edit ───
+  editClientTitle: { ar: 'تعديل الموكل', fr: 'Modifier le client' },
+
+  // ─── Notifications ───
+  notifDeadlineFormat: { ar: 'أجل قضية {case} — {text}', fr: 'Échéance affaire {case} — {text}' },
+  notifHearingFormat: { ar: 'جلسة {case} — {text}', fr: 'Audience {case} — {text}' },
+  notifTodayText: { ar: 'اليوم', fr: "Aujourd'hui" },
+  notifAfterDays: { ar: 'بعد {n} يوم', fr: 'Dans {n} jour(s)' },
+
+  // ─── Autosave ───
+  autosaveAllSaved: { ar: 'تم حفظ جميع التعديلات', fr: 'Toutes les modifications ont été enregistrées' },
+
+  // ─── IPC Cache ───
+  communicationError: { ar: 'حدث خطأ في الاتصال: ', fr: 'Erreur de communication : ' },
+
+  // ─── Profile ───
+  profileDefaultAvatar: { ar: 'م', fr: 'M' },
+  profileImageSizeError: { ar: 'حجم الصورة يجب أن لا يتجاوز 1 ميغابايت', fr: "La taille de l'image ne doit pas dépasser 1 Mo" },
+  profileImageChanged: { ar: 'تم تغيير الصورة بنجاح', fr: 'Photo changée avec succès' },
+  profileImageSaveFailed: { ar: 'فشل حفظ الصورة', fr: "Échec de la sauvegarde de la photo" },
+  profileImageSaveError: { ar: 'خطأ في حفظ الصورة', fr: "Erreur lors de la sauvegarde de la photo" },
+  profileSaveFailed: { ar: 'فشل الحفظ', fr: "Échec de l'enregistrement" },
+  profileSaveError: { ar: 'خطأ في الحفظ', fr: "Erreur lors de l'enregistrement" },
+  profileCurrentPwdRequired: { ar: 'كلمة السر الحالية مطلوبة', fr: 'Mot de passe actuel requis' },
+  profilePwdChangeFailed: { ar: 'فشل تغيير كلمة السر', fr: 'Échec du changement de mot de passe' },
+  profilePwdChangeError: { ar: 'خطأ في تغيير كلمة السر', fr: "Erreur lors du changement de mot de passe" },
+  profileMasterKeyUnavailable: { ar: 'غير متاح', fr: 'Non disponible' },
+  profileMasterKeyError: { ar: 'خطأ', fr: 'Erreur' },
+
+  // ─── Settings ───
+  userPwdGeneratePlaceholder: { ar: 'اتركه فارغاً لتوليد كلمة سر عشوائية', fr: 'Laissez vide pour générer un mot de passe aléatoire' },
+
+  // ─── Shared / Error states ───
+  retryLabel: { ar: 'إعادة المحاولة', fr: 'Réessayer' },
+
+  // ─── Auth / Setup ───
+  setupStepProgress: { ar: 'الخطوة {n} من 3', fr: 'Étape {n} sur 3' },
+  pinValidationError: { ar: 'PIN يجب أن يكون 4-6 أرقام', fr: 'Le PIN doit contenir 4 à 6 chiffres' },
+  pinNoMatch: { ar: 'PIN غير متطابق', fr: 'Les PIN ne correspondent pas' },
+  enterPin: { ar: 'أدخل PIN', fr: 'Entrez le PIN' },
+  pinIncorrect: { ar: 'PIN غير صحيح', fr: 'PIN incorrect' },
+  verifyPinFirst: { ar: 'الرجاء التحقق من PIN أولاً', fr: 'Veuillez vérifier le PIN d\'abord' },
+  masterKeyNotFound: { ar: 'تعذر العثور على مفتاح الاستعادة', fr: 'Clé de récupération introuvable' },
+
+  // ─── Help / Guide titles ───
+  guideDashboardTitle: { ar: 'لوحة التحكم', fr: 'Tableau de bord' },
+  guideDashboardContent: {
+    ar: '<p>لوحة التحكم هي الشاشة الرئيسية التي تظهر عند فتح البرنامج. تعرض لك:</p><ul><li><strong>الإحصائيات السريعة</strong>: عدد القضايا النشطة، الموكلين، المهام والجلسات القادمة</li><li><strong>المواعيد القادمة</strong>: الجلسات والمواعيد النهائية للأيام القادمة</li><li><strong>آخر النشاطات</strong>: سجل آخر التعديلات على القضايا</li><li><strong>رؤى الذكاء الاصطناعي</strong>: تحليلات ذكية لحالة المكتب (تتطلب إعداد AI)</li></ul><p>يمكنك تخصيص لوحة التحكم عبر إظهار/إخفاء العناصر من زر التخصيص في الأعلى.</p>',
+    fr: '<p>Le tableau de bord est l\'écran principal qui s\'affiche à l\'ouverture du programme. Il vous montre :</p><ul><li><strong>Statistiques rapides</strong> : nombre d\'affaires actives, clients, tâches et audiences à venir</li><li><strong>Rendez-vous à venir</strong> : audiences et échéances des prochains jours</li><li><strong>Activités récentes</strong> : historique des dernières modifications</li><li><strong>Aperçus IA</strong> : analyses intelligentes du cabinet (nécessite configuration IA)</li></ul><p>Vous pouvez personnaliser le tableau de bord en affichant/masquant les éléments via le bouton de personnalisation en haut.</p>'
+  },
+  guideCasesTitle: { ar: 'إدارة القضايا', fr: 'Gestion des affaires' },
+  guideCasesContent: {
+    ar: '<p>قسم القضايا هو قلب البرنامج. يمكنك من:</p><ul><li><strong>إضافة قضية جديدة</strong>: الضغط على زر "إضافة قضية" وملء النموذج (الرقم، العنوان، الموكل، المحكمة، النوع...)</li><li><strong>عرض القضايا</strong>: جدول بكل القضايا مع إمكانية البحث والفلترة (حسب الحالة، المحكمة، الأولوية)</li><li><strong>مساحة العمل</strong>: الضغط على أي قضية يفتح مساحة عمل متكاملة فيها: معلومات القضية، الجدول الزمني، الوثائق، المهام، المصاريف، الذكاء الاصطناعي</li><li><strong>Kanban</strong>: عرض القضايا على شكل بطاقات حسب الحالة (نشط، معلق، مغلق)</li><li><strong>الأرشفة</strong>: نقل القضايا المنتهية إلى الأرشيف</li></ul><p>نصيحة: استخدم البحث السريع (Ctrl+K) للوصول الفوري لأي قضية.</p>',
+    fr: '<p>La section affaires est le cœur du programme. Elle vous permet de :</p><ul><li><strong>Ajouter une nouvelle affaire</strong> : cliquer sur "Ajouter une affaire" et remplir le formulaire (numéro, titre, client, tribunal, type...)</li><li><strong>Voir les affaires</strong> : tableau avec recherche et filtres (statut, tribunal, priorité)</li><li><strong>Espace de travail</strong> : cliquer sur une affaire ouvre un espace complet : informations, chronologie, documents, tâches, dépenses, IA</li><li><strong>Kanban</strong> : visualisation par statut (actif, en attente, fermé)</li><li><strong>Archivage</strong> : déplacer les affaires terminées vers l\'archive</li></ul><p>Astuce : utilisez la recherche rapide (Ctrl+K) pour accéder instantanément à toute affaire.</p>'
+  },
+  guideClientsTitle: { ar: 'إدارة الموكلين', fr: 'Gestion des clients' },
+  guideClientsContent: {
+    ar: '<p>قسم الموكلين يسمح بتسجيل وإدارة جميع الموكلين:</p><ul><li><strong>إضافة موكل</strong>: الاسم، الهاتف، البريد الإلكتروني، العنوان، المعرف الوطني</li><li><strong>البطاقة التفصيلية</strong>: عند النقر على موكل تظهر كل قضاياه ومدفوعاته</li><li><strong>البحث والفلترة</strong>: بحث بالاسم أو الهاتف، فلترة حسب الحالة</li><li><strong>أرشفة الموكلين</strong>: إمكانية أرشفة الموكلين غير النشطين</li></ul>',
+    fr: '<p>La section clients permet d\'enregistrer et de gérer tous les clients :</p><ul><li><strong>Ajouter un client</strong> : nom, téléphone, email, adresse, identifiant national</li><li><strong>Fiche détaillée</strong> : en cliquant sur un client, vous voyez toutes ses affaires et paiements</li><li><strong>Recherche et filtres</strong> : recherche par nom ou téléphone, filtrage par statut</li><li><strong>Archivage</strong> : possibilité d\'archiver les clients inactifs</li></ul>'
+  },
+  guideHearingsTitle: { ar: 'الجلسات والمواعيد', fr: 'Audiences et rendez-vous' },
+  guideHearingsContent: {
+    ar: '<p>قسم الجلسات يعرض كل الجلسات والمواعيد في مكان واحد:</p><ul><li><strong>إضافة جلسة</strong>: تحديد القضية، المحكمة، التاريخ، القاضي، الغرفة، النوع (جلسة، مرافعة، تأجيل)</li><li><strong>الحالة</strong>: مجدولة، مؤكدة، ملغاة، منعقدة</li><li><strong>التقويم</strong>: كل الجلسات تظهر أيضاً في التقويم القانوني</li><li><strong>التذكيرات</strong>: إشعارات قبل الجلسة بـ 7 و 3 و 1 يوم</li></ul>',
+    fr: '<p>La section audiences affiche toutes les audiences et rendez-vous en un seul endroit :</p><ul><li><strong>Ajouter une audience</strong> : définir l\'affaire, le tribunal, la date, le juge, la salle, le type</li><li><strong>Statut</strong> : programmée, confirmée, annulée, tenue</li><li><strong>Calendrier</strong> : toutes les audiences apparaissent dans le calendrier juridique</li><li><strong>Rappels</strong> : notifications avant l\'audience à J-7, J-3 et J-1</li></ul>'
+  },
+  guideDocumentsTitle: { ar: 'الوثائق القانونية', fr: 'Documents juridiques' },
+  guideDocumentsContent: {
+    ar: '<p>نظام إدارة الوثائق يدعم:</p><ul><li><strong>رفع الوثائق</strong>: سحب وإفلات أو اختيار ملف (PDF, Word, Excel, صور)</li><li><strong>التصنيف</strong>: حسب النوع (عقد، حكم، مذكرة، مراسلة...) والوسوم</li><li><strong>البحث</strong>: بحث نصي في أسماء الوثائق والوسوم</li><li><strong>المعاينة</strong>: عرض الوثيقة داخل البرنامج</li><li><strong>الذكاء الاصطناعي</strong>: تحليل الوثيقة واستخراج الخلاصة والنقاط الرئيسية</li></ul>',
+    fr: '<p>Le système de gestion documentaire prend en charge :</p><ul><li><strong>Téléversement</strong> : glisser-déposer ou sélectionner un fichier (PDF, Word, Excel, images)</li><li><strong>Classification</strong> : par type (contrat, jugement, note, correspondance...) et tags</li><li><strong>Recherche</strong> : recherche textuelle dans les noms et tags</li><li><strong>Aperçu</strong> : visualisation du document dans le programme</li><li><strong>IA</strong> : analyse du document, extraction du résumé et des points clés</li></ul>'
+  },
+  guideCalendarTitle: { ar: 'التقويم القانوني', fr: 'Calendrier juridique' },
+  guideCalendarContent: {
+    ar: '<p>تقويم قانوني بـ 4 طرق عرض:</p><ul><li><strong>شهري</strong>: نظرة عامة على كل الجلسات والمواعيد</li><li><strong>أسبوعي</strong>: تفاصيل الأسبوع مع التوقيت</li><li><strong>يومي</strong>: جدول زمني دقيق ليوم واحد</li><li><strong>قائمة</strong>: عرض الأحداث كقائمة مرتبة</li></ul><p>الألوان: الأزرق للجلسات، الأخضر للمواعيد، الأحمر للمهل، الذهبي للاستشارات، الأرجواني للوثائق.</p>',
+    fr: '<p>Calendrier juridique avec 4 modes d\'affichage :</p><ul><li><strong>Mensuel</strong> : vue d\'ensemble des audiences et rendez-vous</li><li><strong>Hebdomadaire</strong> : détails de la semaine avec horaires</li><li><strong>Quotidien</strong> : planning précis d\'une journée</li><li><strong>Liste</strong> : événements sous forme de liste ordonnée</li></ul><p>Couleurs : bleu pour les audiences, vert pour les rendez-vous, rouge pour les échéances, doré pour les consultations, violet pour les documents.</p>'
+  },
+  guideTasksTitle: { ar: 'المهام', fr: 'Tâches' },
+  guideTasksContent: {
+    ar: '<p>نظام المهام يساعد على متابعة العمل:</p><ul><li><strong>إضافة مهمة</strong>: عنوان، وصف، أولوية (منخفضة/متوسطة/عالية/حرجة)، تاريخ الاستحقاق، القضية المرتبطة</li><li><strong>الحالات</strong>: متراكم، قيد الانتظار، قيد التنفيذ، مراجعة، منجز</li><li><strong>المهام الفرعية</strong>: تقسيم المهمة إلى خطوات أصغر</li><li><strong>التعليقات</strong>: إضافة ملاحظات وتعليقات على المهمة</li><li><strong>التحليلات</strong>: إحصائيات المهام المنجزة والمتأخرة</li></ul>',
+    fr: '<p>Le système de tâches vous aide à suivre le travail :</p><ul><li><strong>Ajouter une tâche</strong> : titre, description, priorité (basse/moyenne/haute/critique), échéance, affaire liée</li><li><strong>Statuts</strong> : en suspens, à faire, en cours, révision, terminé</li><li><strong>Sous-tâches</strong> : diviser la tâche en plus petites étapes</li><li><strong>Commentaires</strong> : ajouter des notes et commentaires</li><li><strong>Analyses</strong> : statistiques des tâches terminées et en retard</li></ul>'
+  },
+  guideExpensesTitle: { ar: 'المصاريف والمدفوعات', fr: 'Dépenses et paiements' },
+  guideExpensesContent: {
+    ar: '<p>تتبع المصاريف والمدفوعات لكل قضية:</p><ul><li><strong>الأتعاب</strong>: تسجيل الأتعاب الإجمالية والمدفوعة والمتبقية</li><li><strong>المدفوعات</strong>: تسجيل كل دفعة مع تاريخها وطريقتها (نقداً، بنك، شيك)</li><li><strong>التقارير المالية</strong>: عرض إجمالي الأتعاب والمدفوعات لكل موكل</li></ul>',
+    fr: '<p>Suivi des dépenses et paiements par affaire :</p><ul><li><strong>Honoraires</strong> : enregistrement des honoraires totaux, payés et restants</li><li><strong>Paiements</strong> : enregistrement de chaque paiement avec date et mode (espèces, virement, chèque)</li><li><strong>Rapports financiers</strong> : affichage des honoraires et paiements par client</li></ul>'
+  },
+  guideAITitle: { ar: 'المساعد الذكي', fr: 'Assistant IA' },
+  guideAIContent: {
+    ar: '<p>مساعد قانوني بتقنية الذكاء الاصطناعي مع 7 أوضاع:</p><ul><li><strong>محادثة</strong>: طرح أسئلة قانونية عامة</li><li><strong>تلخيص</strong>: تلخيص النصوص القانونية</li><li><strong>صياغة</strong>: صياغة وثائق قانونية</li><li><strong>تحليل</strong>: تحليل الأحكام والنصوص</li><li><strong>استراتيجية</strong>: تحليل استراتيجي للقضايا</li><li><strong>مخاطر</strong>: تحديد وتقييم المخاطر القانونية</li><li><strong>تحضير جلسة</strong>: تحضير شامل للجلسات القضائية</li></ul><p>يدعم المزودات: Groq (مجاني)، OpenAI، Anthropic Claude، Google Gemini.</p><p>للبدء: اختر المزود، أدخل مفتاح API، وابدأ المحادثة.</p>',
+    fr: '<p>Assistant juridique IA avec 7 modes :</p><ul><li><strong>Chat</strong> : poser des questions juridiques générales</li><li><strong>Résumé</strong> : résumer des textes juridiques</li><li><strong>Rédaction</strong> : rédiger des documents juridiques</li><li><strong>Analyse</strong> : analyser des jugements et textes</li><li><strong>Stratégie</strong> : analyse stratégique des affaires</li><li><strong>Risques</strong> : identifier et évaluer les risques juridiques</li><li><strong>Préparation audience</strong> : préparation complète des audiences</li></ul><p>Fournisseurs supportés : Groq (gratuit), OpenAI, Anthropic Claude, Google Gemini.</p><p>Pour commencer : choisissez le fournisseur, entrez la clé API, et commencez la conversation.</p>'
+  },
+  guideReportsTitle: { ar: 'التقارير', fr: 'Rapports' },
+  guideReportsContent: {
+    ar: '<p>قسم التقارير يقدم تحليلات بيانية للمكتب:</p><ul><li><strong>تقرير القضايا</strong>: إحصائيات حسب الحالة والمحكمة والنوع</li><li><strong>تقرير المالي</strong>: الأتعاب والمدفوعات والمصروفات</li><li><strong>تقرير الجلسات</strong>: الجلسات القادمة والمنعقدة</li><li><strong>تقرير المهام</strong>: إنجاز المهام حسب المسؤول</li><li><strong>التقرير الشهري</strong>: نظرة شاملة على نشاط المكتب</li></ul><p>يمكن تصدير التقارير إلى PDF.</p>',
+    fr: '<p>La section rapports offre des analyses graphiques du cabinet :</p><ul><li><strong>Rapport des affaires</strong> : statistiques par statut, tribunal et type</li><li><strong>Rapport financier</strong> : honoraires, paiements et dépenses</li><li><strong>Rapport des audiences</strong> : audiences à venir et tenues</li><li><strong>Rapport des tâches</strong> : achèvement par responsable</li><li><strong>Rapport mensuel</strong> : vue complète de l\'activité du cabinet</li></ul><p>Les rapports peuvent être exportés en PDF.</p>'
+  },
+  guideArchiveTitle: { ar: 'الأرشيف', fr: 'Archive' },
+  guideArchiveContent: {
+    ar: '<p>إدارة القضايا المؤرشفة:</p><ul><li>عرض كل القضايا المؤرشفة مع تاريخ الأرشفة</li><li>البحث في الأرشيف حسب رقم القضية أو العنوان</li><li>استعادة قضية من الأرشيف (مع مهامها)</li><li>الأرشفة التلقائية: القضايا المغلقة منذ 90 يوماً تُؤرشف تلقائياً</li></ul>',
+    fr: '<p>Gestion des affaires archivées :</p><ul><li>Affichage de toutes les affaires archivées avec date d\'archivage</li><li>Recherche dans l\'archive par numéro ou titre</li><li>Restaurer une affaire depuis l\'archive (avec ses tâches)</li><li>Archivage automatique : les affaires fermées depuis 90 jours sont archivées automatiquement</li></ul>'
+  },
+  guideSearchTitle: { ar: 'البحث المتقدم', fr: 'Recherche avancée' },
+  guideSearchContent: {
+    ar: '<p>أداة بحث قوية لتجد أي شيء بسرعة:</p><ul><li><strong>البحث السريع</strong>: Ctrl+K لفتح نافذة البحث السريع</li><li><strong>البحث المتقدم</strong>: بحث في القضايا، الموكلين، الوثائق، المهام</li><li><strong>فلاتر</strong>: تحديد نطاق البحث (النوع، الحالة، التاريخ)</li></ul>',
+    fr: '<p>Outil de recherche puissant pour trouver rapidement n\'importe quoi :</p><ul><li><strong>Recherche rapide</strong> : Ctrl+K pour ouvrir la recherche rapide</li><li><strong>Recherche avancée</strong> : rechercher dans les affaires, clients, documents, tâches</li><li><strong>Filtres</strong> : définir la portée de la recherche (type, statut, date)</li></ul>'
+  },
+
+  // ─── Help / FAQ ───
+  faq01Q: { ar: 'كيف أضيف قضية جديدة؟', fr: 'Comment ajouter une nouvelle affaire ?' },
+  faq01A: { ar: 'اذهب إلى قسم "القضايا" واضغط على زر "إضافة قضية" في أعلى اليمين. املأ النموذج بالبيانات المطلوبة (رقم القضية، العنوان، الموكل، المحكمة) ثم احفظ.', fr: 'Allez dans la section "Affaires" et cliquez sur le bouton "Ajouter une affaire" en haut à droite. Remplissez le formulaire (numéro, titre, client, tribunal) puis sauvegardez.' },
+  faq02Q: { ar: 'كيف أبحث عن قضية بسرعة؟', fr: 'Comment rechercher rapidement une affaire ?' },
+  faq02A: { ar: 'استخدم البحث السريع بالضغط على Ctrl+K (أو Cmd+K على Mac) واكتب رقم القضية أو اسمها. يمكنك أيضاً استخدام شريط البحث في أعلى كل قسم.', fr: 'Utilisez la recherche rapide avec Ctrl+K (ou Cmd+K sur Mac) et tapez le numéro ou le nom de l\'affaire. Vous pouvez aussi utiliser la barre de recherche en haut de chaque section.' },
+  faq03Q: { ar: 'ما هي الأدوار والصلاحيات؟', fr: 'Quels sont les rôles et permissions ?' },
+  faq03A: { ar: 'البرنامج يدعم 6 أدوار: مدير (صلاحية كاملة)، محامٍ أول، محامٍ، مساعد، متدرب، خارجي. كل دور له صلاحيات محددة للوصول إلى الأقسام وإجراء التعديلات. يمكن تعديل صلاحيات المستخدمين من الإعدادات.', fr: 'Le programme prend en charge 6 rôles : Administrateur (accès complet), Avocat principal, Avocat, Assistant, Stagiaire, Externe. Chaque rôle a des permissions spécifiques. Les permissions peuvent être modifiées dans les paramètres.' },
+  faq04Q: { ar: 'كيف أعمل نسخة احتياطية؟', fr: 'Comment faire une sauvegarde ?' },
+  faq04A: { ar: 'اذهب إلى "الإعدادات" > "النسخ الاحتياطي". يمكنك إنشاء نسخة يدوية أو تفعيل النسخ التلقائي (يومي/أسبوعي/شهري). جميع النسخ مشفرة لحماية البيانات.', fr: 'Allez dans "Paramètres" > "Sauvegarde". Vous pouvez créer une sauvegarde manuelle ou activer la sauvegarde automatique (quotidienne/hebdomadaire/mensuelle). Toutes les sauvegardes sont chiffrées.' },
+  faq05Q: { ar: 'كيف أربط مفتاح API للذكاء الاصطناعي؟', fr: 'Comment configurer la clé API IA ?' },
+  faq05A: { ar: 'اذهب إلى قسم "المساعد الذكي". اختر المزود الذي تريد (Groq مجاني وسريع)، ثم أدخل مفتاح API الخاص بك. يمكنك الحصول على مفتاح مجاني من Groq Console. بعد الحفظ، ابدأ المحادثة.', fr: 'Allez dans la section "Assistant IA". Choisissez le fournisseur (Groq est gratuit et rapide), puis entrez votre clé API. Obtenez une clé gratuite sur Groq Console. Après sauvegarde, commencez la conversation.' },
+  faq06Q: { ar: 'ما الفرق بين أوضاع الذكاء الاصطناعي؟', fr: 'Quelle est la différence entre les modes IA ?' },
+  faq06A: { ar: 'المساعد الذكي فيه 7 أوضاع: المحادثة للإجابة عن الأسئلة، التلخيص لتلخيص النصوص، الصياغة لكتابة الوثائق، التحليل لتحليل الأحكام، الاستراتيجية للتخطيط، المخاطر للتقييم القانوني، وتحضير الجلسة للاستعداد للجلسات القضائية.', fr: 'L\'assistant IA a 7 modes : Chat pour répondre aux questions, Résumé pour résumer des textes, Rédaction pour écrire des documents, Analyse pour analyser des jugements, Stratégie pour planifier, Risques pour évaluation juridique, et Préparation d\'audience.' },
+  faq07Q: { ar: 'كيف أضيف وثيقة إلى قضية؟', fr: 'Comment ajouter un document à une affaire ?' },
+  faq07A: { ar: 'افتح مساحة عمل القضية، اذهب إلى تبويب "الوثائق"، واسحب الملف إلى منطقة الإفلات أو اضغط على "رفع وثيقة".', fr: 'Ouvrez l\'espace de travail de l\'affaire, allez dans l\'onglet "Documents", et glissez-déposez le fichier ou cliquez sur "Téléverser un document".' },
+  faq08Q: { ar: 'كيف أسجل دفعة مالية لقضية؟', fr: 'Comment enregistrer un paiement pour une affaire ?' },
+  faq08A: { ar: 'في مساحة عمل القضية، اذهب إلى تبويب "المصاريف". ستجد إحصائيات الأتعاب والمدفوعات. اضغط على "إضافة دفعة" وسجل المبلغ وتاريخه وطريقة الدفع.', fr: 'Dans l\'espace de travail de l\'affaire, allez dans l\'onglet "Dépenses". Vous trouverez les statistiques des honoraires et paiements. Cliquez sur "Ajouter un paiement" et saisissez le montant, la date et le mode de paiement.' },
+  faq09Q: { ar: 'كيف أضيف جلسة إلى التقويم؟', fr: 'Comment ajouter une audience au calendrier ?' },
+  faq09A: { ar: 'من قسم "الجلسات" أو من التقويم مباشرة، اضغط على "إضافة جلسة". اختر القضية المرتبطة، المحكمة، التاريخ، القاضي، والغرفة.', fr: 'Depuis la section "Audiences" ou directement depuis le calendrier, cliquez sur "Ajouter une audience". Choisissez l\'affaire liée, le tribunal, la date, le juge et la salle.' },
+  faq10Q: { ar: 'كيف أضيف مهمة فرعية؟', fr: 'Comment ajouter une sous-tâche ?' },
+  faq10A: { ar: 'افتح المهمة الرئيسية، في قسم "المهام الفرعية" اضغط على "إضافة مهمة فرعية". يمكنك تحديد عنوانها وتاريخ استحقاقها.', fr: 'Ouvrez la tâche principale, dans la section "Sous-tâches" cliquez sur "Ajouter une sous-tâche". Vous pouvez définir son titre et sa date d\'échéance.' },
+  faq11Q: { ar: 'كيف أغير كلمة السر؟', fr: 'Comment changer le mot de passe ?' },
+  faq11A: { ar: 'اذهب إلى "الإعدادات" > "تغيير كلمة السر". أدخل كلمة السر الحالية ثم الجديدة. يجب أن تحتوي كلمة السر الجديدة على 8 أحرف على الأقل.', fr: 'Allez dans "Paramètres" > "Changer le mot de passe". Entrez le mot de passe actuel puis le nouveau. Le nouveau mot de passe doit contenir au moins 8 caractères.' },
+  faq12Q: { ar: 'هل بياناتي آمنة؟', fr: 'Mes données sont-elles sécurisées ?' },
+  faq12A: { ar: 'نعم. جميع البيانات مخزنة محلياً على جهازك ومشفرة. قاعدة البيانات مشفرة باستخدام AES-256-GCM. المفاتيح الحساسة (مثل API keys) مشفرة بشكل منفصل. لا تُشارك بياناتك مع أي طرف خارجي.', fr: 'Oui. Toutes les données sont stockées localement sur votre appareil et chiffrées. La base de données est chiffrée avec AES-256-GCM. Les clés sensibles (API keys) sont chiffrées séparément. Vos données ne sont jamais partagées avec des tiers.' },
+
+  // ─── Help / Knowledge Base ───
+  kbSecurityPermissionsTitle: { ar: 'نظام الأمان والصلاحيات', fr: 'Système de sécurité et permissions' },
+  kbSecurityPermissionsContent: {
+    ar: '<p>البرنامج يعتمد نظام أمان متعدد المستويات:</p><ul><li><strong>6 أدوار</strong>: مدير ← محامٍ أول ← محامٍ ← مساعد ← متدرب ← خارجي</li><li><strong>صلاحيات دقيقة</strong>: كل دور له صلاحية الوصول لأقسام محددة</li><li><strong>تشفير AES-256-GCM</strong>: لكل البيانات الحساسة</li><li><strong>سجل النشاطات</strong>: تسجيل كل عملية تعديل مع المستخدم والتاريخ</li><li><strong>Master Key</strong>: مفتاح استعادة في حال فقدان كلمة السر</li></ul>',
+    fr: '<p>Le programme utilise un système de sécurité multi-niveaux :</p><ul><li><strong>6 rôles</strong> : Administrateur ← Avocat principal ← Avocat ← Assistant ← Stagiaire ← Externe</li><li><strong>Permissions précises</strong> : chaque rôle a un accès spécifique aux sections</li><li><strong>Chiffrement AES-256-GCM</strong> : pour toutes les données sensibles</li><li><strong>Journal d\'activité</strong> : enregistrement de chaque modification</li><li><strong>Master Key</strong> : clé de récupération en cas de perte du mot de passe</li></ul>'
+  },
+  kbSecurityKeysTitle: { ar: 'إدارة المفاتيح والترخيص', fr: 'Gestion des clés et licence' },
+  kbSecurityKeysContent: {
+    ar: '<p>البرنامج يتطلب ترخيصاً مهنياً للاستخدام. يمكن إدارة الترخيص من الإعدادات.</p><p>مفاتيح API للذكاء الاصطناعي تُخزّن مشفرة ولا تُشارك مع أي جهة.</p><p>ينصح باستخدام Groq للحصول على خدمة مجانية وسريعة للبدء.</p>',
+    fr: '<p>Le programme nécessite une licence professionnelle. La licence peut être gérée depuis les paramètres.</p><p>Les clés API IA sont stockées chiffrées et ne sont jamais partagées.</p><p>Il est recommandé d\'utiliser Groq pour un service gratuit et rapide.</p>'
+  },
+  kbBackupTitle: { ar: 'النسخ الاحتياطي والاسترجاع', fr: 'Sauvegarde et restauration' },
+  kbBackupContent: {
+    ar: '<p>نظام النسخ الاحتياطي يوفر حماية كاملة للبيانات:</p><ul><li><strong>تلقائي</strong>: يومي، أسبوعي، أو شهري (حسب الإعدادات)</li><li><strong>يدوي</strong>: إنشاء نسخة احتياطية في أي وقت</li><li><strong>مشفّر</strong>: جميع النسخ مشفرة ولا يمكن فتحها إلا بالبرنامج</li><li><strong>الاسترجاع</strong>: استرجاع أي نسخة سابقة بسهولة</li><li><strong>التصدير</strong>: تصدير أرشيف كامل للبيانات</li></ul><p>يُنصح بعمل نسخة احتياطية أسبوعياً على الأقل.</p>',
+    fr: '<p>Le système de sauvegarde offre une protection complète des données :</p><ul><li><strong>Automatique</strong> : quotidienne, hebdomadaire ou mensuelle</li><li><strong>Manuelle</strong> : créer une sauvegarde à tout moment</li><li><strong>Chiffrée</strong> : toutes les sauvegardes sont chiffrées</li><li><strong>Restauration</strong> : restaurer facilement toute sauvegarde antérieure</li><li><strong>Export</strong> : exporter une archive complète des données</li></ul><p>Il est recommandé d\'effectuer une sauvegarde au moins une fois par semaine.</p>'
+  },
+  kbKeyboardTitle: { ar: 'اختصارات لوحة المفاتيح', fr: 'Raccourcis clavier' },
+  kbKeyboardContent: {
+    ar: '<table class="help-shortcuts"><tr><th>الاختصار</th><th>الوظيفة</th></tr><tr><td><kbd>Ctrl+K</kbd></td><td>فتح البحث السريع</td></tr><tr><td><kbd>Ctrl+N</kbd></td><td>إضافة جديد (حسب القسم الحالي)</td></tr><tr><td><kbd>Escape</kbd></td><td>إغلاق النافذة المنبثقة</td></tr><tr><td><kbd>/</kbd></td><td>التركيز على شريط البحث</td></tr><tr><td><kbd>Ctrl+,</kbd></td><td>فتح الإعدادات</td></tr></table>',
+    fr: '<table class="help-shortcuts"><tr><th>Raccourci</th><th>Fonction</th></tr><tr><td><kbd>Ctrl+K</kbd></td><td>Ouvrir la recherche rapide</td></tr><tr><td><kbd>Ctrl+N</kbd></td><td>Ajouter nouveau (selon la section)</td></tr><tr><td><kbd>Escape</kbd></td><td>Fermer la fenêtre contextuelle</td></tr><tr><td><kbd>/</kbd></td><td>Focus sur la barre de recherche</td></tr><tr><td><kbd>Ctrl+,</kbd></td><td>Ouvrir les paramètres</td></tr></table>'
+  },
+  kbTroubleshootingTitle: { ar: 'حل المشاكل الشائعة', fr: 'Dépannage' },
+  kbTroubleshootingContent: {
+    ar: '<p><strong>المشكلة:</strong> المساعد الذكي لا يعمل</p><p><strong>الحل:</strong> تحقق من اتصال الإنترنت، تأكد من صحة مفتاح API في إعدادات AI، جرب تغيير المزود إلى Groq.</p><p><strong>المشكلة:</strong> البرنامج بطيء</p><p><strong>الحل:</strong> حاول أرشفة القضايا المغلقة، نظف سجل النشاطات من الإعدادات، تأكد من وجود مساحة كافية على القرص.</p><p><strong>المشكلة:</strong> نسيت كلمة السر</p><p><strong>الحل:</strong> استخدم Master Key للاستعادة. إذا لم يكن لديك Master Key، اتصل بالدعم الفني.</p>',
+    fr: '<p><strong>Problème :</strong> L\'assistant IA ne fonctionne pas</p><p><strong>Solution :</strong> Vérifiez votre connexion Internet, assurez-vous que la clé API est correcte dans les paramètres IA, essayez de changer le fournisseur pour Groq.</p><p><strong>Problème :</strong> Le programme est lent</p><p><strong>Solution :</strong> Archivez les affaires fermées, nettoyez le journal d\'activité dans les paramètres, assurez-vous d\'avoir assez d\'espace disque.</p><p><strong>Problème :</strong> Mot de passe oublié</p><p><strong>Solution :</strong> Utilisez la Master Key pour la récupération. Si vous n\'avez pas de Master Key, contactez le support technique.</p>'
+  },
+  helpKbNoResults: { ar: 'لا توجد نتائج للبحث', fr: 'Aucun résultat de recherche' },
+
+  // ─── Setup Placeholders ───
+  setupOfficeNamePlaceholder: { ar: 'اسم المكتب', fr: 'Nom du cabinet' },
+  setupAdminNamePlaceholder: { ar: 'اسم المدير', fr: "Nom de l'administrateur" },
+  setupPasswordPlaceholder: { ar: 'كلمة السر (8 أحرف على الأقل)', fr: 'Mot de passe (8 caractères min)' },
+  setupPinPlaceholder: { ar: 'PIN (4-6 أرقام)', fr: 'PIN (4-6 chiffres)' },
+  confirmPinPlaceholder: { ar: 'تأكيد PIN', fr: 'Confirmer le PIN' },
+  forgotPinPlaceholder: { ar: 'PIN (4-6 أرقام)', fr: 'PIN (4-6 chiffres)' },
+  forgotMasterKeyPlaceholder: { ar: 'مفتاح الاستعادة', fr: 'Clé de récupération' },
+
+  // ─── Kanban ───
+  kanbanArchived: { ar: 'مؤرشفة', fr: 'Archivée' },
+
+  // ─── Calendar Legend ───
+  calLegendDocuments: { ar: 'وثائق', fr: 'Documents' },
+  calLegendPayments: { ar: 'دفعات', fr: 'Paiements' },
+
+  // ─── Table Headers ───
+  thTitle: { ar: 'العنوان', fr: 'Titre' },
+  thCaseRef: { ar: 'القضية', fr: 'Affaire' },
+  thUploadDate: { ar: 'تاريخ الرفع', fr: 'Date de téléversement' },
+  thTags: { ar: 'الوسوم', fr: 'Tags' },
+  thRole: { ar: 'الدور', fr: 'Rôle' },
+  thLastLogin: { ar: 'آخر دخول', fr: 'Dernière connexion' },
+  thTimeCol: { ar: 'الوقت', fr: 'Heure' },
+  thUser: { ar: 'المستخدم', fr: 'Utilisateur' },
+  thAction: { ar: 'الإجراء', fr: 'Action' },
+  thDetails: { ar: 'التفاصيل', fr: 'Détails' },
+  thLevel: { ar: 'المستوى', fr: 'Niveau' },
+  thContext: { ar: 'السياق', fr: 'Contexte' },
+  thMessage: { ar: 'الرسالة', fr: 'Message' },
+
+  // ─── Profile ───
+  profileMasterKeyLabel: { ar: 'مفتاح الاستعادة', fr: 'Clé de récupération' },
+
+  // ─── About ───
+  aboutDescription: { ar: 'تطبيق متكامل لإدارة مكاتب المحاماة في المغرب', fr: 'Application intégrée de gestion des cabinets d\'avocats au Maroc' },
+
+  // ─── Modal ───
+  modalTitle: { ar: 'عنوان', fr: 'Titre' },
+  workflowModalTitle: { ar: 'سير العمل', fr: 'Workflow' },
+
+  // ─── Dashboard Quick Actions ───
+  dashAddCaseAction: { ar: 'إضافة قضية', fr: 'Ajouter une affaire' },
+  dashAddClientAction: { ar: 'إضافة موكل', fr: 'Ajouter un client' },
+  dashAddHearingAction: { ar: 'إضافة جلسة', fr: 'Ajouter une audience' },
+  dashUploadDocumentAction: { ar: 'رفع وثيقة', fr: 'Téléverser un document' },
+
+  // ─── Filter Options ───
+  optionStatusLabel: { ar: 'الحالة', fr: 'Statut' },
+  optionActive: { ar: 'نشط', fr: 'Actif' },
+  optionArchived: { ar: 'مؤرشف', fr: 'Archivé' },
+  optionMinCases: { ar: 'عدد القضايا', fr: "Nombre d'affaires" },
+  optionCity: { ar: 'المدينة', fr: 'Ville' },
+  optionCourt: { ar: 'المحكمة', fr: 'Tribunal' },
+  optionStatus: { ar: 'الحالة', fr: 'Statut' },
+  optionActiveF: { ar: 'نشطة', fr: 'Active' },
+  optionPending: { ar: 'معلقة', fr: 'En attente' },
+  optionClosed: { ar: 'مغلقة', fr: 'Fermée' },
+  optionPriority: { ar: 'الأولوية', fr: 'Priorité' },
+  optionHigh: { ar: 'عالية', fr: 'Haute' },
+  optionMedium: { ar: 'متوسطة', fr: 'Moyenne' },
+  optionLow: { ar: 'منخفضة', fr: 'Basse' },
+  optionClient: { ar: 'الموكل', fr: 'Client' },
+  optionHearingType: { ar: 'جلسات', fr: 'Audiences' },
+  optionDeadlineType: { ar: 'مواعيد نهائية', fr: 'Dates limites' },
+  optionMeetingType: { ar: 'اجتماعات', fr: 'Réunions' },
+  optionTaskType: { ar: 'مهام', fr: 'Tâches' },
+  optionDocumentType: { ar: 'تقديم وثائق', fr: 'Dépôt de documents' },
+  optionPaymentType: { ar: 'دفعات', fr: 'Paiements' },
+  optionAll: { ar: 'الكل', fr: 'Tous' },
+  optionTodo: { ar: 'قيد التنفيذ', fr: 'À faire' },
+  optionInProgress: { ar: 'قيد الإنجاز', fr: 'En cours' },
+  optionWaiting: { ar: 'انتظار', fr: 'En attente' },
+  optionReview: { ar: 'مراجعة', fr: 'Révision' },
+  optionDone: { ar: 'منجز', fr: 'Terminé' },
+  optionDocContracts: { ar: 'عقود', fr: 'Contrats' },
+  optionDocJudgments: { ar: 'أحكام', fr: 'Jugements' },
+  optionDocBriefs: { ar: 'مذكرات', fr: 'Mémoires' },
+  optionDocEvidence: { ar: 'أدلة', fr: 'Preuves' },
+  optionDocReports: { ar: 'تقارير', fr: 'Rapports' },
+  optionDocInvoices: { ar: 'فواتير', fr: 'Factures' },
+  optionDocOther: { ar: 'أخرى', fr: 'Autres' },
+
+  // ─── Specialties ───
+  specialtyCivil: { ar: 'مدني', fr: 'Civil' },
+  specialtyCommercial: { ar: 'تجاري', fr: 'Commercial' },
+  specialtyCriminal: { ar: 'جنائي', fr: 'Pénal' },
+  specialtyFamily: { ar: 'أسرة', fr: 'Famille' },
+  specialtyRealEstate: { ar: 'عقاري', fr: 'Immobilier' },
+  specialtyAdmin: { ar: 'إداري', fr: 'Administratif' },
+  specialtyLabor: { ar: 'شغل', fr: 'Travail' },
+  specialtyTax: { ar: 'جبائي', fr: 'Fiscal' },
+
+  // ─── AI Provider Descriptions ───
+  aiProviderGroq: { ar: 'مجاني، سريع', fr: 'Gratuit, rapide' },
+  aiProviderGemini: { ar: 'Google، مجاني', fr: 'Google, gratuit' },
+
+  // ─── Log Level Filter ───
+  optionAllLevels: { ar: 'جميع المستويات', fr: 'Tous les niveaux' },
+
+  // ─── Profile Avatar ───
+  changePhotoTooltip: { ar: 'انقر لتغيير الصورة', fr: 'Cliquez pour changer la photo' },
+
+  // ─── Document Viewer ───
+  docViewerOpenBtn: { ar: 'فتح', fr: 'Ouvrir' },
+  docViewerDownloadBtn: { ar: 'تحميل', fr: 'Télécharger' },
+  docViewerAnalyzeBtn: { ar: 'تحليل', fr: 'Analyser' },
+  docViewerAnalyzeTitle: { ar: 'تحليل بالذكاء الاصطناعي', fr: 'Analyser avec IA' },
+  docViewerDeleteBtn: { ar: 'حذف', fr: 'Supprimer' },
+  docViewerDeleteTitle: { ar: 'حذف الوثيقة', fr: 'Supprimer le document' },
+
+  // ─── Pre-existing HTML keys ───
+  authLoginHeading: { ar: 'تسجيل الدخول', fr: 'Connexion' },
+  authLoginSub: { ar: 'اختر المستخدم وأدخل كلمة السر', fr: "Choisissez l'utilisateur et entrez le mot de passe" },
+  authOpenAtLogin: { ar: 'تشغيل مع ويندوز', fr: 'Lancer au démarrage' },
+  authRemember30: { ar: 'تذكرني لمدة 30 يوماً', fr: 'Se souvenir de moi 30 jours' },
+  authSetupBtn: { ar: 'إنشاء حساب المدير', fr: 'Créer le compte administrateur' },
+  authSetupDesc: { ar: 'أدخل معلومات مكتب المحاماة للبدء', fr: 'Entrez les informations du cabinet pour commencer' },
+  authSetupHeading: { ar: 'إعداد المكتب لأول مرة', fr: 'Configuration initiale du cabinet' },
+  authSetupHint: { ar: 'يمكنك إضافة مستخدمين آخرين لاحقاً من الإعدادات', fr: 'Vous pouvez ajouter d\'autres utilisateurs plus tard depuis les paramètres' },
+  authSetupSub: { ar: 'إنشاء حساب المدير العام للمكتب', fr: 'Créer le compte administrateur général' },
+  authSetupTitle: { ar: 'إعداد المكتب', fr: 'Configuration du cabinet' },
+  breadcrumbDashboard: { ar: 'الرئيسية', fr: 'Tableau de bord' },
+  clickToReveal: { ar: 'اضغط للإظهار', fr: 'Cliquez pour afficher' },
+  confirmPasswordPlaceholder: { ar: 'تأكيد كلمة السر', fr: 'Confirmer le mot de passe' },
+  dashCasesByType: { ar: 'القضايا حسب النوع', fr: 'Affaires par type' },
+  dashMonthlyCases: { ar: 'القضايا شهرياً', fr: 'Affaires mensuelles' },
+  dashNoTomorrowHearings: { ar: 'لا توجد جلسات غداً', fr: 'Aucune audience demain' },
+  dashOperations: { ar: 'العمليات', fr: 'Opérations' },
+  dashRevenue12m: { ar: 'الإيرادات الشهرية خلال 12 شهراً', fr: 'Revenus mensuels sur 12 mois' },
+  dashTomorrowHearings: { ar: 'جلسات الغد', fr: 'Audiences de demain' },
+  dashUpcomingHearings: { ar: 'الجلسات القادمة', fr: 'Audiences à venir' },
+  dashUrgentTasks: { ar: 'المهام العاجلة', fr: 'Tâches urgentes' },
+  forgotEnterPin: { ar: 'أدخل PIN الرقمي لاستعادة كلمة السر:', fr: 'Entrez le PIN numérique pour récupérer le mot de passe :' },
+  masterKeyDesc: { ar: 'هذا هو مفتاح الاستعادة الخاص بمكتبك. احتفظ به في مكان آمن — يمكنك استخدامه لاستعادة الوصول إذا نسيت كلمة السر.', fr: 'Ceci est la clé de récupération de votre cabinet. Conservez-la en lieu sûr — vous pouvez l\'utiliser pour récupérer l\'accès si vous oubliez votre mot de passe.' },
+  masterKeyDone: { ar: 'تم — بدء استخدام المكتب', fr: 'Terminé — Commencer à utiliser le cabinet' },
+  masterKeyTitle: { ar: 'مفتاح الاستعادة', fr: 'Clé de récupération' },
+  showMyMasterKey: { ar: 'عرض مفتاح الاستعادة الخاص بي', fr: 'Afficher ma clé de récupération' },
+  verifyPin: { ar: 'تحقق من PIN', fr: 'Vérifier le PIN' },
+
+  darkModeToggle: { ar: 'الوضع الليلي', fr: 'Mode sombre' },
+  lockTitleText: { ar: 'قفل', fr: 'Verrouiller' },
+
+  // ─── Tasks ───
+  tagPlaceholder: { ar: 'مهم، عاجل', fr: 'Important, urgent' },
+  hoursAbbrev: { ar: 'س', fr: 'h' },
+  minutesAbbrev: { ar: 'د', fr: 'min' },
+
+  // ─── Quotes ───
+  quote1: { ar: '"العدالة أساس الملك"', fr: '"La justice est le fondement du royaume"' },
+  quote2: { ar: '"الحق فوق القوة"', fr: '"Le droit prime sur la force"' },
+  quote3: { ar: '"القانون سلاح الضعفاء"', fr: '"La loi est l\'arme des faibles"' },
+  quote4: { ar: '"العدل أساس العمران"', fr: '"La justice est le fondement de la civilisation"' },
+  quote5: { ar: '"من حكم بين الناس بالعدل فهو في ذمة الله"', fr: '"Qui juge avec justice est sous la protection de Dieu"' },
+  quote6: { ar: '"القاضي العادل يُحيي الأرض"', fr: '"Le juge équitable fait vivre la terre"' },
+  quote7: { ar: '"العدل حياة القلوب"', fr: '"La justice est la vie des cœurs"' }
 };
 
 function _t(key) {
@@ -1130,6 +1629,16 @@ A.getDayNames = function (len) {
 
 A.getShortDayNames = function () {
   return A.getDayNames('narrow');
+};
+
+A.getMonthNames = function () {
+  const locale = A.getLocale();
+  const months = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(2024, i, 1);
+    months.push(new Intl.DateTimeFormat(locale, { month: 'long' }).format(d));
+  }
+  return months;
 };
 
 A.setLanguage = function (lang) {

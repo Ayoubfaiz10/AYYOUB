@@ -123,13 +123,21 @@ function renderSearchResults(results, q, container, inputEl) {
   });
 }
 
+function debounce(fn, ms) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), ms);
+  };
+}
+
 A.initGlobalSearch = function () {
   const gs = document.getElementById('globalSearch');
   const gsr = document.getElementById('globalSearchResults');
   if (!gs || !gsr) return;
   let gsActiveIdx = -1;
 
-  gs.addEventListener('input', () => {
+  const doSearch = debounce(() => {
     const q = gs.value.trim();
     if (!q) {
       gsr.style.display = 'none';
@@ -137,7 +145,9 @@ A.initGlobalSearch = function () {
     }
     const results = searchLocal(q);
     renderSearchResults(results, q, gsr, gs);
-  });
+  }, 150);
+
+  gs.addEventListener('input', doSearch);
 
   gs.addEventListener('blur', () =>
     setTimeout(() => {
@@ -187,6 +197,13 @@ A.initGlobalSearch = function () {
   function updateActive(items) {
     items.forEach((el, i) => el.classList.toggle('active', i === gsActiveIdx));
     if (gsActiveIdx >= 0 && items[gsActiveIdx]) items[gsActiveIdx].scrollIntoView({ block: 'nearest' });
+  }
+
+  const searchIcon = document.querySelector('.topbar-search > i');
+  if (searchIcon) {
+    searchIcon.addEventListener('click', function () {
+      gs.focus();
+    });
   }
 };
 
@@ -582,14 +599,13 @@ A.initAdvancedSearch = function () {
   const resultsEl = document.getElementById('advancedSearchResults');
   if (!input) return;
 
-  input.addEventListener('input', () => {
+  const doAdvancedSearch = debounce(() => {
     const q = input.value.trim();
     if (!q || !A.state.ipc) {
       if (resultsEl) resultsEl.innerHTML = '';
       return;
     }
     const container = resultsEl;
-    // Use local index for instant results, then supplement with IPC
     const local = searchLocal(q);
     let html = '';
     const esc = A.escapeHtml;
@@ -650,5 +666,7 @@ A.initAdvancedSearch = function () {
       html = '<p class="empty-state">' + _t('noResultsLabel') + '</p>';
     }
     A.safeSetStatic(container, html);
-  });
+  }, 200);
+
+  input.addEventListener('input', doAdvancedSearch);
 };

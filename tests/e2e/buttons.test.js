@@ -6,7 +6,7 @@ const fs = require('fs');
 
 const APP_DIR = path.resolve(__dirname, '../..');
 
-test.describe('مدير مكتب المحامي — اختبار جميع الأزرار', () => {
+test.describe('LexOffece — اختبار جميع الأزرار', () => {
   let app;
   let page;
   let tempDir;
@@ -103,7 +103,7 @@ test.describe('مدير مكتب المحامي — اختبار جميع الأ
   }
 
   test('التطبيق يفتح ويعرض نافذة', async () => {
-    await expect(page).toHaveTitle('مدير مكتب المحامي');
+    await expect(page).toHaveTitle('LexOffece');
   });
 
   test('إكمال الإعداد الأولي (لأول مرة)', async () => {

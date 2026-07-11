@@ -180,7 +180,7 @@ A.AutoSave = {
     document.getElementById('topbar')?.addEventListener('click', e => {
       if (e.target.closest('#asGlobalStatus')) {
         A.AutoSave.saveAll();
-        A.showToast('تم حفظ جميع التعديلات', 'success');
+        A.showToast(_t('autosaveAllSaved'), 'success');
       }
     });
   },

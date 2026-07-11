@@ -33,18 +33,18 @@ A.showTaskForm = async function (editData) {
   A.showModal(
     isEdit ? _t('editTask') : _t('addTask'),
     `
-    <div class="input-group"><label class="input-label">العنوان</label><input type="text" id="fTaskTitle" class="input" value="${esc(editData ? editData.title : '')}" placeholder="${_t('taskTitleLabel')}"></div>
-    <div class="input-group"><label class="input-label">الوصف</label><textarea id="fTaskDesc" class="input" rows="3" placeholder="${_t('taskDescLabel') || _t('edit')}">${esc(editData ? editData.description || '' : '')}</textarea></div>
+    <div class="input-group"><label class="input-label">${_t('taskTitleLabel')}</label><input type="text" id="fTaskTitle" class="input" value="${esc(editData ? editData.title : '')}" placeholder="${_t('taskTitleLabel')}"></div>
+    <div class="input-group"><label class="input-label">${_t('taskDescLabel')}</label><textarea id="fTaskDesc" class="input" rows="3" placeholder="${_t('taskDescLabel')}">${esc(editData ? editData.description || '' : '')}</textarea></div>
     <div class="info-grid-2">
-      <div class="input-group"><label class="input-label">القضية</label><select id="fTaskCase" class="input"><option value="">-- ${_t('selectPlaceholder') || '-- اختر --'} --</option>${caseOpts}</select></div>
-      <div class="input-group"><label class="input-label">مسؤول</label><input type="text" id="fTaskAssigned" class="input" value="${esc(editData ? editData.assigned_to || '' : '')}" placeholder="${_t('assignedToLabel') || _t('add')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventCaseLabel')}</label><select id="fTaskCase" class="input"><option value="">-- ${_t('selectPlaceholder')} --</option>${caseOpts}</select></div>
+      <div class="input-group"><label class="input-label">${_t('assignedToLabel')}</label><input type="text" id="fTaskAssigned" class="input" value="${esc(editData ? editData.assigned_to || '' : '')}" placeholder="${_t('assignedToLabel')}"></div>
     </div>
     <div class="info-grid-3">
-      <div class="input-group"><label class="input-label">الحالة</label><select id="fTaskStatus" class="input">${[['backlog','متراكم'],['todo','قيد الانتظار'],['in_progress','قيد التنفيذ'],['waiting','معلق'],['review','مراجعة'],['done','منجز']].map(([v,l]) => `<option value="${v}" ${editData?.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">الأولوية</label><select id="fTaskPriority" class="input">${[['critical','حرج'],['high','عالي'],['medium','متوسط'],['low','منخفض']].map(([v,l]) => `<option value="${v}" ${editData?.priority === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
-      <div class="input-group"><label class="input-label">تاريخ الاستحقاق</label><input type="date" id="fTaskDue" class="input" value="${esc(editData ? editData.due_date || '' : '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventStatusLabel')}</label><select id="fTaskStatus" class="input">${[['backlog',_t('taskBacklog')],['todo',_t('taskTodo')],['in_progress',_t('taskInProgress')],['waiting',_t('taskWaiting')],['review',_t('taskReview')],['done',_t('taskDone')]].map(([v,l]) => `<option value="${v}" ${editData?.status === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('taskPriorityLabel')}</label><select id="fTaskPriority" class="input">${[['critical',_t('priorityCritical')],['high',_t('priorityHigh')],['medium',_t('priorityMedium')],['low',_t('priorityLow')]].map(([v,l]) => `<option value="${v}" ${editData?.priority === v ? 'selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="input-group"><label class="input-label">${_t('taskDueDateLabel')}</label><input type="date" id="fTaskDue" class="input" value="${esc(editData ? editData.due_date || '' : A.todayLocal())}"></div>
     </div>
-    <div class="input-group"><label class="input-label">الوسوم (مفصولة بفواصل)</label><input type="text" id="fTaskTags" class="input" value="${esc(editData ? editData.tags || '' : '')}" placeholder="${_t('priority_high')}، ${_t('priority_critical')}"></div>
+    <div class="input-group"><label class="input-label">${_t('labelTags')}</label><input type="text" id="fTaskTags" class="input" value="${esc(editData ? editData.tags || '' : '')}" placeholder="${_t('tagPlaceholder')}"></div>
   `,
     async () => {
       const title = document.getElementById('fTaskTitle').value.trim();
@@ -72,7 +72,7 @@ A.showTaskForm = async function (editData) {
         A.loadTasks();
       } catch (e) {
         A.logError('showTaskForm', e);
-        A.showToast('فشل حفظ المهمة', 'error');
+        A.showToast(_t('taskSaveFailed'), 'error');
       }
     }
   );
@@ -89,12 +89,12 @@ A.openTaskDetail = async function (taskId) {
     comments = (await A.cachedInvoke('db:getComments', taskId)) || [];
   } catch (e) {
     A.logError('openTaskDetail', e);
-    A.showToast('فشل تحميل تفاصيل المهمة', 'error');
+    A.showToast(_t('taskLoadDetailFailed'), 'error');
     return;
   }
 
   document.getElementById('taskDetailTitle').textContent = t.title;
-  const priorityLabels = { critical: 'حرج', high: 'عالي', medium: 'متوسط', low: 'منخفض' };
+  const priorityLabels = { critical: _t('priorityCritical'), high: _t('priorityHigh'), medium: _t('priorityMedium'), low: _t('priorityLow') };
   document.getElementById('taskDetailBadge').textContent = priorityLabels[t.priority] || t.priority;
 
   A.safeSet(
@@ -103,21 +103,21 @@ A.openTaskDetail = async function (taskId) {
     <div class="ws-overview-grid">
       <div>
         <div class="task-detail-section">
-          <h4>معلومات</h4>
-          <div class="ws-info-row"><span class="ws-info-label">الحالة</span><span class="ws-info-value">${esc({backlog:'متراكم',todo:'قيد الانتظار',in_progress:'قيد التنفيذ',waiting:'معلق',review:'مراجعة',done:'منجز'}[t.status] || t.status)}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">الأولوية</span><span class="ws-info-value">${esc({critical:'حرج',high:'عالي',medium:'متوسط',low:'منخفض'}[t.priority] || t.priority)}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">القضية</span><span class="ws-info-value">${esc(t.case_number || '—')}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">تاريخ الاستحقاق</span><span class="ws-info-value">${esc(t.due_date || '—')}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">مسؤول</span><span class="ws-info-value">${esc(t.assigned_to || '—')}</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">التقدم</span><span class="ws-info-value">${t.progress || 0}%</span></div>
-          <div class="ws-info-row"><span class="ws-info-label">الوقت المسجل</span><span class="ws-info-value">${Math.floor((t.time_tracked || 0) / 60)}س ${(t.time_tracked || 0) % 60}د</span></div>
+          <h4 data-i18n="labelInfo">${_t('labelInfo')}</h4>
+          <div class="ws-info-row"><span class="ws-info-label" data-i18n="thStatus">${_t('thStatus')}</span><span class="ws-info-value">${esc({backlog:_t('taskBacklog'),todo:_t('taskTodo'),in_progress:_t('taskInProgress'),waiting:_t('taskWaiting'),review:_t('taskReview'),done:_t('taskDone')}[t.status] || t.status)}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label" data-i18n="taskPriorityLabel">${_t('taskPriorityLabel')}</span><span class="ws-info-value">${esc({critical:_t('priorityCritical'),high:_t('priorityHigh'),medium:_t('priorityMedium'),low:_t('priorityLow')}[t.priority] || t.priority)}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label" data-i18n="thCaseNumber">${_t('thCaseNumber')}</span><span class="ws-info-value">${esc(t.case_number || '—')}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label" data-i18n="taskDueDateLabel">${_t('taskDueDateLabel')}</span><span class="ws-info-value">${esc(t.due_date || '—')}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label">${_t('responsibleLabel')}</span><span class="ws-info-value">${esc(t.assigned_to || '—')}</span></div>
+          <div class="ws-info-row"><span class="ws-info-label">${_t('progressLabel')}</span><span class="ws-info-value">${t.progress || 0}%</span></div>
+          <div class="ws-info-row"><span class="ws-info-label">${_t('timeTrackedLabel')}</span><span class="ws-info-value">${Math.floor((t.time_tracked || 0) / 60)}${_t('hoursAbbrev')} ${(t.time_tracked || 0) % 60}${_t('minutesAbbrev')}</span></div>
         </div>
-        ${t.description ? `<div class="task-detail-section"><h4>الوصف</h4><p style="font-size:var(--type-caption);color:var(--foreground);line-height:1.6;">${esc(t.description)}</p></div>` : ''}
+        ${t.description ? `<div class="task-detail-section"><h4 data-i18n="taskDescLabel">${_t('taskDescLabel')}</h4><p style="font-size:var(--type-caption);color:var(--foreground);line-height:1.6;">${esc(t.description)}</p></div>` : ''}
       </div>
       <div>
         <div class="task-detail-section">
-          <h4>المهام الفرعية (${subtasks.filter(s => s.done).length}/${subtasks.length})</h4>
-          <div id="subtaskList">${subtasks
+          <h4>${_t('subtasksLabel')} (${subtasks.filter(s => s.done).length}/${subtasks.length})</h4>
+          <div id="subtaskList" class="subtask-list">${subtasks
             .map(
               s => `<div class="subtask-item">
             <div class="subtask-check ${s.done ? 'done' : ''}" data-click="subtask:toggle:${s.id}">${s.done ? '<i class="ri-check-line" style="font-size:10px;"></i>' : ''}</div>
@@ -127,12 +127,12 @@ A.openTaskDetail = async function (taskId) {
             )
             .join('')}</div>
           <div style="display:flex;gap:var(--spacing-1-5);margin-top:var(--spacing-1-5);">
-            <input type="text" id="newSubtaskInput" class="input input-sm" placeholder="مهمة فرعية..." style="flex:1;">
+            <input type="text" id="newSubtaskInput" class="input input-sm" placeholder="${_t('subtaskPlaceholder')}" style="flex:1;">
             <button class="btn btn-primary btn-xs" data-click="task:addSubtask:${taskId}">+</button>
           </div>
         </div>
         <div class="task-detail-section">
-          <h4>التعليقات (${comments.length})</h4>
+          <h4>${_t('commentsLabel')} (${comments.length})</h4>
           <div id="commentList">${
             comments
               .map(
@@ -141,11 +141,11 @@ A.openTaskDetail = async function (taskId) {
             <div class="comment-text">${esc(c.text)}</div>
           </div>`
               )
-              .join('') || '<p style="font-size:var(--type-caption);color:var(--muted-foreground);">لا توجد تعليقات</p>'
+              .join('') || '<p style="font-size:var(--type-caption);color:var(--muted-foreground);">' + _t('noCommentsLabel') + '</p>'
           }</div>
           <div style="display:flex;gap:var(--spacing-1-5);margin-top:var(--spacing-1-5);">
-            <input type="text" id="newCommentInput" class="input input-sm" placeholder="أضف تعليقاً..." style="flex:1;">
-            <button class="btn btn-primary btn-xs" data-click="task:addComment:${taskId}">إرسال</button>
+            <input type="text" id="newCommentInput" class="input input-sm" placeholder="${_t('addCommentPlaceholder')}" style="flex:1;">
+            <button class="btn btn-primary btn-xs" data-click="task:addComment:${taskId}">${_t('sendBtn')}</button>
           </div>
         </div>
       </div>
@@ -156,14 +156,14 @@ A.openTaskDetail = async function (taskId) {
     A.showTaskForm(t);
   };
   document.getElementById('taskDetailDelete').onclick = async () => {
-    if (await A.showConfirm('حذف هذه المهمة؟')) {
+    if (await A.showConfirm(_t('deleteTaskConfirm'))) {
       try {
         await A.mutate('db:deleteTask', taskId);
         document.getElementById('taskDetailOverlay').style.display = 'none';
         A.loadTasks();
       } catch (e) {
         A.logError('deleteTask', e);
-        A.showToast('فشل حذف المهمة', 'error');
+        A.showToast(_t('taskDeleteFailed'), 'error');
       }
     }
   };
@@ -176,7 +176,7 @@ window.toggleSubtask = async function (id) {
     await A.mutate('db:toggleSubtask', id);
   } catch (e) {
     A.logError('toggleSubtask', e);
-    A.showToast('فشل تحديث المهمة الفرعية', 'error');
+    A.showToast(_t('subtaskToggleFailed'), 'error');
     return;
   }
   const allTasks = A.state.allTasks || [];
@@ -191,7 +191,7 @@ window.deleteSubtaskItem = async function (id) {
     A.loadTasks();
   } catch (e) {
     A.logError('deleteSubtask', e);
-    A.showToast('فشل حذف المهمة الفرعية', 'error');
+    A.showToast(_t('subtaskDeleteFailed'), 'error');
   }
 };
 
@@ -202,7 +202,7 @@ window.addSubtaskTo = async function (taskId) {
     await A.mutate('db:addSubtask', { task_id: taskId, title: input.value.trim() });
   } catch (e) {
     A.logError('addSubtask', e);
-    A.showToast('فشل إضافة المهمة الفرعية', 'error');
+    A.showToast(_t('subtaskAddFailed'), 'error');
     return;
   }
   input.value = '';
@@ -214,10 +214,10 @@ window.addCommentTo = async function (taskId) {
   const input = document.getElementById('newCommentInput');
   if (!input || !input.value.trim()) return;
   try {
-    await A.mutate('db:addComment', { task_id: taskId, text: input.value.trim(), author: 'المحامي' });
+    await A.mutate('db:addComment', { task_id: taskId, text: input.value.trim(), author: _t('defaultAuthorValue') });
   } catch (e) {
     A.logError('addComment', e);
-    A.showToast('فشل إضافة التعليق', 'error');
+    A.showToast(_t('commentAddFailed'), 'error');
     return;
   }
   input.value = '';
@@ -231,14 +231,14 @@ window.applyWorkflow = async function () {
   const caseId = wfCaseEl ? parseInt(wfCaseEl.value, 10) : 0;
   const wfId = wfEl ? parseInt(wfEl.value, 10) : 0;
   if (!caseId || !wfId) {
-    A.showToast('اختر القضية وسير العمل', 'error');
+    A.showToast(_t('selectCaseAndWorkflow'), 'error');
     return;
   }
   try {
     await A.mutate('db:applyWorkflow', { caseId, workflowId: wfId });
   } catch (e) {
     A.logError('applyWorkflow', e);
-    A.showToast('فشل تطبيق سير العمل', 'error');
+    A.showToast(_t('workflowApplyFailed'), 'error');
     return;
   }
   A.loadTasks();
@@ -252,14 +252,14 @@ window.applyTemplate = async function () {
   const caseId = tmplCaseEl ? parseInt(tmplCaseEl.value, 10) : 0;
   const tmplId = tmplEl ? parseInt(tmplEl.value, 10) : 0;
   if (!caseId || !tmplId) {
-    A.showToast('اختر القضية والقالب', 'error');
+    A.showToast(_t('selectCaseAndTemplate'), 'error');
     return;
   }
   try {
     await A.mutate('db:applyTemplate', { caseId, templateId: tmplId });
   } catch (e) {
     A.logError('applyTemplate', e);
-    A.showToast('فشل تطبيق القالب', 'error');
+    A.showToast(_t('templateApplyFailed'), 'error');
     return;
   }
   A.loadTasks();
@@ -267,42 +267,42 @@ window.applyTemplate = async function () {
 };
 
 window.deleteWorkflowItem = async function (id) {
-  if (await A.showConfirm('حذف سير العمل؟')) {
+  if (await A.showConfirm(_t('deleteWorkflowConfirm'))) {
     try {
       await A.mutate('db:deleteWorkflow', id);
       document.getElementById('showWorkflowsBtn').click();
     } catch (e) {
       A.logError('deleteWorkflow', e);
-      A.showToast('فشل حذف سير العمل', 'error');
+      A.showToast(_t('workflowDeleteFailed'), 'error');
     }
   }
 };
 
 window.deleteTemplateItem = async function (id) {
-  if (await A.showConfirm('حذف هذا القالب؟')) {
+  if (await A.showConfirm(_t('deleteTemplateConfirm'))) {
     try {
       await A.mutate('db:deleteTemplate', id);
       document.getElementById('showWorkflowsBtn').click();
     } catch (e) {
       A.logError('deleteTemplate', e);
-      A.showToast('فشل حذف القالب', 'error');
+      A.showToast(_t('templateDeleteFailed'), 'error');
     }
   }
 };
 
 window.showNewWorkflowForm = function () {
   A.showModal(
-    'سير عمل جديد',
+    _t('newWorkflowTitle'),
     `
-    <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="wfName" class="input"></div>
-    <div class="input-group"><label class="input-label">الوصف</label><textarea id="wfDesc" class="input" rows="2"></textarea></div>
-    <div class="input-group"><label class="input-label">نوع القضية</label><input type="text" id="wfCaseType" class="input" placeholder="مدني، أسرة، تجاري..."></div>
-    <div class="input-group"><label class="input-label">الخطوات (اسم لكل سطر)</label><textarea id="wfSteps" class="input" rows="4" placeholder="جمع معلومات الموكل&#10;إنشاء ملف القضية&#10;رفع الوثائق الأولية"></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('nameLabel')}</label><input type="text" id="wfName" class="input"></div>
+    <div class="input-group"><label class="input-label">${_t('taskDescLabel')}</label><textarea id="wfDesc" class="input" rows="2"></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('caseTypeLabel')}</label><input type="text" id="wfCaseType" class="input" placeholder="${_t('caseTypePlaceholder')}"></div>
+    <div class="input-group"><label class="input-label">${_t('workflowStepsLabel')}</label><textarea id="wfSteps" class="input" rows="4" placeholder="${_t('workflowStepsPlaceholder')}"></textarea></div>
   `,
     async () => {
       const name = document.getElementById('wfName').value.trim();
       if (!name) {
-        A.showToast('الاسم مطلوب', 'error');
+        A.showToast(_t('nameRequired'), 'error');
         return;
       }
       const lines = document.getElementById('wfSteps').value.split('\n').filter(Boolean);
@@ -315,7 +315,7 @@ window.showNewWorkflowForm = function () {
         });
       } catch (e) {
         A.logError('addWorkflow', e);
-        A.showToast('فشل إضافة سير العمل', 'error');
+        A.showToast(_t('workflowAddFailed'), 'error');
         return;
       }
       A.hideModal();
@@ -326,16 +326,16 @@ window.showNewWorkflowForm = function () {
 
 window.showNewTemplateForm = function () {
   A.showModal(
-    'قالب مهام جديد',
+    _t('newTemplateTitle'),
     `
-    <div class="input-group"><label class="input-label">الاسم</label><input type="text" id="tmplName" class="input"></div>
-    <div class="input-group"><label class="input-label">الوصف</label><textarea id="tmplDesc" class="input" rows="2"></textarea></div>
-    <div class="input-group"><label class="input-label">المهام (JSON)</label><textarea id="tmplTasks" class="input" rows="6" placeholder='[{"title":"مهمة 1","priority":"high"},{"title":"مهمة 2","priority":"medium","due_days":7}]'></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('nameLabel')}</label><input type="text" id="tmplName" class="input"></div>
+    <div class="input-group"><label class="input-label">${_t('taskDescLabel')}</label><textarea id="tmplDesc" class="input" rows="2"></textarea></div>
+    <div class="input-group"><label class="input-label">${_t('tasksJsonLabel')}</label><textarea id="tmplTasks" class="input" rows="6" placeholder='${_t('tasksJsonPlaceholder')}'></textarea></div>
   `,
     async () => {
       const name = document.getElementById('tmplName').value.trim();
       if (!name) {
-        A.showToast('الاسم مطلوب', 'error');
+        A.showToast(_t('nameRequired'), 'error');
         return;
       }
       try {
@@ -346,7 +346,7 @@ window.showNewTemplateForm = function () {
         });
       } catch (e) {
         A.logError('addTemplate', e);
-        A.showToast('فشل إضافة القالب', 'error');
+        A.showToast(_t('templateAddFailed'), 'error');
         return;
       }
       A.hideModal();
@@ -388,54 +388,54 @@ A.initTasks = function () {
     const esc = A.escapeHtml;
     const caseOpts = cases.map(c => `<option value="${c.id}">${esc(c.case_number)}</option>`).join('');
 
-    document.getElementById('workflowModalTitle').textContent = 'سير العمل والقالب';
+    document.getElementById('workflowModalTitle').textContent = _t('workflowsAndTemplatesTitle');
     A.safeSet(
       document.getElementById('workflowModalBody'),
       esc => `
       <div style="margin-bottom:var(--spacing-3);">
-        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">تطبيق سير عمل على قضية</h4>
+        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">${_t('applyWorkflowToCase')}</h4>
         <div class="info-grid-2">
           <select id="wfCaseSelect" class="input">${caseOpts}</select>
           <div style="display:flex;gap:var(--spacing-1-5);">
             <select id="wfSelect" class="input" style="flex:1;">
-              <option value="">اختر سير عمل...</option>
-              ${workflows.map(w => `<option value="${w.id}">${esc(w.name)} (${w.step_count || 0} خطوات)</option>`).join('')}
+              <option value="">${_t('selectWorkflowPlaceholder')}</option>
+              ${workflows.map(w => `<option value="${w.id}">${esc(w.name)} (${w.step_count || 0} ${_t('stepsCountLabel')})</option>`).join('')}
             </select>
-            <button class="btn btn-primary btn-sm" data-click="workflow:apply">تطبيق</button>
+            <button class="btn btn-primary btn-sm" data-click="workflow:apply">${_t('applyBtn')}</button>
           </div>
         </div>
       </div>
       <div style="margin-bottom:var(--spacing-3);">
-        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">تطبيق قالب على قضية</h4>
+        <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">${_t('applyTemplateToCase')}</h4>
         <div class="info-grid-2">
           <select id="tmplCaseSelect" class="input">${caseOpts}</select>
           <div style="display:flex;gap:var(--spacing-1-5);">
             <select id="tmplSelect" class="input" style="flex:1;">
-              <option value="">اختر قالب...</option>
+              <option value="">${_t('selectTemplatePlaceholder')}</option>
               ${templates.map(t => `<option value="${t.id}">${esc(t.name)}</option>`).join('')}
             </select>
-            <button class="btn btn-primary btn-sm" data-click="template:apply">تطبيق</button>
+            <button class="btn btn-primary btn-sm" data-click="template:apply">${_t('applyBtn')}</button>
           </div>
         </div>
       </div>
       <hr style="border:none;border-top:1px solid var(--border);margin:var(--spacing-3) 0;">
       <div style="display:flex;gap:var(--spacing-2);margin-bottom:var(--spacing-2);">
-        <button class="btn btn-secondary btn-sm" data-click="workflow:new">+ سير عمل جديد</button>
-        <button class="btn btn-secondary btn-sm" data-click="template:new">+ قالب جديد</button>
+        <button class="btn btn-secondary btn-sm" data-click="workflow:new">+ ${_t('newWorkflowBtn')}</button>
+        <button class="btn btn-secondary btn-sm" data-click="template:new">+ ${_t('newTemplateBtn')}</button>
       </div>
-      <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">سير العمل الحالية</h4>
+      <h4 style="font-size:var(--type-body);margin-bottom:var(--spacing-1-5);">${_t('currentWorkflowsLabel')}</h4>
       <div id="workflowList">${
         workflows
           .map(
             w => `<div class="workflow-card">
         <h4>${esc(w.name)}</h4>
-        <p>${esc(w.description || '')} · ${w.step_count || 0} خطوات</p>
+        <p>${esc(w.description || '')} · ${w.step_count || 0} ${_t('stepsCountLabel')}</p>
         <button class="btn-icon" data-click="workflow:delete:${w.id}" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
       </div>`
           )
-          .join('') || '<p style="color:var(--muted-foreground);">لا توجد سير عمل</p>'
+          .join('') || '<p style="color:var(--muted-foreground);">' + _t('noWorkflowsLabel') + '</p>'
       }</div>
-      <h4 style="font-size:var(--type-body);margin:var(--spacing-3) 0 var(--spacing-1-5);">القوالب الحالية</h4>
+      <h4 style="font-size:var(--type-body);margin:var(--spacing-3) 0 var(--spacing-1-5);">${_t('currentTemplatesLabel')}</h4>
       <div id="templateList">${
         templates
           .map(
@@ -445,7 +445,7 @@ A.initTasks = function () {
         <button class="btn-icon" data-click="template:delete:${t.id}" style="position:absolute;top:8px;left:8px;"><i class="ri-delete-bin-line"></i></button>
       </div>`
           )
-          .join('') || '<p style="color:var(--muted-foreground);">لا توجد قوالب</p>'
+          .join('') || '<p style="color:var(--muted-foreground);">' + _t('noTemplatesLabel') + '</p>'
       }</div>
     `
     );
@@ -466,7 +466,7 @@ A.initTasks = function () {
       await A.mutate('db:updateTask', taskId, { status: newStatus });
     } catch (e) {
       A.logError('kanbanDropV8', e);
-      A.showToast('فشل تغيير حالة المهمة', 'error');
+      A.showToast(_t('taskStatusChangeFailed'), 'error');
     }
     A.loadTasks();
   });

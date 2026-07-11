@@ -3,34 +3,7 @@ var A = (window.App = window.App || {});
 A._selectedUserId = null;
 A._dashboardLoaded = false;
 A._forgotUserId = null;
-A._forgotQuestionIndex = null;
 
-A.SECURITY_QUESTIONS = [
-  'ما اسم مدرستك الابتدائية؟',
-  'ما اسم حيوانك الأليف المفضل؟',
-  'ما اسم مدينتك المفضلة؟',
-  'ما هو لونك المفضل؟',
-  'ما اسم والدتك؟',
-  'ما اسم والدك؟',
-  'ما هو طبقك المفضل؟',
-  'ما اسم أفضل صديق لك؟',
-  'ما اسم معلمك المفضل في المدرسة؟',
-  'ما هي هوايتك المفضلة؟',
-  'ما اسم أول شارع عرفت تعيش فيه؟',
-  'ما هو اسم فيلمك المفضل؟'
-];
-
-A.populateSecurityQuestions = function () {
-  const sel = document.getElementById('sq1');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">اختر سؤال الأمان...</option>';
-  for (let j = 0; j < A.SECURITY_QUESTIONS.length; j++) {
-    const opt = document.createElement('option');
-    opt.value = A.SECURITY_QUESTIONS[j];
-    opt.textContent = A.SECURITY_QUESTIONS[j];
-    sel.appendChild(opt);
-  }
-};
 
 A._currentSetupStep = 1;
 
@@ -46,7 +19,7 @@ A.goToSetupStep = function (n) {
   const fill = document.querySelector('.setup-progress-fill');
   if (fill) fill.style.width = pct + '%';
   const text = document.querySelector('.setup-progress-text');
-  if (text) text.textContent = 'الخطوة ' + n + ' من 3';
+  if (text) text.textContent = _t('setupStepProgress').replace('{n}', n);
   const pctEl = document.querySelector('.setup-progress-pct');
   if (pctEl) pctEl.textContent = pct + '%';
 };
@@ -96,7 +69,7 @@ A.nextSetupStep = function () {
       return;
     }
     A.goToSetupStep(3);
-    document.getElementById('sq1').focus();
+    document.getElementById('setupPin').focus();
   }
 };
 
@@ -116,7 +89,6 @@ A.showSetupScreen = function () {
   if (overlay) overlay.style.display = 'flex';
   const appEl = document.getElementById('app');
   if (appEl) appEl.style.display = 'none';
-  A.populateSecurityQuestions();
   A.goToSetupStep(1);
 };
 
@@ -280,25 +252,26 @@ A.doSetup = function () {
     return;
   }
 
-  const sq1 = document.getElementById('sq1') ? document.getElementById('sq1').value : '';
-  const sa1 = document.getElementById('sa1') ? document.getElementById('sa1').value.trim() : '';
-  const sq2 = document.getElementById('sq2') ? document.getElementById('sq2').value : '';
-  const sa2 = document.getElementById('sa2') ? document.getElementById('sa2').value.trim() : '';
-  const sq3 = document.getElementById('sq3') ? document.getElementById('sq3').value : '';
-  const sa3 = document.getElementById('sa3') ? document.getElementById('sa3').value.trim() : '';
+  const pin = document.getElementById('setupPin') ? document.getElementById('setupPin').value : '';
+  const confirmPin = document.getElementById('setupConfirmPin') ? document.getElementById('setupConfirmPin').value : '';
 
-  if (!sq1 || !sa1) {
+  if (!pin || !/^\d{4,6}$/.test(pin)) {
     if (errorEl) {
       errorEl.style.display = 'block';
-      errorEl.textContent = _t('securityQuestionsRequired');
+      errorEl.textContent = _t('pinValidationError');
+    }
+    return;
+  }
+  if (pin !== confirmPin) {
+    if (errorEl) {
+      errorEl.style.display = 'block';
+      errorEl.textContent = _t('pinNoMatch');
     }
     return;
   }
 
-  const setupPayload = { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, securityQ1: sq1, securityA1: sa1 };
-    if (sq2 && sa2) { setupPayload.securityQ2 = sq2; setupPayload.securityA2 = sa2; }
-    if (sq3 && sa3) { setupPayload.securityQ3 = sq3; setupPayload.securityA3 = sa3; }
-    A.state.ipc.invoke('auth:setup', setupPayload)
+  const setupPayload = { officeName: officeName, adminName: adminName, password: pw, openAtLogin: openAtLogin, pin: pin };
+  A.state.ipc.invoke('auth:setup', setupPayload)
     .then(function (result) {
       if (result && result.ok) {
         if (errorEl) errorEl.style.display = 'none';
@@ -307,16 +280,9 @@ A.doSetup = function () {
           A.state.currentSessionToken = token;
           localStorage.setItem('session_token', token);
         }
-        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
-        A.hideAuth();
-        if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
-          A._dashboardLoaded = true;
-          A.loadDashboard();
-        }
-        if (typeof A.loadSearchIndex === 'function')
-          setTimeout(function () {
-            A.loadSearchIndex();
-          }, 300);
+        A.state.ipc.invoke('auth:getMasterKey').then(function (mkr) {
+          A.showSetupCompleteModal(mkr && mkr.ok ? mkr.masterKey : null);
+        });
       } else {
         if (errorEl) {
           errorEl.style.display = 'block';
@@ -398,18 +364,19 @@ A.showForgotPassword = function () {
   document.getElementById('forgotStep2').style.display = 'none';
   document.getElementById('forgotStep3').style.display = 'none';
   document.getElementById('forgotError').style.display = 'none';
-  document.getElementById('forgotAnswerError').style.display = 'none';
+  document.getElementById('forgotPinError').style.display = 'none';
   document.getElementById('forgotResetError').style.display = 'none';
   document.getElementById('forgotMasterKeySection').style.display = 'none';
+  document.getElementById('forgotMasterKeyDisplay').style.display = 'none';
   document.getElementById('forgotMasterError').style.display = 'none';
-  document.getElementById('forgotAnswer').value = '';
+  document.getElementById('forgotPin').value = '';
   document.getElementById('forgotNewPassword').value = '';
   document.getElementById('forgotConfirmPassword').value = '';
   document.getElementById('forgotMasterKey').value = '';
   document.getElementById('forgotMasterNewPassword').value = '';
   document.getElementById('forgotMasterConfirmPassword').value = '';
   A._forgotUserId = null;
-  A._forgotQuestionIndex = null;
+  A._forgotPin = null;
 
   A.state.ipc
     .invoke('auth:boot')
@@ -431,9 +398,9 @@ A.showForgotPassword = function () {
     });
 };
 
-A.doForgotCheckAnswer = function () {
-  const answer = document.getElementById('forgotAnswer') ? document.getElementById('forgotAnswer').value.trim() : '';
-  const errorEl = document.getElementById('forgotAnswerError');
+A.doForgotCheckPin = function () {
+  const pin = document.getElementById('forgotPin') ? document.getElementById('forgotPin').value : '';
+  const errorEl = document.getElementById('forgotPinError');
   if (!A._forgotUserId) {
     if (errorEl) {
       errorEl.style.display = 'block';
@@ -441,36 +408,30 @@ A.doForgotCheckAnswer = function () {
     }
     return;
   }
-  if (!A._forgotQuestionIndex) {
+  if (!pin) {
     if (errorEl) {
       errorEl.style.display = 'block';
-      errorEl.textContent = _t('selectUserFirst');
-    }
-    return;
-  }
-  if (!answer) {
-    if (errorEl) {
-      errorEl.style.display = 'block';
-      errorEl.textContent = _t('enterAnswer');
+      errorEl.textContent = _t('enterPin');
     }
     return;
   }
   A.state.ipc
-    .invoke('auth:checkSecurityAnswer', { userId: A._forgotUserId, questionIndex: A._forgotQuestionIndex, answer: answer })
+    .invoke('auth:checkPin', { userId: A._forgotUserId, pin: pin })
     .then(function (result) {
       if (result && result.ok) {
         errorEl.style.display = 'none';
+        A._forgotPin = pin;
         document.getElementById('forgotStep2').style.display = 'none';
         document.getElementById('forgotStep3').style.display = 'block';
       } else {
         if (errorEl) {
           errorEl.style.display = 'block';
-          errorEl.textContent = (result && result.error) || _t('wrongSecurityAnswer');
+          errorEl.textContent = (result && result.error) || _t('pinIncorrect');
         }
       }
     })
     .catch(function (e) {
-      console.error('Check answer error:', e);
+      console.error('Check PIN error:', e);
       if (errorEl) {
         errorEl.style.display = 'block';
         errorEl.textContent = _t('errorOccurred');
@@ -497,7 +458,7 @@ A.doForgotReset = function () {
     return;
   }
   A.state.ipc
-    .invoke('auth:resetPassword', { userId: A._forgotUserId, newPassword: newPw, remember: true })
+    .invoke('auth:resetPassword', { userId: A._forgotUserId, newPassword: newPw, remember: true, pin: A._forgotPin })
     .then(function (result) {
       if (result && result.ok) {
         errorEl.style.display = 'none';
@@ -536,27 +497,42 @@ A.doForgotSelectUser = function () {
     return;
   }
   document.getElementById('forgotError').style.display = 'none';
-  A.state.ipc
-    .invoke('auth:getSecurityQuestion', A._forgotUserId)
+  document.getElementById('forgotStep1').style.display = 'none';
+  document.getElementById('forgotStep2').style.display = 'block';
+  document.getElementById('forgotStep3').style.display = 'none';
+  document.getElementById('forgotPin').focus();
+};
+
+A.doForgotShowMyMasterKey = function () {
+  const displayEl = document.getElementById('forgotMasterKeyDisplay');
+  if (!displayEl) return;
+  if (!A._forgotUserId) {
+    displayEl.textContent = _t('selectUserFirst');
+    displayEl.style.display = 'block';
+    return;
+  }
+  if (!A._forgotPin) {
+    displayEl.textContent = _t('verifyPinFirst');
+    displayEl.style.color = 'var(--destructive)';
+    displayEl.style.display = 'block';
+    return;
+  }
+  displayEl.textContent = _t('loading');
+  displayEl.style.display = 'block';
+  A.state.ipc.invoke('auth:getForgotMasterKey', { userId: A._forgotUserId, pin: A._forgotPin })
     .then(function (result) {
       if (result && result.ok) {
-        A._forgotQuestionIndex = result.questionIndex;
-        document.getElementById('forgotQuestionDisplay').textContent = result.question;
-        document.getElementById('forgotStep1').style.display = 'none';
-        document.getElementById('forgotStep2').style.display = 'block';
-        document.getElementById('forgotStep3').style.display = 'none';
-        document.getElementById('forgotAnswer').focus();
+        displayEl.textContent = result.masterKey;
+        displayEl.style.color = '';
       } else {
-        document.getElementById('forgotError').style.display = 'block';
-        document.getElementById('forgotError').textContent = (result && result.error) || _t('noSecurityQuestions');
-        document.getElementById('forgotMasterKeySection').style.display = 'block';
-        document.getElementById('forgotMasterKey').focus();
+        displayEl.textContent = (result && result.error) || _t('masterKeyNotFound');
+        displayEl.style.color = 'var(--destructive)';
       }
     })
     .catch(function (e) {
-      console.error('Get question error:', e);
-      document.getElementById('forgotError').style.display = 'block';
-      document.getElementById('forgotError').textContent = _t('errorOccurred');
+      console.error('Show master key error:', e);
+      displayEl.textContent = _t('errorOccurred');
+      displayEl.style.color = 'var(--destructive)';
     });
 };
 
@@ -599,12 +575,10 @@ A.doForgotMasterReset = function () {
     .then(function (result) {
       if (result && result.ok) {
         errorEl.style.display = 'none';
-        A.state.currentUser = result.user;
         if (result.sessionToken) {
           A.state.currentSessionToken = result.sessionToken;
           localStorage.setItem('session_token', result.sessionToken);
         }
-        if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
         document.getElementById('forgotPasswordModal').style.display = 'none';
         A.hideAuth();
         if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
@@ -627,6 +601,44 @@ A.doForgotMasterReset = function () {
     });
 };
 
+A._completeSetup = function () {
+  if (typeof A.applyRoleRestrictions === 'function') A.applyRoleRestrictions();
+  A.hideAuth();
+  if (typeof A.loadDashboard === 'function' && !A._dashboardLoaded) {
+    A._dashboardLoaded = true;
+    A.loadDashboard();
+  }
+  if (typeof A.loadSearchIndex === 'function')
+    setTimeout(function () {
+      A.loadSearchIndex();
+    }, 300);
+};
+
+A.showSetupCompleteModal = function (masterKey) {
+  const overlay = document.getElementById('masterKeyModal');
+  if (overlay) {
+    const keyEl = document.getElementById('masterKeyDisplay');
+    if (keyEl) {
+      if (masterKey) {
+        keyEl.textContent = masterKey;
+        keyEl.style.display = 'block';
+      } else {
+        keyEl.style.display = 'none';
+      }
+    }
+    overlay.style.display = 'flex';
+    const closeBtn = document.getElementById('masterKeyDoneBtn');
+    if (closeBtn) {
+      closeBtn.onclick = function () {
+        overlay.style.display = 'none';
+        A._completeSetup();
+      };
+    }
+  } else {
+    A._completeSetup();
+  }
+};
+
 A.backToLogin = function () {
   document.getElementById('forgotPasswordModal').style.display = 'none';
   document.getElementById('authLoginScreen').style.display = 'flex';
@@ -637,7 +649,6 @@ A.initAuth = function () {
   const loginPw = document.getElementById('loginPassword');
   const lockBtn = document.getElementById('lockAppBtn');
   const forgotLink = document.getElementById('forgotPasswordLink');
-  const forgotCheckBtn = document.getElementById('forgotCheckAnswerBtn');
   const forgotResetBtn = document.getElementById('forgotResetBtn');
   const forgotBackLink = document.getElementById('forgotBackToLogin');
   function onLoginKeydown(e) {
@@ -666,7 +677,10 @@ A.initAuth = function () {
   document.getElementById('setupConfirmPassword')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.nextSetupStep();
   });
-  document.getElementById('sa1')?.addEventListener('keydown', function (e) {
+  document.getElementById('setupPin')?.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') document.getElementById('setupConfirmPin')?.focus();
+  });
+  document.getElementById('setupConfirmPin')?.addEventListener('keydown', function (e) {
     if (e.key === 'Enter') A.doSetup();
   });
 
@@ -707,15 +721,16 @@ A.initAuth = function () {
     }
   });
 
-  if (forgotCheckBtn) forgotCheckBtn.addEventListener('click', A.doForgotCheckAnswer);
+  document.getElementById('forgotCheckPinBtn')?.addEventListener('click', A.doForgotCheckPin);
   if (forgotResetBtn) forgotResetBtn.addEventListener('click', A.doForgotReset);
   document.getElementById('forgotMasterResetBtn')?.addEventListener('click', A.doForgotMasterReset);
+  document.getElementById('forgotShowMyMasterKeyBtn')?.addEventListener('click', A.doForgotShowMyMasterKey);
 
-  // Enter key in forgot answer field
-  const forgotAnswer = document.getElementById('forgotAnswer');
-  if (forgotAnswer)
-    forgotAnswer.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter') A.doForgotCheckAnswer();
+  // Enter key in forgot PIN field
+  const forgotPin = document.getElementById('forgotPin');
+  if (forgotPin)
+    forgotPin.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') A.doForgotCheckPin();
     });
 
   // Enter key in forgot new password fields

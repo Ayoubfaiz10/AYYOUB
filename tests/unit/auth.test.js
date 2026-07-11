@@ -50,6 +50,7 @@ function verifyToken(token) {
 
 // ───── Token Test Helpers ─────
 
+// Keep in sync with modules/navigation.js ROLE_ACCESS (A.ROLE_ACCESS)
 const ROLE_ACCESS = {
   admin: [
     'dashboard',

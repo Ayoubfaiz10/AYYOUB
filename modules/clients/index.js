@@ -4,15 +4,28 @@ A.state.allClients = [];
 A.state.currentClientId = null;
 A.state._clientDetailToken = 0;
 
+A._filterClientList = function () {
+  let list = A.state.allClients || [];
+  const q = document.getElementById('searchClients')?.value.toLowerCase();
+  if (q) list = list.filter(c => (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.email || '').toLowerCase().includes(q));
+  const st = document.getElementById('cfilterStatus')?.value;
+  if (st === 'archived') list = list.filter(c => c.archived);
+  else if (st === 'active') list = list.filter(c => !c.archived);
+  const mc = parseInt(document.getElementById('cfilterMinCases')?.value, 10);
+  if (mc > 0) list = list.filter(c => (c._caseCount || 0) >= mc);
+  const city = document.getElementById('cfilterCity')?.value;
+  if (city) list = list.filter(c => (c.address || '').toLowerCase().includes(city.toLowerCase()));
+  return list;
+};
+
 A.loadClients = async function (filter) {
   if (!A.state.ipc) return;
   const mainEl = document.getElementById('clientsBody')?.parentElement;
   A.showSkeleton('clientsBody', 5, 'tableRow');
   try {
     A.state.allClients = await A.cachedInvoke('db:getAllClients');
-    const q = document.getElementById('searchClients').value.toLowerCase();
-    let list = A.state.allClients;
-    if (q) list = list.filter(c => (c.name || '').toLowerCase().includes(q) || (c.phone || '').includes(q) || (c.email || '').toLowerCase().includes(q));
+    A.populateClientCities(A.state.allClients);
+    const list = A._filterClientList();
     if (A.state._clientScroll) A.state._clientScroll.destroy();
     A.state._clientScroll = A.VirtualScroll.init(
       'clientsBody',
@@ -29,6 +42,22 @@ A.loadClients = async function (filter) {
     if (mainEl) A.showError(mainEl, _t('failedLoadClients'), () => A.loadClients(filter));
     A.showEmpty('clientsCardGrid', 'ri-user-3-line', _t('tryAgainLater'));
   }
+};
+
+A._ensureClientViews = function () {
+  if (!A.state.allClients || !A.state.allClients.length) { A.loadClients(); return; }
+  const list = A._filterClientList();
+  if (A.state._clientScroll) A.state._clientScroll.destroy();
+  A.state._clientScroll = A.VirtualScroll.init('clientsBody', list, function (d) { A.renderClientTable(d); }, 30);
+  A.renderClientCards(list);
+  A.renderClientSegments(list);
+};
+
+A.populateClientCities = function (clients) {
+  const sel = document.getElementById('cfilterCity');
+  if (!sel || sel.options.length > 1) return;
+  const cities = [...new Set(clients.map(c => c.address).filter(Boolean).map(a => a.split(/[،,]\s*/).map(s => s.trim())).flat().filter(c => c.length > 2))].sort();
+  cities.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; sel.appendChild(o); });
 };
 
 A.openClientDetail = async function (id) {
@@ -81,6 +110,7 @@ A.initClients = function () {
       document.querySelectorAll('#section-clients .case-view-panel').forEach(p => p.classList.remove('active'));
       const viewMap = { table: 'clientsTableView', card: 'clientsCardView', segment: 'clientsSegmentView' };
       document.getElementById(viewMap[btn.dataset.view]).classList.add('active');
+      A._ensureClientViews();
     })
   );
   document.getElementById('addClientBtn')?.addEventListener('click', () =>
@@ -148,9 +178,49 @@ A.initClients = function () {
       A.navigateTo(link.dataset.section);
     });
   });
-  document.getElementById('clEditBtn')?.addEventListener('click', () => {
+  document.getElementById('clEditBtn')?.addEventListener('click', async () => {
     if (!A.state.currentClientId) return;
-    A.showToast(_t('editClientComing'), 'info');
+    const client = A.state.allClients.find(c => c.id === A.state.currentClientId);
+    if (!client) return;
+    const clientId = client.id;
+    A.showModal(
+      _t('editClientTitle'),
+      `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--spacing-3);">
+      <div class="input-group"><label class="input-label">${_t('fullNameLabel')} <span style="color:var(--destructive);">*</span></label><input type="text" id="fClEditName" class="input" value="${A.escapeHtml(client.name)}"></div>
+      <div class="input-group"><label class="input-label">${_t('phoneLabel')}</label><input type="text" id="fClEditPhone" class="input" value="${A.escapeHtml(client.phone || '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('emailLabel')}</label><input type="email" id="fClEditEmail" class="input" value="${A.escapeHtml(client.email || '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('addressLabel')}</label><input type="text" id="fClEditAddress" class="input" value="${A.escapeHtml(client.address || '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('nationalIdLabel')}</label><input type="text" id="fClEditIdNum" class="input" value="${A.escapeHtml(client.national_id || '')}"></div>
+      <div class="input-group"><label class="input-label">${_t('tagsLabel')}</label><input type="text" id="fClEditTags" class="input" value="${A.escapeHtml(client.tags || '')}"></div>
+    </div>
+    <div class="input-group" style="margin-top:var(--spacing-2);"><label class="input-label">${_t('notesLabel')}</label><textarea id="fClEditNotes" class="input" rows="2">${A.escapeHtml(client.notes || '')}</textarea></div>
+  `,
+      async () => {
+        const name = document.getElementById('fClEditName').value.trim();
+        if (!name) { A.showToast(_t('nameRequired'), 'error'); return; }
+        try {
+          await A.mutate('db:updateClient', {
+            id: clientId,
+            name,
+            phone: document.getElementById('fClEditPhone').value,
+            email: document.getElementById('fClEditEmail').value,
+            address: document.getElementById('fClEditAddress').value,
+            notes: document.getElementById('fClEditNotes').value,
+            national_id: document.getElementById('fClEditIdNum').value,
+            tags: document.getElementById('fClEditTags').value
+          });
+          A.hideModal();
+          A.loadClients();
+          document.querySelectorAll('#clientDetailBody .ws-panel').forEach(p => A.safeSet(p, () => ''));
+          A.openClientDetail(clientId);
+          A.showToast(_t('clientUpdated'), 'success');
+        } catch (e) {
+          A.logError('editClient', e);
+          A.showToast(_t('clientUpdateFailed'), 'error');
+        }
+      }
+    );
   });
   document.getElementById('clArchiveBtn')?.addEventListener('click', async () => {
     if (!A.state.currentClientId) return;

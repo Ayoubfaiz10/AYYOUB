@@ -15,7 +15,7 @@ const cacheDeps = {
     'db:addPaiement',
     'db:updateHonorairesTotaux'
   ],
-  'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClientNotes'],
+  'db:getAllClients': ['db:addClient', 'db:deleteClient', 'db:updateClient', 'db:updateClientNotes'],
   'db:getAllTasks': ['db:addTask', 'db:deleteTask', 'db:updateTask', 'db:toggleSubtask', 'db:deleteSubtask', 'db:addSubtask'],
   'db:getDashboardStats': ['db:addCase', 'db:deleteCase', 'db:addClient', 'db:deleteClient', 'db:addTask', 'db:deleteTask', 'db:updateTask', 'db:addPaiement'],
   'db:getDashboardExtendedStats': [
@@ -105,7 +105,7 @@ A.mutate = async function (channel, ...args) {
     return result;
   } catch (err) {
     A.logError('mutate:' + channel, err);
-    return { ok: false, error: 'حدث خطأ في الاتصال: ' + (err.message || '') };
+    return { ok: false, error: _t('communicationError') + (err.message || '') };
   }
 };
 

@@ -23,7 +23,7 @@ A.loadProfile = async function () {
         avatar.appendChild(img);
         avatar.style.background = 'none';
       } else {
-        avatar.textContent = (user.name || 'م')[0];
+        avatar.textContent = (user.name || _t('profileDefaultAvatar'))[0];
         avatar.style.background = '';
       }
     }
@@ -37,14 +37,15 @@ A.loadProfile = async function () {
       const aiConfig = await A.state.ipc.invoke('ai:getConfig');
       if (apiStatus) {
         if (aiConfig && aiConfig.hasKey) {
-          apiStatus.textContent = _t('profileApiKeySet') || 'مضبوط';
+          apiStatus.textContent = _t('profileApiKeySet');
           apiStatus.className = 'badge badge-success';
         } else {
-          apiStatus.textContent = _t('profileApiKeyNotSet') || 'غير مضبوط';
+          apiStatus.textContent = _t('profileApiKeyNotSet');
           apiStatus.className = 'badge badge-danger';
         }
       }
     } catch (e) {}
+    A.loadMasterKeyStatus();
 
     const activityList = document.getElementById('profileActivityList');
     if (activityList) {
@@ -117,7 +118,7 @@ A.initProfile = function () {
       const file = fileInput.files && fileInput.files[0];
       if (!file) return;
       if (file.size > 1024 * 1024) {
-        A.showToast('حجم الصورة يجب أن لا يتجاوز 1 ميغابايت', 'error');
+        A.showToast(_t('profileImageSizeError'), 'error');
         return;
       }
       const reader = new FileReader();
@@ -126,13 +127,13 @@ A.initProfile = function () {
         try {
           const result = await A.state.ipc.invoke('auth:updateProfile', { avatar: dataUrl });
           if (result && result.ok) {
-            A.showToast('تم تغيير الصورة بنجاح', 'success');
+            A.showToast(_t('profileImageChanged'), 'success');
             A.loadProfile();
           } else {
-            A.showToast(result?.error || 'فشل حفظ الصورة', 'error');
+            A.showToast(result?.error || _t('profileImageSaveFailed'), 'error');
           }
         } catch (err) {
-          A.showToast('خطأ في حفظ الصورة', 'error');
+          A.showToast(_t('profileImageSaveError'), 'error');
         }
       };
       reader.readAsDataURL(file);
@@ -144,7 +145,7 @@ A.initProfile = function () {
     const data = {};
     const name = document.getElementById('pfName')?.value?.trim();
     if (!name) {
-      A.showToast('الاسم مطلوب', 'error');
+      A.showToast(_t('nameRequired'), 'error');
       return;
     }
     data.name = name;
@@ -167,13 +168,13 @@ A.initProfile = function () {
     try {
       const result = await A.state.ipc.invoke('auth:updateProfile', data);
       if (result && result.ok) {
-        A.showToast(_t('savedSuccessfully') || 'تم الحفظ بنجاح', 'success');
+        A.showToast(_t('savedSuccessfully'), 'success');
         A.loadProfile();
       } else {
-        A.showToast(result?.error || 'فشل الحفظ', 'error');
+        A.showToast(result?.error || _t('profileSaveFailed'), 'error');
       }
     } catch (e) {
-      A.showToast('خطأ في الحفظ', 'error');
+      A.showToast(_t('profileSaveError'), 'error');
     }
   });
 
@@ -187,7 +188,7 @@ A.initProfile = function () {
       if (msgEl) {
         msgEl.style.display = 'block';
         msgEl.style.color = 'var(--destructive)';
-        msgEl.textContent = 'كلمة السر الحالية مطلوبة';
+        msgEl.textContent = _t('profileCurrentPwdRequired');
       }
       return;
     }
@@ -195,7 +196,7 @@ A.initProfile = function () {
       if (msgEl) {
         msgEl.style.display = 'block';
         msgEl.style.color = 'var(--destructive)';
-        msgEl.textContent = 'كلمة السر الجديدة يجب أن تكون 8 أحرف على الأقل';
+        msgEl.textContent = _t('newPwdMinLength');
       }
       return;
     }
@@ -203,7 +204,7 @@ A.initProfile = function () {
       if (msgEl) {
         msgEl.style.display = 'block';
         msgEl.style.color = 'var(--destructive)';
-        msgEl.textContent = 'كلمتا السر غير متطابقتين';
+        msgEl.textContent = _t('passwordsNoMatch');
       }
       return;
     }
@@ -214,7 +215,7 @@ A.initProfile = function () {
         if (msgEl) {
           msgEl.style.display = 'block';
           msgEl.style.color = 'var(--success)';
-          msgEl.textContent = 'تم تغيير كلمة السر بنجاح';
+          msgEl.textContent = _t('pwdChanged');
         }
         document.getElementById('pfCurrentPwd').value = '';
         document.getElementById('pfNewPwd').value = '';
@@ -223,15 +224,53 @@ A.initProfile = function () {
         if (msgEl) {
           msgEl.style.display = 'block';
           msgEl.style.color = 'var(--destructive)';
-          msgEl.textContent = result?.error || 'فشل تغيير كلمة السر';
+          msgEl.textContent = result?.error || _t('profilePwdChangeFailed');
         }
       }
     } catch (e) {
       if (msgEl) {
         msgEl.style.display = 'block';
         msgEl.style.color = 'var(--destructive)';
-        msgEl.textContent = 'خطأ في تغيير كلمة السر';
+        msgEl.textContent = _t('profilePwdChangeError');
       }
     }
   });
+};
+
+A.loadMasterKeyStatus = async function () {
+  const el = document.getElementById('profileMasterKey');
+  if (!el) return;
+  try {
+    const res = await A.state.ipc.invoke('auth:getMasterKey');
+    if (res && res.ok) {
+      el.dataset.masterKey = res.masterKey;
+      el.textContent = '********';
+      el.style.color = '';
+    } else {
+      el.textContent = _t('profileMasterKeyUnavailable');
+      el.style.color = 'var(--text-muted)';
+    }
+  } catch (e) {
+    el.textContent = _t('profileMasterKeyError');
+  }
+};
+
+A.showMasterKey = function () {
+  const el = document.getElementById('profileMasterKey');
+  if (!el) return;
+  if (!el.dataset.masterKey) {
+    A.loadMasterKeyStatus();
+    return;
+  }
+  if (el.dataset.revealed === '1') {
+    el.textContent = '********';
+    el.dataset.revealed = '0';
+  } else {
+    el.textContent = el.dataset.masterKey;
+    el.dataset.revealed = '1';
+    setTimeout(() => {
+      el.textContent = '********';
+      el.dataset.revealed = '0';
+    }, 15000);
+  }
 };

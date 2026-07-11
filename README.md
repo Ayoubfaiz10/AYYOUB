@@ -1,4 +1,4 @@
-# مدير مكتب المحامي — Cabinet Manager v2.0
+# LexOffece v2.0
 
 **منصة إدارة مكاتب المحاماة** — Law Office Management Platform
 

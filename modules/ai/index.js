@@ -9,30 +9,30 @@ A.state.aiModel = '';
 
 const AI_PROVIDER_META = {
   groq: {
-    label: 'مفتاح API (Groq)',
+    label: 'aiLabelGroq',
     placeholder: 'gsk_...',
-    hint: 'احصل على مفتاح مجاني من <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Groq Console</a>',
+    hint: 'aiHintGroq',
     logoBg: '#1a1a2e',
     logoText: 'G'
   },
   openai: {
-    label: 'مفتاح API (OpenAI)',
+    label: 'aiLabelOpenai',
     placeholder: 'sk-...',
-    hint: 'احصل على مفتاح من <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" style="color:var(--info);">OpenAI Dashboard</a>',
+    hint: 'aiHintOpenai',
     logoBg: '#10a37f',
     logoText: 'O'
   },
   anthropic: {
-    label: 'مفتاح API (Anthropic)',
+    label: 'aiLabelAnthropic',
     placeholder: 'sk-ant-...',
-    hint: 'احصل على مفتاح من <a href="https://console.anthropic.com/" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Anthropic Console</a>',
+    hint: 'aiHintAnthropic',
     logoBg: '#d97757',
     logoText: 'C'
   },
   gemini: {
-    label: 'مفتاح API (Gemini)',
+    label: 'aiLabelGemini',
     placeholder: 'AIza...',
-    hint: 'احصل على مفتاح مجاني من <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" style="color:var(--info);">Google AI Studio</a>',
+    hint: 'aiHintGemini',
     logoBg: '#4285f4',
     logoText: 'G+'
   }
@@ -59,9 +59,9 @@ window.selectAiProvider = function (provider) {
   const label = document.getElementById('aiKeyLabel');
   const hint = document.getElementById('aiSetupHint');
   const meta = AI_PROVIDER_META[provider] || AI_PROVIDER_META.groq;
-  if (label) label.textContent = meta.label;
+  if (label) label.textContent = _t(meta.label);
   if (el) el.placeholder = meta.placeholder;
-  if (hint) hint.innerHTML = meta.hint;
+  if (hint) hint.innerHTML = _t(meta.hint);
   populateModels(provider, '');
 };
 
@@ -100,7 +100,7 @@ A.initAI = function () {
     const key = apiKeyEl.value.trim();
     const model = document.getElementById('aiModelSelect')?.value || '';
     if (!key) {
-      A.showToast('الرجاء إدخال مفتاح API', 'error');
+      A.showToast(_t('aiEnterKey'), 'error');
       return;
     }
     A.state.aiModel = model;
@@ -112,7 +112,7 @@ A.initAI = function () {
       aiChat.style.display = 'flex';
       A.updateModelBar();
     } else {
-      A.showToast(result?.error || 'فشل حفظ مفتاح API', 'error');
+      A.showToast(result?.error || _t('aiSaveFailed'), 'error');
     }
   });
 
@@ -131,15 +131,15 @@ A.initAI = function () {
       btn.classList.add('active');
       A.state.aiMode = btn.dataset.mode;
       const modeHints = {
-        chat: 'اطرح سؤالك القانوني...',
-        summarize: 'الصق النص القانوني للتلخيص...',
-        draft: 'صف الوثيقة التي تريد صياغتها...',
-        analyze: 'الصق النص للتحليل القانوني...',
-        strategy: 'صف الموقف القانوني للتحليل الاستراتيجي...',
-        risk: 'صف الموقف لتحديد المخاطر...',
-        hearing_prep: 'اختر قضية أو جلسة للتحضير...'
+        chat: _t('aiModeChat'),
+        summarize: _t('aiModeSummarize'),
+        draft: _t('aiModeDraft'),
+        analyze: _t('aiModeAnalyze'),
+        strategy: _t('aiModeStrategy'),
+        risk: _t('aiModeRisk'),
+        hearing_prep: _t('aiModeHearingPrep')
       };
-      if (aiInput) aiInput.placeholder = modeHints[btn.dataset.mode] || 'اكتب سؤالك...';
+      if (aiInput) aiInput.placeholder = modeHints[btn.dataset.mode] || _t('aiInputGeneral');
     });
   });
 
@@ -156,7 +156,7 @@ A.initAI = function () {
     const floatBtn = document.createElement('button');
     floatBtn.className = 'ai-float-btn';
     A.safeSetStatic(floatBtn, '<i class="ri-robot-3-line"></i>');
-    floatBtn.title = 'المساعد الذكي (Ctrl+K)';
+    floatBtn.title = _t('aiFloatBtnTitle');
     floatBtn.addEventListener('click', () => {
       if (!floatBtn._dragging) A.navigateTo('ai');
     });
@@ -218,12 +218,12 @@ A.setAiContext = function (type, id, label) {
   const labelEl = document.getElementById('aiContextLabel');
   if (bar && labelEl) {
     bar.style.display = 'flex';
-    labelEl.textContent = `السياق: ${label}`;
+    labelEl.textContent = _t('aiContextLabel').replace('{label}', label);
   }
   A.navigateTo('ai');
-  const modeLabels = { case: 'حلل هذه القضية', client: 'حلل هذا الموكل', document: 'حلل هذه الوثيقة', hearing: 'جهز لهذه الجلسة' };
+  const modeLabels = { case: _t('aiContextCase'), client: _t('aiContextClient'), document: _t('aiContextDocument'), hearing: _t('aiContextHearing') };
   const input = document.getElementById('aiInput');
-  if (input) input.placeholder = modeLabels[type] || 'اسأل المساعد الذكي...';
+  if (input) input.placeholder = modeLabels[type] || _t('aiContextGeneral');
 };
 
 A.clearAiContext = function () {
@@ -234,11 +234,11 @@ A.clearAiContext = function () {
 
 A.sendAiMessage = async function () {
   if (!A.state.ipc || !A.state.aiConfigured || A.state.isAISending) {
-    if (A.state.isAISending) A.showToast('جاري معالجة رسالة أخرى...', 'info');
+    if (A.state.isAISending) A.showToast(_t('aiSendingOther'), 'info');
     return;
   }
   if (!navigator.onLine) {
-    A.showToast('يرجى التحقق من الاتصال بالإنترنت', 'warning');
+    A.showToast(_t('aiOffline'), 'warning');
     return;
   }
   const input = document.getElementById('aiInput');
@@ -264,11 +264,11 @@ A.sendAiMessage = async function () {
       res = await A.state.ipc.invoke('ai:ask', { mode: A.state.aiMode, message: msg });
     }
     if (typingEl && typingEl.parentNode) typingEl.remove();
-    A.addAiMessage('assistant', res.friendlyError || res.text || 'عذراً، لم أتمكن من معالجة طلبك.');
+    A.addAiMessage('assistant', res.friendlyError || res.text || _t('aiSorry'));
   } catch (error) {
     A.logError('sendAiMessage', error);
     if (typingEl && typingEl.parentNode) typingEl.remove();
-    A.addAiMessage('assistant', 'حدث خطأ في الاتصال بالمساعد الذكي. تحقق من اتصالك بالإنترنت وحاول مرة أخرى.');
+    A.addAiMessage('assistant', _t('aiErrorGeneral'));
   } finally {
     A.state.isAISending = false;
     input.disabled = false;
@@ -317,12 +317,12 @@ A.addAiMessage = function (role, text) {
   const time = document.createElement('div');
   time.className = 'ai-msg-time';
   const now = new Date();
-  time.textContent = now.toLocaleTimeString('ar-MA', { hour: '2-digit', minute: '2-digit' });
+  time.textContent = now.toLocaleTimeString(A.getLocale(), { hour: '2-digit', minute: '2-digit' });
   footer.appendChild(time);
   const copyBtn = document.createElement('button');
   copyBtn.className = 'ai-msg-copy';
   copyBtn.innerHTML = '<i class="ri-file-copy-line"></i>';
-  copyBtn.title = 'نسخ الرسالة';
+  copyBtn.title = _t('aiCopyMsg');
   copyBtn.addEventListener('click', function () {
     navigator.clipboard
       .writeText(text)
@@ -382,14 +382,14 @@ A.loadAI = async function () {
 A.analyzeDoc = async function (docId) {
   if (!A.state.ipc) return;
   if (!A.state.aiConfigured) {
-    A.showToast('الرجاء إعداد الذكاء الاصطناعي أولاً من قسم "الذكاء الاصطناعي"', 'warning');
+    A.showToast(_t('aiSetupFirst'), 'warning');
     return;
   }
   A.showModal(
-    'تحليل الوثيقة بالذكاء الاصطناعي',
-    '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">جاري تحليل الوثيقة...</p></div>',
+    _t('aiAnalysisTitle'),
+    '<div id="docAnalysisContent" style="text-align:center;padding:40px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);color:var(--gold);"></i><p style="margin-top:12px;color:var(--muted-foreground);">' + _t('aiAnalyzing') + '</p></div>',
     null,
-    'إغلاق'
+    _t('close')
   );
   try {
     const result = await A.state.ipc.invoke('ai:analyzeDocument', { docId });
@@ -399,11 +399,11 @@ A.analyzeDoc = async function (docId) {
       content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-alert-line" style="font-size:var(--icon-lg);"></i><p>${A.escapeHtml(result.error)}</p></div>`;
       return;
     }
-    const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">(من الذاكرة المخبأة)</span>' : '';
+    const cachedLabel = result.cached ? '<span style="font-size:11px;color:var(--muted-foreground);">' + _t('aiCachedLabel') + '</span>' : '';
     const html = result.analysis
-      .replace(/^={3,}\s*الخلاصة\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> الخلاصة</h4>')
-      .replace(/^={3,}\s*النقاط الرئيسية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> النقاط الرئيسية</h4>')
-      .replace(/^={3,}\s*التوصية القانونية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> التوصية القانونية</h4>')
+      .replace(/^={3,}\s*الخلاصة\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-quote-text" style="color:var(--gold);"></i> ' + _t('aiAnalysisSummary') + '</h4>')
+      .replace(/^={3,}\s*النقاط الرئيسية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-list-check" style="color:var(--gold);"></i> ' + _t('aiAnalysisKeyPoints') + '</h4>')
+      .replace(/^={3,}\s*التوصية القانونية\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;"><i class="ri-lightbulb-flash-line" style="color:var(--gold);"></i> ' + _t('aiAnalysisLegalRecommendation') + '</h4>')
       .replace(/^={3,}\s*(.+?)\s*={3,}$/gim, '<h4 style="color:var(--foreground);margin:16px 0 8px;font-size:14px;">$1</h4>')
       .replace(/\*\*(.*?)\*\*/g, (_, m) => '<strong>' + A.escapeHtml(m) + '</strong>')
       .replace(/\n/g, '<br>');
@@ -413,7 +413,7 @@ A.analyzeDoc = async function (docId) {
     A.logError('analyzeDoc', e);
     const content = document.getElementById('docAnalysisContent');
     if (content)
-      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:var(--icon-lg);"></i><p>حدث خطأ أثناء تحليل الوثيقة</p></div>`;
+      content.innerHTML = `<div style="text-align:center;padding:20px;color:var(--destructive);"><i class="ri-error-warning-line" style="font-size:var(--icon-lg);"></i><p>${_t('aiAnalysisError')}</p></div>`;
   }
 };
 

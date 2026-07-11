@@ -24,7 +24,7 @@ A.renderMonthView = function () {
   const { start, end, year, month, firstDay, lastDay } = A.getCalEvents();
   document.getElementById('calTitle').textContent = new Intl.DateTimeFormat(A.getLocale(), { month: 'long', year: 'numeric' }).format(A.state.calDate);
   const weekdays = A.getDayNames('long');
-  const today = new Date().toISOString().slice(0, 10);
+  const today = A.todayLocal();
   const eventsByDate = {};
   A.state.allEvents.forEach(e => {
     if (e.status !== 'cancelled') (eventsByDate[e.date] || (eventsByDate[e.date] = [])).push(e);
@@ -32,7 +32,7 @@ A.renderMonthView = function () {
   let html = weekdays.map(d => `<div class="cal-header-cell">${d}</div>`).join('');
 
   for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-    const dateStr = d.toISOString().slice(0, 10);
+    const dateStr = A.dateToLocalStr(d);
     const isOther = d.getMonth() !== month;
     const isToday = dateStr === today;
     const dayEvents = eventsByDate[dateStr] || [];
@@ -40,7 +40,7 @@ A.renderMonthView = function () {
     const more = dayEvents.length - 3;
     html += `<div class="cal-day ${isOther ? 'other-month' : ''} ${isToday ? 'today' : ''}" data-date="${dateStr}">
       <div class="cal-day-num">${d.getDate()}</div>
-      ${visible.map(e => `<div class="cal-day-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 20)}</div>`).join('')}
+      ${visible.map(e => `<div class="cal-day-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 40)}</div>`).join('')}
       ${more > 0 ? `<div class="cal-day-more" data-ns="_click" data-cmd=".cal-day[data-date='${dateStr}']" data-click-stop="true">+${more} ${_t('moreEventsLabel')}</div>` : ''}
     </div>`;
   }
@@ -57,7 +57,7 @@ A.renderMonthView = function () {
 A.renderWeekView = function () {
   const grid = document.getElementById('calWeekGrid');
   const { year, month } = A.getCalEvents();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = A.todayLocal();
   const startOfWeek = new Date(A.state.calDate);
   startOfWeek.setDate(A.state.calDate.getDate() - A.state.calDate.getDay());
   const hours = Array.from({ length: 12 }, (_, i) => `${String(i + 8).padStart(2, '0')}:00`);
@@ -67,7 +67,7 @@ A.renderWeekView = function () {
   });
   const shortDays = A.getShortDayNames();
   let html =
-    '<div class="cal-week-header" data-i18n="calendarTimeHeader">الوقت</div>' +
+    '<div class="cal-week-header">' + _t('calendarTimeHeader') + '</div>' +
     Array.from({ length: 7 }, (_, i) => {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
@@ -78,10 +78,10 @@ A.renderWeekView = function () {
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
-      const dateStr = d.toISOString().slice(0, 10);
+      const dateStr = A.dateToLocalStr(d);
       const events = (eventsByDate[dateStr] || []).filter(e => e.time && e.time.startsWith(h.slice(0, 2)));
       html += `<div class="cal-week-cell" data-date="${dateStr}">
-        ${events.map(e => `<div class="cal-week-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 15)}</div>`).join('')}
+        ${events.map(e => `<div class="cal-week-event event-${e.type}" data-click="event:open:${e.id}" data-click-stop="true">${A.escapeHtml(e.title).slice(0, 30)}</div>`).join('')}
       </div>`;
     }
   });
@@ -97,14 +97,14 @@ A.renderWeekView = function () {
 
 A.renderDayView = function () {
   const grid = document.getElementById('calDayGrid');
-  const dateStr = A.state.calDate.toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
+  const dateStr = A.dateToLocalStr(A.state.calDate);
+  const today = A.todayLocal();
   const hours = Array.from({ length: 14 }, (_, i) => `${String(i + 7).padStart(2, '0')}:00`);
   const dayEvents = (A.state.allEvents || []).filter(e => e.date === dateStr && e.status !== 'cancelled');
   A.safeSet(grid, esc => {
     let h = `<div class="cal-week-header" style="grid-column:span 2;text-align:right;padding:var(--spacing-2);font-size:var(--type-body);">
       ${new Intl.DateTimeFormat(A.getLocale(), { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).format(A.state.calDate)}
-      ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;" data-i18n="statusToday">اليوم</span>' : ''}
+      ${dateStr === today ? '<span class="badge badge-gold" style="margin-right:8px;">' + _t('statusToday') + '</span>' : ''}
     </div>`;
     hours.forEach(hour => {
       const evts = dayEvents.filter(e => e.time && e.time.startsWith(hour.slice(0, 2)));
@@ -119,7 +119,7 @@ A.renderDayView = function () {
 
 A.renderAgendaView = function () {
   const container = document.getElementById('calAgendaList');
-  const today = new Date().toISOString().slice(0, 10);
+  const today = A.todayLocal();
   const sorted = [...A.state.allEvents]
     .filter(e => e.date >= today && e.status !== 'cancelled')
     .sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));

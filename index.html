@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>مدير مكتب المحامي</title>
+    <title>LexOffece</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&display=swap" rel="stylesheet" />
@@ -27,16 +27,16 @@
   </head>
   <body>
     <div id="startupOverlay">
-      <div class="startup-logo">M</div>
-      <div class="startup-name" data-i18n="startupName">مدير المكتب</div>
-      <div class="startup-sub" data-i18n="startupSub">Cabinet Manager — Legal Intelligence Platform</div>
+      <div class="startup-logo"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
+      <div class="startup-name" data-i18n="startupName">LexOffece</div>
+      <div class="startup-sub" data-i18n="startupSub">منصة إدارة المكاتب القانونية</div>
       <div class="startup-bar"><div class="startup-bar-inner" id="startupBar"></div></div>
     </div>
 
     <!-- Onboarding overlay -->
     <div id="onboardingOverlay">
       <div class="onboarding-box" id="onboardingBox">
-        <h2 id="onbTitle" data-i18n="onbTitle">مرحباً بك في مدير المكتب</h2>
+        <h2 id="onbTitle" data-i18n="onbTitle">مرحباً بك في LexOffece</h2>
         <p id="onbDesc" data-i18n="onbDesc">منصة إدارة المكاتب القانونية — نظّم قضاياك، موكليك، وثائقك، وجلساتك في مكان واحد.</p>
         <div class="onboarding-steps" id="onbSteps">
           <div class="onboarding-dot active"></div>
@@ -57,7 +57,7 @@
           <div class="auth-sidebar">
             <div class="auth-sidebar-icon"><i class="ri-key-2-line"></i></div>
             <div class="auth-sidebar-title" data-i18n="licenseTitle">تفعيل الترخيص</div>
-            <div class="auth-sidebar-desc" data-i18n="licenseSub">أدخل مفتاح التفعيل لبدء استخدام مدير مكتب المحامي</div>
+            <div class="auth-sidebar-desc" data-i18n="licenseSub">أدخل مفتاح التفعيل لبدء استخدام LexOffece</div>
           </div>
           <div class="auth-form">
             <div class="auth-form-header">
@@ -129,7 +129,7 @@
               <div class="setup-progress-steps">
                 <span class="setup-step active" data-step="1" data-i18n="setupStep1">معلومات المكتب</span>
                 <span class="setup-step" data-step="2" data-i18n="setupStep2">كلمة السر</span>
-                <span class="setup-step" data-step="3" data-i18n="setupStep3">سؤال الأمان</span>
+                <span class="setup-step" data-step="3" data-i18n="setupStep3">PIN الرقمي</span>
               </div>
               <div class="setup-progress-bar">
                 <div class="setup-progress-fill" style="width: 33%"></div>
@@ -148,10 +148,10 @@
                 <p data-i18n="authSetupSub">إنشاء حساب المدير العام للمكتب</p>
               </div>
               <div class="input-group">
-                <i class="ri-building-2-line input-icon"></i><input type="text" id="setupOfficeName" placeholder="اسم المكتب" class="input" />
+                <i class="ri-building-2-line input-icon"></i><input type="text" id="setupOfficeName" placeholder="اسم المكتب" class="input" data-i18n="setupOfficeNamePlaceholder" />
               </div>
               <div class="input-group">
-                <i class="ri-user-3-line input-icon"></i><input type="text" id="setupAdminName" placeholder="اسم المدير" class="input" />
+                <i class="ri-user-3-line input-icon"></i><input type="text" id="setupAdminName" placeholder="اسم المدير" class="input" data-i18n="setupAdminNamePlaceholder" />
               </div>
               <div class="setup-nav">
                 <button id="setupNext1" class="btn btn-primary btn-full" data-i18n="nextBtn">التالي</button>
@@ -166,10 +166,10 @@
                 <p data-i18n="setupStep2Desc">اختر كلمة سر قوية لحساب المدير</p>
               </div>
               <div class="input-group">
-                <i class="ri-lock-2-line input-icon"></i><input type="password" id="setupPassword" placeholder="كلمة السر (8 أحرف على الأقل)" class="input" />
+                <i class="ri-lock-2-line input-icon"></i><input type="password" id="setupPassword" placeholder="كلمة السر (8 أحرف على الأقل)" class="input" data-i18n="setupPasswordPlaceholder" />
               </div>
               <div class="input-group">
-                <i class="ri-lock-2-line input-icon"></i><input type="password" id="setupConfirmPassword" placeholder="تأكيد كلمة السر" class="input" />
+                <i class="ri-lock-2-line input-icon"></i><input type="password" id="setupConfirmPassword" placeholder="تأكيد كلمة السر" class="input" data-i18n="confirmPasswordPlaceholder" />
               </div>
               <div class="setup-nav">
                 <button id="setupPrev2" class="btn btn-secondary" data-i18n="prevBtn">السابق</button>
@@ -177,19 +177,18 @@
               </div>
             </div>
 
-            <!-- Step 3: Security question -->
+            <!-- Step 3: PIN -->
             <div id="setupStep3Content" class="setup-step-content">
               <div class="auth-form-header">
-                <div class="auth-form-icon"><i class="ri-question-line" style="color: var(--gold)"></i></div>
-                <h2 data-i18n="setupStep3Heading">سؤال الأمان</h2>
-                <p data-i18n="setupStep3Desc">اختر سؤالاً وإجابة لاستعادة كلمة السر لاحقاً</p>
+                <div class="auth-form-icon"><i class="ri-keypad-line" style="color: var(--gold)"></i></div>
+                <h2 data-i18n="setupStep3Heading">PIN الرقمي</h2>
+                <p data-i18n="setupStep3Desc">أدخل PIN رقمي (4-6 أرقام) لاستعادة كلمة السر لاحقاً</p>
               </div>
-              <div class="security-group">
-                <label class="security-label" data-i18n="securityQuestions">سؤال الأمان (لاستعادة كلمة السر)</label>
-                <select id="sq1" class="input">
-                  <option value="">اختر سؤال الأمان...</option>
-                </select>
-                <input type="text" id="sa1" placeholder="الإجابة" class="input" />
+              <div class="input-group">
+                <i class="ri-keypad-line input-icon"></i><input type="password" id="setupPin" placeholder="PIN (4-6 أرقام)" class="input" maxlength="6" inputmode="numeric" pattern="[0-9]*" data-i18n="setupPinPlaceholder" />
+              </div>
+              <div class="input-group">
+                <i class="ri-keypad-line input-icon"></i><input type="password" id="setupConfirmPin" placeholder="تأكيد PIN" class="input" maxlength="6" inputmode="numeric" pattern="[0-9]*" data-i18n="confirmPinPlaceholder" />
               </div>
               <label class="auth-remember">
                 <input type="checkbox" id="setupOpenAtLogin" checked />
@@ -211,8 +210,8 @@
         <div class="auth-box auth-box-login">
           <div class="auth-sidebar">
             <div class="auth-sidebar-icon"><i class="ri-shield-keyhole-line"></i></div>
-            <div class="auth-sidebar-title" data-i18n="appName">مدير مكتب المحامي</div>
-            <div class="auth-sidebar-desc" data-i18n="appSub">Cabinet Manager v2.0</div>
+            <div class="auth-sidebar-title" data-i18n="appName">LexOffece</div>
+            <div class="auth-sidebar-desc" data-i18n="appSub">LexOffece v2.0</div>
           </div>
           <div class="auth-form">
             <div class="auth-form-header">
@@ -223,7 +222,7 @@
             <div id="userCardsContainer" class="user-grid"></div>
             <div class="input-group">
               <i class="ri-lock-line input-icon"></i>
-              <input type="password" id="loginPassword" placeholder="كلمة السر" class="input" autocomplete="current-password" />
+              <input type="password" id="loginPassword" placeholder="كلمة السر" class="input" autocomplete="current-password" data-i18n="passwordPlaceholder" />
             </div>
             <div id="loginError" class="form-error" style="display: none"></div>
             <label class="auth-remember">
@@ -248,9 +247,27 @@
               <p data-i18n="forgotSelectUser">اختر المستخدم</p>
               <div id="forgotUserCardsContainer" class="user-grid"></div>
               <div id="forgotError" class="form-error" style="display: none"></div>
+            </div>
+            <div id="forgotStep2" style="display: none">
+              <p data-i18n="forgotEnterPin" style="text-align:center;margin-bottom:var(--spacing-2)">أدخل PIN الرقمي لاستعادة كلمة السر:</p>
+              <div class="input-group">
+                <i class="ri-keypad-line input-icon"></i><input type="password" id="forgotPin" placeholder="PIN (4-6 أرقام)" class="input" maxlength="6" inputmode="numeric" pattern="[0-9]*" data-i18n="forgotPinPlaceholder" />
+              </div>
+              <div id="forgotPinError" class="form-error" style="display: none"></div>
+              <button id="forgotCheckPinBtn" class="btn btn-primary btn-full" data-i18n="verifyPin">تحقق من PIN</button>
+            </div>
+            <div id="forgotStep3" style="display: none">
+              <div class="input-group">
+                <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotNewPassword" placeholder="كلمة سر جديدة" class="input" data-i18n="newPwdPlaceholder" />
+              </div>
+              <div class="input-group">
+                <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotConfirmPassword" placeholder="تأكيد كلمة السر" class="input" data-i18n="confirmPasswordPlaceholder" />
+              </div>
+              <div id="forgotResetError" class="form-error" style="display: none"></div>
+              <button id="forgotResetBtn" class="btn btn-gold btn-full" data-i18n="resetPassword">إعادة تعيين كلمة السر</button>
               <div
                 id="forgotMasterKeySection"
-                style="display: none; margin-top: var(--spacing-3); border-top: 1px solid var(--border); padding-top: var(--spacing-3)"
+                style="margin-top: var(--spacing-3); border-top: 1px solid var(--border); padding-top: var(--spacing-3)"
               >
                 <p
                   style="text-align: center; font-size: var(--type-body); color: var(--muted-foreground); margin-bottom: var(--spacing-2)"
@@ -258,37 +275,23 @@
                 >
                   أو استخدم مفتاح الاستعادة السري:
                 </p>
+                <div style="display:flex;gap:6px;margin-bottom:var(--spacing-2)">
+                  <button id="forgotShowMyMasterKeyBtn" class="btn btn-outline btn-sm" style="flex:1" data-i18n="showMyMasterKey">عرض مفتاح الاستعادة الخاص بي</button>
+                </div>
+                <div id="forgotMasterKeyDisplay" style="display:none;background:var(--bg-md);padding:0.5rem 1rem;border-radius:var(--radius);font-family:monospace;direction:ltr;font-size:0.9rem;word-break:break-all;margin-bottom:var(--spacing-2);border:1px solid var(--border);text-align:center"></div>
                 <div class="input-group">
-                  <i class="ri-key-line input-icon"></i><input type="password" id="forgotMasterKey" placeholder="مفتاح الاستعادة" class="input" />
+                  <i class="ri-key-line input-icon"></i><input type="password" id="forgotMasterKey" placeholder="مفتاح الاستعادة" class="input" data-i18n="forgotMasterKeyPlaceholder" />
                 </div>
                 <div class="input-group">
-                  <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotMasterNewPassword" placeholder="كلمة سر جديدة" class="input" />
+                  <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotMasterNewPassword" placeholder="كلمة سر جديدة" class="input" data-i18n="newPwdPlaceholder" />
                 </div>
                 <div class="input-group">
                   <i class="ri-lock-2-line input-icon"></i
-                  ><input type="password" id="forgotMasterConfirmPassword" placeholder="تأكيد كلمة السر" class="input" />
+                  ><input type="password" id="forgotMasterConfirmPassword" placeholder="تأكيد كلمة السر" class="input" data-i18n="confirmPasswordPlaceholder" />
                 </div>
                 <div id="forgotMasterError" class="form-error" style="display: none"></div>
                 <button id="forgotMasterResetBtn" class="btn btn-gold btn-full" data-i18n="resetWithMasterKey">استعادة باستخدام مفتاح الاستعادة</button>
               </div>
-            </div>
-            <div id="forgotStep2" style="display: none">
-              <p id="forgotQuestionDisplay" class="forgot-question"></p>
-              <div class="input-group">
-                <i class="ri-question-answer-line input-icon"></i><input type="text" id="forgotAnswer" placeholder="الإجابة" class="input" />
-              </div>
-              <div id="forgotAnswerError" class="form-error" style="display: none"></div>
-              <button id="forgotCheckAnswerBtn" class="btn btn-primary btn-full" data-i18n="verifyAnswer">تحقق</button>
-            </div>
-            <div id="forgotStep3" style="display: none">
-              <div class="input-group">
-                <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotNewPassword" placeholder="كلمة سر جديدة" class="input" />
-              </div>
-              <div class="input-group">
-                <i class="ri-lock-2-line input-icon"></i><input type="password" id="forgotConfirmPassword" placeholder="تأكيد كلمة السر" class="input" />
-              </div>
-              <div id="forgotResetError" class="form-error" style="display: none"></div>
-              <button id="forgotResetBtn" class="btn btn-gold btn-full" data-i18n="resetPassword">إعادة تعيين كلمة السر</button>
             </div>
             <div class="auth-hint"><a id="forgotBackToLogin" data-i18n="backToLogin">→ العودة لتسجيل الدخول</a></div>
           </div>
@@ -314,6 +317,9 @@
           <button class="topbar-icon-btn" id="notifBtn" data-i18n="notifTitle" data-i18n-attr="title">
             <i class="ri-notification-3-line"></i><span class="notif-badge" style="display: none">0</span>
           </button>
+          <button class="topbar-icon-btn" id="shortcutsHelpBtn" title="اختصارات لوحة المفاتيح" data-i18n="keyboardShortcuts" data-i18n-attr="title">
+            <i class="ri-question-mark"></i>
+          </button>
           <span id="asGlobalStatus" class="topbar-as-status" style="display: none"
             ><i class="ri-check-line"></i> <span data-i18n="autoSaveStatus">تم الحفظ</span></span
           >
@@ -328,75 +334,75 @@
         <aside id="sidebar">
           <div class="sidebar-header">
             <div class="sidebar-brand">
-              <div class="sidebar-brand-icon">M</div>
+              <div class="sidebar-brand-icon"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
               <div class="sidebar-brand-text">
-                <span class="sidebar-brand-title" data-i18n="startupName">مدير المكتب</span>
-                <span class="sidebar-brand-sub">Cabinet Manager</span>
+                <span class="sidebar-brand-title" data-i18n="startupName">LexOffece</span>
+                <span class="sidebar-brand-sub">LexOffece</span>
               </div>
             </div>
           </div>
           <nav id="nav" class="nav-list">
             <div class="nav-section-label" data-i18n="navMain">الرئيسية</div>
-            <button class="nav-item active" data-section="dashboard">
+            <button class="nav-item active" data-section="dashboard" aria-label="الرئيسية" title="الرئيسية" data-i18n="navDashboard" data-i18n-attr="title">
               <i class="ri-dashboard-3-line nav-icon"></i><span class="nav-label" data-i18n="navDashboard">الرئيسية</span>
             </button>
-            <button class="nav-item" data-section="search">
+            <button class="nav-item" data-section="search" aria-label="بحث متقدم" title="بحث متقدم" data-i18n="navAdvancedSearch" data-i18n-attr="title">
               <i class="ri-search-2-line nav-icon"></i><span class="nav-label" data-i18n="navAdvancedSearch">بحث متقدم</span>
             </button>
-            <button class="nav-item" data-section="notifications">
+            <button class="nav-item" data-section="notifications" aria-label="الإشعارات" title="الإشعارات" data-i18n="navNotifications" data-i18n-attr="title">
               <i class="ri-notification-3-line nav-icon"></i><span class="nav-label" data-i18n="navNotifications">الإشعارات</span
               ><span class="nav-badge" id="notifBadge" style="display: none">0</span>
             </button>
 
             <div class="nav-section-label" data-i18n="navFiles">الملفات</div>
-            <button class="nav-item" data-section="clients">
+            <button class="nav-item" data-section="clients" aria-label="الموكلين" title="الموكلين" data-i18n="navClients" data-i18n-attr="title">
               <i class="ri-user-3-line nav-icon"></i><span class="nav-label" data-i18n="navClients">الموكلين</span>
             </button>
-            <button class="nav-item" data-section="cases">
+            <button class="nav-item" data-section="cases" aria-label="القضايا" title="القضايا" data-i18n="navCases" data-i18n-attr="title">
               <i class="ri-briefcase-4-line nav-icon"></i><span class="nav-label" data-i18n="navCases">القضايا</span>
             </button>
-            <button class="nav-item" data-section="hearings">
+            <button class="nav-item" data-section="hearings" aria-label="الجلسات" title="الجلسات" data-i18n="navHearings" data-i18n-attr="title">
               <i class="ri-scales-3-line nav-icon"></i><span class="nav-label" data-i18n="navHearings">الجلسات</span>
             </button>
-            <button class="nav-item" data-section="documents">
+            <button class="nav-item" data-section="documents" aria-label="الوثائق" title="الوثائق" data-i18n="navDocuments" data-i18n-attr="title">
               <i class="ri-file-4-line nav-icon"></i><span class="nav-label" data-i18n="navDocuments">الوثائق</span>
             </button>
 
             <div class="nav-section-label" data-i18n="navOrganization">التنظيم</div>
-            <button class="nav-item" data-section="calendar">
+            <button class="nav-item" data-section="calendar" aria-label="التقويم" title="التقويم" data-i18n="navCalendar" data-i18n-attr="title">
               <i class="ri-calendar-2-line nav-icon"></i><span class="nav-label" data-i18n="navCalendar">التقويم</span>
             </button>
-            <button class="nav-item" data-section="tasks"><i class="ri-task-line nav-icon"></i><span class="nav-label" data-i18n="navTasks">المهام</span></button>
-            <button class="nav-item" data-section="expenses">
+            <button class="nav-item" data-section="tasks" aria-label="المهام" title="المهام" data-i18n="navTasks" data-i18n-attr="title"><i class="ri-task-line nav-icon"></i><span class="nav-label" data-i18n="navTasks">المهام</span></button>
+            <button class="nav-item" data-section="expenses" aria-label="المصاريف" title="المصاريف" data-i18n="navExpenses" data-i18n-attr="title">
               <i class="ri-money-dollar-circle-line nav-icon"></i><span class="nav-label" data-i18n="navExpenses">المصاريف</span>
             </button>
 
             <div class="nav-section-label" data-i18n="navOther">أخرى</div>
-            <button class="nav-item" data-section="reports">
+            <button class="nav-item" data-section="reports" aria-label="التقارير" title="التقارير" data-i18n="navReports" data-i18n-attr="title">
               <i class="ri-bar-chart-2-line nav-icon"></i><span class="nav-label" data-i18n="navReports">التقارير</span>
             </button>
-            <button class="nav-item" data-section="ai">
+            <button class="nav-item" data-section="ai" aria-label="المساعد الذكي" title="المساعد الذكي" data-i18n="navAI" data-i18n-attr="title">
               <i class="ri-robot-3-line nav-icon"></i><span class="nav-label" data-i18n="navAI">المساعد الذكي</span>
             </button>
-            <button class="nav-item" data-section="archive">
+            <button class="nav-item" data-section="archive" aria-label="الأرشيف" title="الأرشيف" data-i18n="navArchive" data-i18n-attr="title">
               <i class="ri-archive-line nav-icon"></i><span class="nav-label" data-i18n="navArchive">الأرشيف</span>
             </button>
-            <button class="nav-item" data-section="support">
-              <i class="ri-customer-service-line nav-icon"></i><span class="nav-label" data-i18n="navSupport">الدعم</span>
+            <button class="nav-item" data-section="help" aria-label="المساعدة" title="المساعدة" data-i18n="navHelp" data-i18n-attr="title">
+              <i class="ri-customer-service-line nav-icon"></i><span class="nav-label" data-i18n="navHelp">المساعدة</span>
             </button>
-            <button class="nav-item" data-section="settings">
+            <button class="nav-item" data-section="settings" aria-label="الإعدادات" title="الإعدادات" data-i18n="navSettings" data-i18n-attr="title">
               <i class="ri-settings-3-line nav-icon"></i><span class="nav-label" data-i18n="navSettings">الإعدادات</span>
             </button>
 
           </nav>
           <div class="sidebar-footer">
-            <button class="sidebar-footer-btn" id="licenseManageBtn" title="الترخيص" data-i18n="navLicense" data-i18n-attr="title">
+            <button class="sidebar-footer-btn" id="licenseManageBtn" title="الترخيص" aria-label="الترخيص" data-i18n="navLicense" data-i18n-attr="title">
               <i class="ri-key-2-line"></i>
             </button>
-            <button class="sidebar-footer-btn" id="lockAppBtn" title="قفل" data-i18n="navLock" data-i18n-attr="title">
+            <button class="sidebar-footer-btn" id="lockAppBtn" title="قفل" aria-label="قفل التطبيق" data-i18n="lockTitleText" data-i18n-attr="title">
               <i class="ri-lock-line"></i>
             </button>
-            <button class="sidebar-footer-btn" id="darkModeToggle" title="الوضع الليلي" data-i18n="settingsAppearance" data-i18n-attr="title">
+            <button class="sidebar-footer-btn" id="darkModeToggle" title="الوضع الليلي" aria-label="الوضع الليلي" data-i18n="darkModeToggle" data-i18n-attr="title">
               <i class="ri-moon-line"></i>
             </button>
           </div>
@@ -409,7 +415,7 @@
             <!-- Empty State (first-run only) -->
             <div id="dashEmptyState" class="dash-empty-state" style="display: none">
               <div class="dash-empty-illustration"><i class="ri-dashboard-3-line"></i></div>
-              <h3 data-i18n="dashEmptyTitle">مرحباً بك في مدير المكتب</h3>
+              <h3 data-i18n="dashEmptyTitle">مرحباً بك في LexOffece</h3>
               <p data-i18n="dashEmptyDesc">ابدأ بإضافة موكل أو قضية جديدة للبدء</p>
               <div class="dash-empty-actions">
                 <button class="btn btn-primary" data-action="client" data-i18n="dashAddClient"><i class="ri-user-add-line"></i> إضافة موكل</button>
@@ -421,14 +427,14 @@
             <div class="dash-welcome-row" id="dashWelcomeRow">
               <div class="dash-welcome-text">
                 <div class="dash-avatar-box" id="dashAvatar" style="display:none"></div>
-                <div class="dash-greeting" id="dashUserName">محامي</div>
+                <div class="dash-greeting" id="dashUserName" data-i18n="defaultLawyer">محامي</div>
                 <div class="dash-date" id="dashDate"></div>
               </div>
               <div class="dash-welcome-actions">
-                <button class="qa-btn btn dash-action-btn dash-action-primary" data-action="case"><i class="ri-briefcase-add-line"></i> <span>إضافة قضية</span></button>
-                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="client"><i class="ri-user-add-line"></i> <span>إضافة موكل</span></button>
-                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="hearing"><i class="ri-calendar-add-line"></i> <span>إضافة جلسة</span></button>
-                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="document"><i class="ri-upload-2-line"></i> <span>رفع وثيقة</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-primary" data-action="case"><i class="ri-briefcase-add-line"></i> <span data-i18n="dashAddCaseAction">إضافة قضية</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="client"><i class="ri-user-add-line"></i> <span data-i18n="dashAddClientAction">إضافة موكل</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="hearing"><i class="ri-calendar-add-line"></i> <span data-i18n="dashAddHearingAction">إضافة جلسة</span></button>
+                <button class="qa-btn btn dash-action-btn dash-action-secondary" data-action="document"><i class="ri-upload-2-line"></i> <span data-i18n="dashUploadDocumentAction">رفع وثيقة</span></button>
               </div>
             </div>
 
@@ -577,19 +583,19 @@
             <div id="clientsFilterBar" class="cases-filter-bar" style="display: none">
               <div class="filter-row">
                 <select id="cfilterStatus" class="input input-sm">
-                  <option value="">الحالة</option>
-                  <option value="active">نشط</option>
-                  <option value="archived">مؤرشف</option>
+                  <option value="" data-i18n="optionStatusLabel">الحالة</option>
+                  <option value="active" data-i18n="statusActive">نشط</option>
+                  <option value="archived" data-i18n="optionArchived">مؤرشف</option>
                 </select>
                 <select id="cfilterMinCases" class="input input-sm">
-                  <option value="">عدد القضايا</option>
+                  <option value="" data-i18n="optionMinCases">عدد القضايا</option>
                   <option value="0">0+</option>
                   <option value="1">1+</option>
                   <option value="3">3+</option>
                   <option value="5">5+</option>
                 </select>
                 <select id="cfilterCity" class="input input-sm">
-                  <option value="">المدينة</option>
+                  <option value="" data-i18n="optionCity">المدينة</option>
                 </select>
                 <button id="cfilterApply" class="btn btn-primary btn-sm" data-i18n="applyBtn">تطبيق</button>
                 <button id="cfilterReset" class="btn btn-secondary btn-sm" data-i18n="resetBtn">إعادة</button>
@@ -649,22 +655,22 @@
             <div id="casesFilterBar" class="cases-filter-bar" style="display: none">
               <div class="filter-row">
                 <select id="filterCourt" class="input input-sm">
-                  <option value="">المحكمة</option>
+                  <option value="" data-i18n="optionCourt">المحكمة</option>
                 </select>
                 <select id="filterStatus" class="input input-sm">
-                  <option value="">الحالة</option>
-                  <option value="active">نشطة</option>
-                  <option value="pending">معلقة</option>
-                  <option value="closed">مغلقة</option>
+                  <option value="" data-i18n="optionStatusLabel">الحالة</option>
+                  <option value="active" data-i18n="optionActiveF">نشطة</option>
+                  <option value="pending" data-i18n="optionPending">معلقة</option>
+                  <option value="closed" data-i18n="optionClosed">مغلقة</option>
                 </select>
                 <select id="filterPriority" class="input input-sm">
-                  <option value="">الأولوية</option>
-                  <option value="high">عالية</option>
-                  <option value="medium">متوسطة</option>
-                  <option value="low">منخفضة</option>
+                  <option value="" data-i18n="optionPriority">الأولوية</option>
+                  <option value="high" data-i18n="optionHigh">عالية</option>
+                  <option value="medium" data-i18n="optionMedium">متوسطة</option>
+                  <option value="low" data-i18n="optionLow">منخفضة</option>
                 </select>
                 <select id="filterClient" class="input input-sm">
-                  <option value="">الموكل</option>
+                  <option value="" data-i18n="optionClient">الموكل</option>
                 </select>
                 <input type="date" id="filterDateFrom" class="input input-sm" style="width: 140px" />
                 <button id="filterApplyBtn" class="btn btn-primary btn-sm" data-i18n="applyBtn">تطبيق</button>
@@ -728,7 +734,7 @@
                   <div class="kanban-col-body" id="kanbanClosed"></div>
                 </div>
                 <div class="kanban-col-full" data-status="archived">
-                  <div class="kanban-col-header-full"><span>مؤرشفة</span><span class="kanban-col-count" id="kanbanCountArchived">0</span></div>
+                  <div class="kanban-col-header-full"><span data-i18n="kanbanArchived">مؤرشفة</span><span class="kanban-col-count" id="kanbanCountArchived">0</span></div>
                   <div class="kanban-col-body" id="kanbanArchived"></div>
                 </div>
               </div>
@@ -752,13 +758,13 @@
               </div>
               <div class="toolbar-right">
                 <select id="hearingsFilterType" class="input input-sm" style="width: 130px">
-                  <option value="all">جميع الأنواع</option>
-                  <option value="hearing">جلسات</option>
-                  <option value="deadline">مواعيد نهائية</option>
-                  <option value="meeting">اجتماعات</option>
-                  <option value="task">مهام</option>
-                  <option value="document">تقديم وثائق</option>
-                  <option value="payment">دفعات</option>
+                  <option value="all" data-i18n="allTypes">جميع الأنواع</option>
+                  <option value="hearing" data-i18n="optionHearingType">جلسات</option>
+                  <option value="deadline" data-i18n="optionDeadlineType">مواعيد نهائية</option>
+                  <option value="meeting" data-i18n="optionMeetingType">اجتماعات</option>
+                  <option value="task" data-i18n="optionTaskType">مهام</option>
+                  <option value="document" data-i18n="optionDocumentType">تقديم وثائق</option>
+                  <option value="payment" data-i18n="optionPaymentType">دفعات</option>
                 </select>
                 <button id="addHearingBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> <span data-i18n="cdNewHearing">حدث جديد</span></button>
               </div>
@@ -779,8 +785,8 @@
                     <th data-i18n="thDate">التاريخ</th>
                     <th data-i18n="thTime">الوقت</th>
                     <th data-i18n="thType">النوع</th>
-                    <th>العنوان</th>
-                    <th>القضية</th>
+                    <th data-i18n="thTitle">العنوان</th>
+                    <th data-i18n="thCaseRef">القضية</th>
                     <th data-i18n="thClient">الموكل</th>
                     <th data-i18n="thStatus">الحالة</th>
                     <th data-i18n="thActions">الإجراءات</th>
@@ -828,6 +834,8 @@
                   <span class="cal-legend-item"><span class="cal-dot cal-dot-deadline"></span> <span data-i18n="calLegendDeadlines">مواعيد</span></span>
                   <span class="cal-legend-item"><span class="cal-dot cal-dot-task"></span> <span data-i18n="calLegendTasks">مهام</span></span>
                   <span class="cal-legend-item"><span class="cal-dot cal-dot-meeting"></span> <span data-i18n="calLegendMeetings">اجتماعات</span></span>
+                  <span class="cal-legend-item"><span class="cal-dot" style="background:var(--purple);"></span> <span data-i18n="calLegendDocuments">وثائق</span></span>
+                  <span class="cal-legend-item"><span class="cal-dot" style="background:var(--success);"></span> <span data-i18n="calLegendPayments">دفعات</span></span>
                 </div>
                 <button id="addEventBtn" class="btn btn-primary btn-sm"><i class="ri-add-line"></i> <span data-i18n="cdNewHearing">حدث</span></button>
               </div>
@@ -881,12 +889,12 @@
                   <button class="view-btn" data-view="analytics"><i class="ri-bar-chart-2-line"></i></button>
                 </div>
                 <select id="taskStatusFilter" class="input input-sm" style="width: 120px">
-                  <option value="all">الكل</option>
-                  <option value="todo">قيد التنفيذ</option>
-                  <option value="in_progress">قيد الإنجاز</option>
-                  <option value="waiting">انتظار</option>
-                  <option value="review">مراجعة</option>
-                  <option value="done">منجز</option>
+                  <option value="all" data-i18n="optionAll">الكل</option>
+                  <option value="todo" data-i18n="optionTodo">قيد التنفيذ</option>
+                  <option value="in_progress" data-i18n="optionInProgress">قيد الإنجاز</option>
+                  <option value="waiting" data-i18n="optionWaiting">انتظار</option>
+                  <option value="review" data-i18n="optionReview">مراجعة</option>
+                  <option value="done" data-i18n="optionDone">منجز</option>
                 </select>
               </div>
               <div class="toolbar-right">
@@ -941,7 +949,7 @@
 
           <!-- ═══ TASK DETAIL MODAL V8 ═══ -->
           <div id="taskDetailOverlay" class="modal-overlay" style="display: none">
-            <div class="modal modal-workspace" style="max-width: 720px">
+            <div class="modal modal-workspace" style="max-width: 860px">
               <div class="ws-header">
                 <div class="ws-header-left">
                   <button class="ws-back" data-click="close:taskDetailOverlay"><i class="ri-arrow-right-s-line"></i></button>
@@ -951,8 +959,8 @@
                   </div>
                 </div>
                 <div class="ws-header-actions">
-                  <button class="btn btn-secondary btn-xs" id="taskDetailEdit"><i class="ri-pencil-line"></i></button>
-                  <button class="btn btn-danger btn-xs" id="taskDetailDelete"><i class="ri-delete-bin-line"></i></button>
+                  <button class="btn btn-secondary btn-xs" id="taskDetailEdit"><i class="ri-pencil-line"></i> تعديل</button>
+                  <button class="btn btn-danger btn-xs" id="taskDetailDelete"><i class="ri-delete-bin-line"></i> حذف</button>
                   <button class="modal-close" style="position: static" data-click="close:taskDetailOverlay"><i class="ri-close-line"></i></button>
                 </div>
               </div>
@@ -964,7 +972,7 @@
           <div id="workflowModalOverlay" class="modal-overlay" style="display: none">
             <div class="modal" style="max-width: 600px">
               <div class="modal-header">
-                <h3 id="workflowModalTitle">سير العمل</h3>
+                <h3 id="workflowModalTitle" data-i18n="workflowModalTitle">سير العمل</h3>
                 <button class="modal-close" data-click="close:workflowModalOverlay"><i class="ri-close-line"></i></button>
               </div>
               <div class="modal-body" id="workflowModalBody"></div>
@@ -991,14 +999,14 @@
               </div>
               <div class="toolbar-right">
                 <select id="docFilterType" class="input input-sm" style="width: 130px">
-                  <option value="all">جميع الأنواع</option>
-                  <option value="Contract">عقود</option>
-                  <option value="Jugement">أحكام</option>
-                  <option value="Mémoire">مذكرات</option>
-                  <option value="Preuve">أدلة</option>
-                  <option value="Rapport">تقارير</option>
-                  <option value="Facture">فواتير</option>
-                  <option value="Autre">أخرى</option>
+                  <option value="all" data-i18n="allTypes">جميع الأنواع</option>
+                  <option value="Contract" data-i18n="optionDocContracts">عقود</option>
+                  <option value="Jugement" data-i18n="optionDocJudgments">أحكام</option>
+                  <option value="Mémoire" data-i18n="optionDocBriefs">مذكرات</option>
+                  <option value="Preuve" data-i18n="optionDocEvidence">أدلة</option>
+                  <option value="Rapport" data-i18n="optionDocReports">تقارير</option>
+                  <option value="Facture" data-i18n="optionDocInvoices">فواتير</option>
+                  <option value="Autre" data-i18n="optionDocOther">أخرى</option>
                 </select>
                 <button id="uploadDocGlobalBtn" class="btn btn-primary btn-sm">
                   <i class="ri-upload-2-line"></i> <span data-i18n="cdUploadDoc">رفع</span>
@@ -1019,9 +1027,9 @@
                       <th data-i18n="thType">النوع</th>
                       <th data-i18n="thCaseNumber">القضية</th>
                       <th data-i18n="thClient">الموكل</th>
-                      <th>تاريخ الرفع</th>
+                      <th data-i18n="thUploadDate">تاريخ الرفع</th>
                       <th data-i18n="thStatus">الحالة</th>
-                      <th>الوسوم</th>
+                      <th data-i18n="thTags">الوسوم</th>
                       <th data-i18n="thActions">الإجراءات</th>
                     </tr>
                   </thead>
@@ -1047,23 +1055,27 @@
                   </div>
                 </div>
                 <div class="ws-header-actions">
-                  <button class="btn btn-secondary btn-xs" id="docViewerOpen"><i class="ri-external-link-line"></i> فتح</button>
-                  <button class="btn btn-primary btn-xs" id="docViewerDownload"><i class="ri-download-line"></i> تحميل</button>
+                  <button class="btn btn-secondary btn-xs" id="docViewerOpen"><i class="ri-external-link-line"></i> <span data-i18n="docViewerOpenBtn">فتح</span></button>
+                  <button class="btn btn-primary btn-xs" id="docViewerDownload"><i class="ri-download-line"></i> <span data-i18n="docViewerDownloadBtn">تحميل</span></button>
                   <button
                     class="btn btn-outline btn-xs"
                     id="docViewerAnalyze"
                     style="color: var(--gold); border-color: var(--gold)"
                     title="تحليل بالذكاء الاصطناعي"
+                    data-i18n="docViewerAnalyzeTitle"
+                    data-i18n-attr="title"
                   >
-                    <i class="ri-robot-3-line"></i> تحليل
+                    <i class="ri-robot-3-line"></i> <span data-i18n="docViewerAnalyzeBtn">تحليل</span>
                   </button>
                   <button
                     class="btn btn-outline btn-xs"
                     id="docViewerDelete"
                     style="color: var(--destructive); border-color: var(--destructive)"
                     title="حذف الوثيقة"
+                    data-i18n="docViewerDeleteTitle"
+                    data-i18n-attr="title"
                   >
-                    <i class="ri-delete-bin-line"></i> حذف
+                    <i class="ri-delete-bin-line"></i> <span data-i18n="docViewerDeleteBtn">حذف</span>
                   </button>
                   <button class="modal-close" style="position: static" data-click="close:docViewerOverlay"><i class="ri-close-line"></i></button>
                 </div>
@@ -1085,7 +1097,7 @@
                     <p id="docViewerPreview">معاينة الملف</p>
                   </div>
                 </div>
-                <div style="border-right: 1px solid var(--border); overflow-y: auto; padding: var(--spacing-3-5)">
+                <div>
                   <div class="ws-info-card" style="box-shadow: none; padding: 0">
                     <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelInfo">معلومات</h4>
                     <div class="ws-info-row">
@@ -1111,7 +1123,7 @@
                   </div>
                   <div class="ws-info-card" style="box-shadow: none; padding: 0; margin-top: var(--spacing-3)">
                     <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelNotes">ملاحظات</h4>
-                    <textarea id="docVNotes" class="input" rows="4" placeholder="ملاحظات قانونية..." data-i18n="docVNotesPlaceholder"></textarea>
+                    <textarea id="docVNotes" class="input" rows="2" placeholder="ملاحظات قانونية..." data-i18n="docVNotesPlaceholder"></textarea>
                     <button class="btn btn-primary btn-xs" style="margin-top: 8px" id="docVSaveNotes" data-i18n="saveBtn">حفظ</button>
                   </div>
                 </div>
@@ -1159,9 +1171,9 @@
                 <table class="table" id="expPaymentsTable">
                   <thead>
                     <tr>
-                      <th data-i18n="thDate">التاريخ</th>
-                      <th>القضية</th>
-                      <th data-i18n="thAmount">المبلغ</th>
+                    <th data-i18n="thDate">التاريخ</th>
+                    <th data-i18n="thCaseRef">القضية</th>
+                    <th data-i18n="thAmount">المبلغ</th>
                       <th data-i18n="thPaymentMethod">طريقة الدفع</th>
                       <th data-i18n="thNotes">ملاحظات</th>
                     </tr>
@@ -1295,7 +1307,7 @@
                         G
                       </div>
                       <span style="font-size: 12px; font-weight: 600">Groq</span>
-                      <span style="font-size: 9px; color: var(--muted-foreground)">مجاني، سريع</span>
+                      <span style="font-size: 9px; color: var(--muted-foreground)" data-i18n="aiProviderGroq">مجاني، سريع</span>
                     </button>
                     <button class="ai-provider-btn" data-provider="openai" data-click="ai:selectProvider:openai">
                       <div class="ai-provider-logo" style="background: var(--brand-openai)">
@@ -1316,7 +1328,7 @@
                         G
                       </div>
                       <span style="font-size: 12px; font-weight: 600">Gemini</span>
-                      <span style="font-size: 9px; color: var(--muted-foreground)">Google، مجاني</span>
+                      <span style="font-size: 9px; color: var(--muted-foreground)" data-i18n="aiProviderGemini">Google، مجاني</span>
                     </button>
                   </div>
                   <div style="max-width: 450px; margin: 0 auto">
@@ -1339,16 +1351,16 @@
                 <div class="ai-model-bar" id="aiModelBar" style="display: none">
                   <i class="ri-flashlight-line"></i>
                   <span id="aiModelLabel">Groq · Llama 3.1 8B</span>
-                  <button id="aiChangeKeyBtn" class="btn btn-xs" title="تغيير المفتاح"><i class="ri-key-2-line"></i></button>
+                  <button id="aiChangeKeyBtn" class="btn btn-xs" data-i18n="aiChangeKeyTitle" title="تغيير المفتاح"><i class="ri-key-2-line"></i></button>
                 </div>
                 <div class="ai-mode-bar">
-                  <button class="ai-mode-btn active" data-mode="chat"><i class="ri-chat-3-line"></i><span>محادثة</span></button>
-                  <button class="ai-mode-btn" data-mode="summarize"><i class="ri-file-text-line"></i><span>تلخيص</span></button>
-                  <button class="ai-mode-btn" data-mode="draft"><i class="ri-edit-line"></i><span>صياغة</span></button>
-                  <button class="ai-mode-btn" data-mode="analyze"><i class="ri-scales-3-line"></i><span>تحليل</span></button>
-                  <button class="ai-mode-btn" data-mode="strategy"><i class="ri-brain-line"></i><span>استراتيجية</span></button>
-                  <button class="ai-mode-btn" data-mode="risk"><i class="ri-alert-line"></i><span>مخاطر</span></button>
-                  <button class="ai-mode-btn" data-mode="hearing_prep"><i class="ri-presentation-line"></i><span>تحضير جلسة</span></button>
+                  <button class="ai-mode-btn active" data-mode="chat"><i class="ri-chat-3-line"></i><span data-i18n="aiChatMode">محادثة</span></button>
+                  <button class="ai-mode-btn" data-mode="summarize"><i class="ri-file-text-line"></i><span data-i18n="aiSummarizeMode">تلخيص</span></button>
+                  <button class="ai-mode-btn" data-mode="draft"><i class="ri-edit-line"></i><span data-i18n="aiDraftMode">صياغة</span></button>
+                  <button class="ai-mode-btn" data-mode="analyze"><i class="ri-scales-3-line"></i><span data-i18n="aiAnalyzeMode">تحليل</span></button>
+                  <button class="ai-mode-btn" data-mode="strategy"><i class="ri-brain-line"></i><span data-i18n="aiStrategyMode">استراتيجية</span></button>
+                  <button class="ai-mode-btn" data-mode="risk"><i class="ri-alert-line"></i><span data-i18n="aiRiskMode">مخاطر</span></button>
+                  <button class="ai-mode-btn" data-mode="hearing_prep"><i class="ri-presentation-line"></i><span data-i18n="aiHearingPrepMode">تحضير جلسة</span></button>
                 </div>
                 <div id="aiMessages" style="flex: 1; overflow-y: auto; padding: 12px 0"></div>
                 <div class="ai-input-bar">
@@ -1370,10 +1382,10 @@
           <section id="section-about" class="section" style="display: none">
             <div class="sales-page">
               <div style="text-align: center; margin-bottom: var(--spacing-4)">
-                <div class="startup-logo" style="margin: 0 auto var(--spacing-3)">م</div>
-                <h1 style="margin-bottom: 4px">مدير مكتب المحامي</h1>
+                <div class="startup-logo" style="margin: 0 auto var(--spacing-3)"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
+                <h1 style="margin-bottom: 4px">LexOffece</h1>
                 <p style="color: var(--muted-foreground); font-size: var(--type-body); margin-bottom: var(--spacing-2)">
-                  Cabinet Manager — منصة إدارة المكاتب القانونية
+                  منصة إدارة المكاتب القانونية
                 </p>
                 <span class="version-badge">v2.0.0</span>
               </div>
@@ -1381,7 +1393,7 @@
               <div class="meta-row"><span class="meta-label">آخر تحديث</span><span class="meta-value">18 يونيو 2026</span></div>
               <div class="meta-row"><span class="meta-label">التقنية</span><span class="meta-value">Electron + SQLite + Groq AI</span></div>
               <div class="meta-row"><span class="meta-label">الترخيص</span><span class="meta-value">مكتب المحاماة — ترخيص مهني</span></div>
-              <div class="meta-row"><span class="meta-label">المطور</span><span class="meta-value">Cabinet Manager Team</span></div>
+              <div class="meta-row"><span class="meta-label">المطور</span><span class="meta-value">LexOffece Team</span></div>
               <h2>المميزات الرئيسية</h2>
               <p>
                 • نظام متكامل لإدارة القضايا والموكلين والجلسات والوثائق والمهام<br />
@@ -1398,10 +1410,10 @@
           <section id="section-license" class="section" style="display: none">
             <div class="sales-page">
               <h1>الترخيص</h1>
-              <p>مدير مكتب المحامي — Cabinet Manager v2.0</p>
+              <p>LexOffece v2.0</p>
               <div class="license-box">
                 <p style="color: var(--muted-foreground); margin-bottom: var(--spacing-2)">رخصة الاستخدام المهني</p>
-                <div class="license-key">CAB-MGR-2026-XXXX-XXXX</div>
+                <div class="license-key">LEX-OFF-2026-XXXX-XXXX</div>
                 <p style="font-size: 12px; color: var(--muted-foreground); margin-top: var(--spacing-2)">مرخص لمكتب المحاماة — جميع الحقوق محفوظة</p>
               </div>
               <h2>شروط الاستخدام</h2>
@@ -1438,44 +1450,47 @@
             </div>
           </section>
 
-          <!-- ═══ SUPPORT PAGE ═══ -->
-          <section id="section-support" class="section" style="display: none">
-            <div class="sales-page">
-              <h1>الدعم والمساعدة</h1>
-              <p>تواصل مع فريق الدعم الفني</p>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: var(--spacing-3); margin: var(--spacing-4) 0">
-                <div class="support-card" data-click="support:mail">
-                  <div class="support-card-icon"><i class="ri-mail-line"></i></div>
-                  <div>
-                    <h4>البريد الإلكتروني</h4>
-                    <p>support@cabinetmanager.ma</p>
-                  </div>
-                </div>
-                <div class="support-card" data-click="nav:about">
-                  <div class="support-card-icon"><i class="ri-information-line"></i></div>
-                  <div>
-                    <h4>حول البرنامج</h4>
-                    <p>معلومات الإصدار والمميزات</p>
-                  </div>
-                </div>
-                <div class="support-card" data-click="nav:changelog">
-                  <div class="support-card-icon"><i class="ri-history-line"></i></div>
-                  <div>
-                    <h4>سجل التحديثات</h4>
-                    <p>تعرف على آخر التغييرات</p>
-                  </div>
-                </div>
-                <div class="support-card" data-click="nav:license">
-                  <div class="support-card-icon"><i class="ri-file-shield-line"></i></div>
-                  <div>
-                    <h4>الترخيص</h4>
-                    <p>شروط ورخصة الاستخدام</p>
-                  </div>
+          <!-- ═══ HELP / SUPPORT PAGE ═══ -->
+          <section id="section-help" class="section">
+            <div class="section-header">
+              <h1><i class="ri-customer-service-line" style="margin-left:8px;"></i><span data-i18n="helpTitle">المساعدة والدعم</span></h1>
+              <p class="section-sub" data-i18n="helpDesc">دليل الاستخدام، الأسئلة الشائعة، قاعدة المعرفة، فحص النظام</p>
+            </div>
+            <div id="helpContainer" class="help-container">
+              <div class="help-tabs">
+                <button class="help-tab active" data-tab="helpGuideTab"><i class="ri-book-open-line"></i><span data-i18n="helpGuideTab">دليل الاستخدام</span></button>
+                <button class="help-tab" data-tab="helpFaqTab"><i class="ri-question-answer-line"></i><span data-i18n="helpFaqTab">الأسئلة الشائعة</span></button>
+                <button class="help-tab" data-tab="helpKbTab"><i class="ri-database-line"></i><span data-i18n="helpKbTab">قاعدة المعرفة</span></button>
+                <button class="help-tab" data-tab="helpHealthTab"><i class="ri-heart-pulse-line"></i><span data-i18n="helpHealthTab">فحص النظام</span></button>
+              </div>
+              <!-- Guide tab -->
+              <div class="help-tab-content active" id="helpGuideTab">
+                <div class="help-layout">
+                  <div class="help-sidebar" id="helpGuideSidebar"></div>
+                  <div class="help-content" id="helpGuideContent"></div>
                 </div>
               </div>
-              <p style="text-align: center; color: var(--muted-foreground); font-size: 13px; margin-top: var(--spacing-4)">
-                نحن هنا لمساعدتك — فريق الدعم يرد خلال 24 ساعة
-              </p>
+              <!-- FAQ tab -->
+              <div class="help-tab-content" id="helpFaqTab">
+                <div class="help-faq-list" id="helpFaqList"></div>
+              </div>
+              <!-- KB tab -->
+              <div class="help-tab-content" id="helpKbTab">
+                <div class="help-kb-layout">
+                  <div class="help-kb-sidebar">
+                    <div class="input-group" style="margin:0 0 var(--spacing-3) 0;">
+                      <i class="ri-search-line input-icon"></i>
+                      <input type="text" id="helpKbSearch" class="input" placeholder="بحث في قاعدة المعرفة..." data-i18n="helpKbSearch" />
+                    </div>
+                    <div id="helpKbList"></div>
+                  </div>
+                  <div class="help-content" id="helpKbContent"></div>
+                </div>
+              </div>
+              <!-- Health tab -->
+              <div class="help-tab-content" id="helpHealthTab">
+                <div id="helpHealthContent"></div>
+              </div>
             </div>
           </section>
 
@@ -1518,7 +1533,7 @@
             <div id="profileContent" class="profile-grid">
               <div class="profile-left">
                 <div class="card profile-avatar-card">
-                  <div class="profile-avatar" id="profileAvatar" title="انقر لتغيير الصورة">م</div>
+                  <div class="profile-avatar" id="profileAvatar" title="انقر لتغيير الصورة" data-i18n="changePhotoTooltip" data-i18n-attr="title">م</div>
                   <input type="file" id="pfAvatarInput" accept="image/*" style="display: none" />
                   <h3 id="profileName">المحامي</h3>
                   <p class="profile-role" id="profileRole">admin</p>
@@ -1527,11 +1542,15 @@
                 <div class="card profile-security-card">
                   <div class="card-header"><h3 data-i18n="profileSecurity">الأمان</h3></div>
                   <div class="card-body">
-                    <div class="profile-info-row">
-                      <span data-i18n="profileApiKey">مفتاح API</span
-                      ><span id="profileApiKeyStatus" class="badge badge-danger" data-i18n="profileApiKeyNotSet">غير مضبوط</span>
-                    </div>
-                    <div class="profile-info-row"><span data-i18n="profileLastLogin">آخر دخول</span><span id="profileLastLogin">—</span></div>
+                     <div class="profile-info-row">
+                       <span data-i18n="profileApiKey">مفتاح API</span
+                       ><span id="profileApiKeyStatus" class="badge badge-danger" data-i18n="profileApiKeyNotSet">غير مضبوط</span>
+                     </div>
+                     <div class="profile-info-row">
+                        <span data-i18n="profileMasterKeyLabel">مفتاح الاستعادة</span>
+                        <span id="profileMasterKey" class="badge badge-secondary" style="cursor:pointer;direction:ltr;font-family:monospace" onclick="A.showMasterKey()" data-i18n="clickToReveal">اضغط للإظهار</span>
+                     </div>
+                     <div class="profile-info-row"><span data-i18n="profileLastLogin">آخر دخول</span><span id="profileLastLogin">—</span></div>
                   </div>
                 </div>
                 <div class="card profile-activity-card">
@@ -1572,14 +1591,14 @@
                       <div class="input-group">
                         <label class="input-label" data-i18n="profileSpecialties">التخصصات</label>
                         <div id="pfSpecialties" class="specialties-grid">
-                          <label class="specialty-checkbox"><input type="checkbox" value="مدني" /><span>مدني</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="تجاري" /><span>تجاري</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="جنائي" /><span>جنائي</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="أسرة" /><span>أسرة</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="عقاري" /><span>عقاري</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="إداري" /><span>إداري</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="شغل" /><span>شغل</span></label>
-                          <label class="specialty-checkbox"><input type="checkbox" value="جبائي" /><span>جبائي</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="مدني" /><span data-i18n="specialtyCivil">مدني</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="تجاري" /><span data-i18n="specialtyCommercial">تجاري</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="جنائي" /><span data-i18n="specialtyCriminal">جنائي</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="أسرة" /><span data-i18n="specialtyFamily">أسرة</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="عقاري" /><span data-i18n="specialtyRealEstate">عقاري</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="إداري" /><span data-i18n="specialtyAdmin">إداري</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="شغل" /><span data-i18n="specialtyLabor">شغل</span></label>
+                          <label class="specialty-checkbox"><input type="checkbox" value="جبائي" /><span data-i18n="specialtyTax">جبائي</span></label>
                         </div>
                       </div>
                       <div class="input-group">
@@ -1700,9 +1719,9 @@
                             <tr>
                               <th data-i18n="thName">الاسم</th>
                               <th data-i18n="thEmail">البريد</th>
-                              <th>الدور</th>
+                              <th data-i18n="thRole">الدور</th>
                               <th data-i18n="thStatus">الحالة</th>
-                              <th>آخر دخول</th>
+                              <th data-i18n="thLastLogin">آخر دخول</th>
                               <th data-i18n="thActions">الإجراءات</th>
                             </tr>
                           </thead>
@@ -1720,10 +1739,10 @@
                         <table class="table">
                           <thead>
                             <tr>
-                              <th>الوقت</th>
-                              <th>المستخدم</th>
-                              <th>الإجراء</th>
-                              <th>التفاصيل</th>
+                              <th data-i18n="thTimeCol">الوقت</th>
+                              <th data-i18n="thUser">المستخدم</th>
+                              <th data-i18n="thAction">الإجراء</th>
+                              <th data-i18n="thDetails">التفاصيل</th>
                             </tr>
                           </thead>
                           <tbody id="settingsActivityBody"></tbody>
@@ -1739,7 +1758,7 @@
                       <h3 data-i18n="errorLog">سجل الأخطاء</h3>
                       <div style="display: flex; gap: 8px; align-items: center">
                         <select id="logLevelFilter" class="input" style="width: 120px; font-size: 11px">
-                          <option value="">جميع المستويات</option>
+                          <option value="" data-i18n="optionAllLevels">جميع المستويات</option>
                           <option value="INFO">INFO</option>
                           <option value="WARN">WARN</option>
                           <option value="ERROR">ERROR</option>
@@ -1768,10 +1787,10 @@
                         <table class="table" style="font-size: 11px">
                           <thead>
                             <tr>
-                              <th>الوقت</th>
-                              <th>المستوى</th>
-                              <th>السياق</th>
-                              <th>الرسالة</th>
+                              <th data-i18n="thTimeCol">الوقت</th>
+                              <th data-i18n="thLevel">المستوى</th>
+                              <th data-i18n="thContext">السياق</th>
+                              <th data-i18n="thMessage">الرسالة</th>
                             </tr>
                           </thead>
                           <tbody id="settingsLogsBody"></tbody>
@@ -1881,9 +1900,9 @@
                 <div class="setting-panel" id="setting-about">
                   <div class="card" style="text-align: center; padding: 40px">
                     <i class="ri-shield-keyhole-line" style="font-size: var(--icon-xl); color: var(--gold); display: block; margin-bottom: 16px"></i>
-                    <h3 style="color: var(--foreground); font-size: 18px">مدير مكتب المحامي</h3>
-                    <p style="color: var(--muted-foreground); font-size: 13px">Cabinet Manager v2.0</p>
-                    <p style="color: var(--muted-foreground); font-size: 13px; margin-top: 12px">تطبيق متكامل لإدارة مكاتب المحاماة في المغرب</p>
+                    <h3 style="color: var(--foreground); font-size: 18px">LexOffece</h3>
+                    <p style="color: var(--muted-foreground); font-size: 13px">LexOffece v2.0</p>
+                    <p style="color: var(--muted-foreground); font-size: 13px; margin-top: 12px" data-i18n="aboutDescription">تطبيق متكامل لإدارة مكاتب المحاماة في المغرب</p>
                   </div>
                 </div>
               </div>
@@ -1898,7 +1917,7 @@
     <div id="modalOverlay" class="modal-overlay" style="display: none">
       <div class="modal" id="modalContent">
         <div class="modal-header">
-          <h3 id="modalTitle">عنوان</h3>
+          <h3 id="modalTitle" data-i18n="modalTitle">عنوان</h3>
           <button class="modal-close" id="modalCloseBtn"><i class="ri-close-line"></i></button>
         </div>
         <div class="modal-body" id="modalBody"></div>
@@ -2067,6 +2086,19 @@
       </div>
     </div>
 
+    <div id="masterKeyModal" class="modal-overlay" style="display:none;z-index:10001">
+      <div class="modal-box" style="max-width:520px;text-align:center;padding:2rem">
+        <div style="font-size:3rem;margin-bottom:1rem">&#x1f511;</div>
+        <h2 style="margin-bottom:0.5rem" data-i18n="masterKeyTitle">مفتاح الاستعادة</h2>
+        <p style="margin-bottom:1rem;color:var(--muted-foreground)" data-i18n="masterKeyDesc">
+          هذا هو مفتاح الاستعادة الخاص بمكتبك. احتفظ به في مكان آمن — يمكنك استخدامه لاستعادة الوصول إذا نسيت كلمة السر.
+        </p>
+        <div id="masterKeyDisplay" style="background:var(--bg-md);padding:0.75rem 1rem;border-radius:var(--radius);font-family:monospace;direction:ltr;font-size:0.95rem;word-break:break-all;margin-bottom:1.25rem;border:1px solid var(--border)"></div>
+        <div class="setup-nav" style="justify-content:center">
+          <button id="masterKeyDoneBtn" class="btn btn-primary" data-i18n="masterKeyDone">تم — بدء استخدام المكتب</button>
+        </div>
+      </div>
+    </div>
     <input type="file" id="fileInput" style="display: none" />
     <!-- ipcRenderer + electron exposed via preload.js (contextIsolation:true) -->
     <script defer src="modules/i18n.js"></script>
@@ -2096,6 +2128,7 @@
     <script defer src="modules/documents/views.js"></script>
     <script defer src="modules/documents/index.js"></script>
     <script defer src="modules/ai/index.js"></script>
+    <script defer src="modules/help/index.js"></script>
     <script defer src="modules/settings/index.js"></script>
     <script defer src="modules/expenses/index.js"></script>
     <script defer src="modules/notifications/index.js"></script>

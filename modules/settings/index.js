@@ -80,7 +80,7 @@ A.initSettings = function () {
       <div class="input-group"><label class="input-label">${_t('userEmailLabel')}</label><input type="email" id="fUserEmail" class="input"></div>
       <div class="info-grid-2">
         <div class="input-group"><label class="input-label">${_t('userRoleLabel')}</label><select id="fUserRole" class="input">${['admin', 'senior_lawyer', 'junior_lawyer', 'assistant', 'intern', 'external'].map(r => `<option value="${r}">${r}</option>`).join('')}</select></div>
-        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" placeholder="اتركه فارغاً لتوليد كلمة سر عشوائية"></div>
+        <div class="input-group"><label class="input-label">${_t('userPwdLabel')}</label><input type="password" id="fUserPwd" class="input" placeholder="${_t('userPwdGeneratePlaceholder')}"></div>
       </div>
     `,
       async () => {
@@ -405,7 +405,7 @@ A.initSettings = function () {
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `logs_${new Date().toISOString().slice(0, 10)}.json`;
+        a.download = `logs_${A.todayLocal()}.json`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -595,6 +595,35 @@ A.loadSettingsLogs = async function (loadMore) {
     }
   } else if (loadMoreBtn) {
     loadMoreBtn.style.display = 'none';
+  }
+};
+
+A.runIntegrityCheck = async function () {
+  if (!A.state.ipc) return;
+  A.showToast(_t('loading'), 'info');
+  try {
+    const result = await A.mutate('db:integrityCheck');
+    if (!result) { A.showToast(_t('failedLoad'), 'error'); return; }
+    const parts = [];
+    if (result.orphans && result.orphans.length) parts.push(result.orphans.length + ' ' + _t('backupCorrupt').replace('✖', ''));
+    if (result.warnings && result.warnings.length) parts.push(result.warnings.length + ' ' + _t('warning'));
+    A.showToast(parts.length ? parts.join(', ') : _t('healthValid'), parts.length ? 'warning' : 'success');
+  } catch (e) {
+    A.logError('runIntegrityCheck', e);
+    A.showToast(_t('failedLoad'), 'error');
+  }
+};
+
+A.repairOrphans = async function () {
+  if (!A.state.ipc) return;
+  A.showToast(_t('cleaningRunning'), 'info');
+  try {
+    const result = await A.mutate('db:repairOrphans');
+    if (result && result.ok === false) { A.showToast(result.error || _t('cleanFailed'), 'error'); return; }
+    A.showToast(_t('cleanedOrphans').replace('{n}', result?.deletedCount || 0).replace('{m}', result?.freedMB || 0), 'success');
+  } catch (e) {
+    A.logError('repairOrphans', e);
+    A.showToast(_t('cleanFailed'), 'error');
   }
 };
 

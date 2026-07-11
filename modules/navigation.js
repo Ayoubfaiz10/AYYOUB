@@ -19,6 +19,7 @@ var ROLE_ACCESS = {
     'reports',
     'ai',
     'archive',
+    'help',
     'support',
     'settings'
   ],
@@ -38,11 +39,13 @@ var ROLE_ACCESS = {
     'archive',
     'support'
   ],
-  junior_lawyer: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'ai', 'support'],
-  assistant: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'support'],
-  intern: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'tasks', 'support'],
-  external: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'support']
+  junior_lawyer: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'ai', 'help', 'support'],
+  assistant: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'help', 'support'],
+  intern: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'tasks', 'help', 'support'],
+  external: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'help', 'support']
 };
+A.ROLE_ACCESS = ROLE_ACCESS;
+A.SECTIONS = ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'expenses', 'reports', 'ai', 'archive', 'help', 'support', 'settings'];
 
 A.canAccess = function (sectionId) {
   const role = (A.state.currentUser && A.state.currentUser.role) || 'admin';
@@ -88,21 +91,32 @@ A.navigateTo = function (sectionId) {
     if (!A.state.loadedSections.has(sectionId)) {
       A.state.loadedSections.add(sectionId);
     }
+    if (!A.state.initedSections) A.state.initedSections = new Set();
+    function lazyInit(name) {
+      if (!A.state.initedSections.has(name)) {
+        A.state.initedSections.add(name);
+        var fn = A['init' + name.charAt(0).toUpperCase() + name.slice(1)];
+        if (typeof fn === 'function') fn();
+      }
+    }
     if (sectionId === 'dashboard' && typeof A.loadDashboard === 'function') A.loadDashboard();
     else if (sectionId === 'clients' && typeof A.loadClients === 'function') A.loadClients();
     else if (sectionId === 'cases' && typeof A.loadCases === 'function') A.loadCases();
     else if (sectionId === 'hearings' && typeof A.loadHearings === 'function') A.loadHearings();
-    else if (sectionId === 'tasks' && typeof A.loadTasks === 'function') A.loadTasks();
+    else if (sectionId === 'tasks') { lazyInit('tasks'); if (typeof A.loadTasks === 'function') A.loadTasks(); }
     else if (sectionId === 'documents' && typeof A.loadDocuments === 'function') A.loadDocuments();
     else if (sectionId === 'expenses' && typeof A.loadExpenses === 'function') A.loadExpenses();
-    else if (sectionId === 'calendar' && typeof A.loadCalendar === 'function') A.loadCalendar();
+    else if (sectionId === 'calendar') { lazyInit('calendar'); if (typeof A.loadCalendar === 'function') A.loadCalendar(); }
     else if (sectionId === 'archive' && typeof A.loadArchive === 'function') A.loadArchive();
-    else if (sectionId === 'ai' && typeof A.loadAI === 'function') A.loadAI();
+    else if (sectionId === 'ai') { lazyInit('ai'); if (typeof A.loadAI === 'function') A.loadAI(); }
+    else if (sectionId === 'help') { lazyInit('help'); if (typeof A.renderGuide === 'function') A.renderGuide(); }
     else if (sectionId === 'notifications' && typeof A.loadNotifications === 'function') A.loadNotifications();
     else if (sectionId === 'search' && typeof A.initAdvancedSearch === 'function') A.initAdvancedSearch();
-    else if (sectionId === 'reports' && typeof A.initReports === 'function') A.initReports();
+    else if (sectionId === 'reports') { lazyInit('reports'); if (typeof A.initReports === 'function') A.initReports(); }
     else if (sectionId === 'profile' && typeof A.loadProfile === 'function') A.loadProfile();
     else if (sectionId === 'settings') {
+      lazyInit('settings');
+      if (typeof A.initSettingsData === 'function') A.initSettingsData();
       if (typeof A.loadSettingsUsers === 'function') A.loadSettingsUsers();
       if (typeof A.loadSettingsActivity === 'function') A.loadSettingsActivity();
     }
@@ -112,26 +126,28 @@ A.navigateTo = function (sectionId) {
 A.updateBreadcrumbs = function (sectionId) {
   const container = document.getElementById('topbarBreadcrumbs');
   if (!container) return;
-  const labels = {
-    dashboard: 'الرئيسية',
-    clients: 'الموكلين',
-    cases: 'القضايا',
-    hearings: 'الجلسات',
-    documents: 'الوثائق',
-    calendar: 'التقويم',
-    tasks: 'المهام',
-    expenses: 'المصاريف',
-    reports: 'التقارير',
-    ai: 'المساعد الذكي',
-    archive: 'الأرشيف',
-    search: 'بحث متقدم',
-    notifications: 'الإشعارات',
-    settings: 'الإعدادات',
-    support: 'الدعم',
-    profile: 'الملف الشخصي'
+  const labelKeys = {
+    dashboard: 'navDashboard',
+    clients: 'navClients',
+    cases: 'navCases',
+    hearings: 'navHearings',
+    documents: 'navDocuments',
+    calendar: 'navCalendar',
+    tasks: 'navTasks',
+    expenses: 'navExpenses',
+    reports: 'navReports',
+    ai: 'navAI',
+    archive: 'navArchive',
+    search: 'navAdvancedSearch',
+    notifications: 'navNotifications',
+    settings: 'navSettings',
+    help: 'navHelp',
+    support: 'navSupport',
+    profile: 'navProfile'
   };
-  const leaf = labels[sectionId] || sectionId;
-  container.innerHTML = '<span class="breadcrumb-item" data-section="dashboard">الرئيسية</span><span class="breadcrumb-item">' + leaf + '</span>';
+  const key = labelKeys[sectionId] || null;
+  const leaf = key ? _t(key) : sectionId;
+  container.innerHTML = '<span class="breadcrumb-item" data-section="dashboard">' + _t('navDashboard') + '</span><span class="breadcrumb-item">' + leaf + '</span>';
 };
 
 window.navigateTo = A.navigateTo;
@@ -165,6 +181,7 @@ A.initKeyboardShortcuts = function () {
     }
   });
 
+  document.getElementById('shortcutsHelpBtn')?.addEventListener('click', A.showShortcutsHelp);
   document.getElementById('shortcutsHelpClose')?.addEventListener('click', A.hideShortcutsHelp);
   document.getElementById('shortcutsHelpOverlay')?.addEventListener('click', function (e) {
     if (e.target === this) A.hideShortcutsHelp();

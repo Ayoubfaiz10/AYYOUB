@@ -2,7 +2,16 @@ var A = (window.App = window.App || {});
 
 A.state = {};
 A.state.ipc = null;
-A.state.statusLabels = { active: 'نشطة', pending: 'معلقة', closed: 'مغلقة' };
+A.state.statusLabels = { active: _t('activeF'), pending: _t('pendingF'), closed: _t('closedF') };
+
+A.todayLocal = function () {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
+
+A.dateToLocalStr = function (d) {
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+};
 A._trustedClicks = [
   '#clientDetailOverlay [data-ws=clnotes]',
   '#addCaseBtn',
@@ -51,7 +60,7 @@ A.showError = function (containerId, message, retryFn) {
   A.safeSet(
     el,
     esc =>
-      `<div class="error-state"><i class="ri-alert-line error-state-icon"></i><p class="error-state-text">${esc(message)}</p>${retryFn ? '<button class="btn btn-secondary btn-xs error-retry-btn">إعادة المحاولة</button>' : ''}</div>`
+      `<div class="error-state"><i class="ri-alert-line error-state-icon"></i><p class="error-state-text">${esc(message)}</p>${retryFn ? '<button class="btn btn-secondary btn-xs error-retry-btn">' + _t('retryLabel') + '</button>' : ''}</div>`
   );
   if (retryFn) el.querySelector('.error-retry-btn')?.addEventListener('click', retryFn);
 };
@@ -136,7 +145,7 @@ A.showLoading = function (elementId) {
   if (!el) return;
   el.dataset._ldOrigHtml = el.innerHTML;
   el.innerHTML =
-    '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--muted-foreground);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);"></i> جاري التحميل...</div>';
+    '<div class="loading-spinner" style="display:flex;align-items:center;justify-content:center;gap:10px;padding:40px 20px;color:var(--muted-foreground);font-size:14px;"><i class="ri-loader-4-line ri-spin" style="font-size:var(--icon-lg);"></i> ' + _t('loading') + '</div>';
 };
 
 A.hideLoading = function (elementId) {
@@ -331,8 +340,10 @@ document.addEventListener('click', function (e) {
   }
 });
 
-A.state.ipc.on('app:indexNotification', function (data) {
-  const typeMap = { indexSuccess: 'success', indexWarning: 'warning', indexError: 'error' };
-  const toastType = typeMap[data.type] || 'info';
-  A.showToast(data.message, toastType);
-});
+if (A.state.ipc) {
+  A.state.ipc.on('app:indexNotification', function (data) {
+    const typeMap = { indexSuccess: 'success', indexWarning: 'warning', indexError: 'error' };
+    const toastType = typeMap[data.type] || 'info';
+    A.showToast(data.message, toastType);
+  });
+}

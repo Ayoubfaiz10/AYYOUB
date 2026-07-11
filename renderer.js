@@ -56,32 +56,14 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initDashboard);
   safeInit(A.initClients);
   safeInit(A.initCases);
-  safeInit(A.initCalendar);
   safeInit(A.initHearings);
-  safeInit(A.initTasks);
   safeInit(A.initDocuments);
-  safeInit(A.initExpenses);
   safeInit(A.initArchive);
-  safeInit(A.initReports);
-  safeInit(A.initAI);
-  safeInit(A.initSettings);
-  safeInit(A.initSettingsData);
   safeInit(A.initNotifications);
   safeInit(A.initProfile);
   safeInit(A.initSessionTimeout);
   safeInit(A.AutoSave ? A.AutoSave.init : null);
 
-  // Patch navigateTo to load settings data when navigating to settings
-  const origNav = A.navigateTo;
-  A.navigateTo = function (sectionId) {
-    origNav(sectionId);
-    if (sectionId === 'settings') {
-      setTimeout(() => {
-        A.loadSettingsUsers();
-        A.loadSettingsActivity();
-      }, 100);
-    }
-  };
   window.navigateTo = A.navigateTo;
 
   // Patch loadDashboard to update user badge
@@ -113,6 +95,9 @@ document.addEventListener('DOMContentLoaded', () => {
   A.loadAiInsights = A.loadSmartInsights;
   window.loadAiInsights = A.loadSmartInsights;
 
+  // Init index notification listener
+  if (A._initIndexNotification) A._initIndexNotification();
+
   // Listen for push events from main process
   if (A.state.ipc) {
     A.state.ipc.on('app:navigateToCase', caseId => {
@@ -121,11 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // License check before auth
-  A.checkLicense().then(function () {
-    A.checkAuth().finally(function () {
-      // Load search index after auth completes (preloads all data for instant local search)
-      if (A.loadSearchIndex) setTimeout(() => A.loadSearchIndex(), 500);
-    });
+  // License check in parallel with auth (don't block login)
+  Promise.all([A.checkLicense(), A.checkAuth()]).finally(function () {
+    // Load search index after auth completes (preloads all data for instant local search)
+    if (A.loadSearchIndex) setTimeout(() => A.loadSearchIndex(), 500);
   });
 });

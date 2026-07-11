@@ -6,6 +6,11 @@ const crypto = require('crypto');
 const { Transform } = require('stream');
 const { app } = require('electron');
 
+function localDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+function todayLocal() { return localDateStr(new Date()); }
+
 const USER_DATA = app.getPath('userData');
 const DB_PATH = path.join(USER_DATA, 'lawyer.db');
 const STORAGE_DIR = path.join(USER_DATA, 'storage', 'affaires');
@@ -179,6 +184,7 @@ async function initDb() {
   safeAlter('ALTER TABLE cases ADD COLUMN honoraires_totaux REAL DEFAULT 0');
   safeAlter("ALTER TABLE cases ADD COLUMN access_level TEXT DEFAULT 'team'");
   safeAlter('ALTER TABLE cases ADD COLUMN deadline_date TEXT');
+  safeAlter('ALTER TABLE cases ADD COLUMN archived_date TEXT');
   db.run(`CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
     description TEXT DEFAULT '', priority TEXT DEFAULT 'medium',
@@ -271,14 +277,11 @@ async function initDb() {
   safeAlter('ALTER TABLE users ADD COLUMN specialties TEXT');
   safeAlter('ALTER TABLE users ADD COLUMN experience_years INTEGER DEFAULT 0');
   db.run('CREATE TABLE IF NOT EXISTS office_settings (key TEXT PRIMARY KEY, value TEXT)');
-  db.run(`CREATE TABLE IF NOT EXISTS security_questions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    question_index INTEGER NOT NULL,
-    question TEXT NOT NULL,
-    answer_hash TEXT NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    UNIQUE(user_id, question_index)
+  db.run(`CREATE TABLE IF NOT EXISTS user_pin (
+    user_id INTEGER PRIMARY KEY,
+    pin_hash TEXT NOT NULL,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now','localtime')),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS permissions (
     id INTEGER PRIMARY KEY AUTOINCREMENT, role TEXT NOT NULL,
@@ -708,7 +711,7 @@ function addCase(data) {
       data.total_fees || 0,
       data.priority || 'medium',
       data.case_type || 'مدني',
-      data.created_date || new Date().toISOString().slice(0, 10)
+      data.created_date || todayLocal()
     ]
   );
   const res = query('SELECT last_insert_rowid() as id');
@@ -730,10 +733,12 @@ function deleteCase(id) {
 }
 
 function archiveCase(id) {
-  mutate('UPDATE cases SET archived = 1 WHERE id = ?', [id]);
+  mutate("UPDATE cases SET archived = 1, archived_date = date('now','localtime') WHERE id = ?", [id]);
+  mutate('UPDATE tasks SET archived = 1 WHERE case_id = ?', [id]);
 }
 function unarchiveCase(id) {
-  mutate('UPDATE cases SET archived = 0 WHERE id = ?', [id]);
+  mutate('UPDATE cases SET archived = 0, archived_date = NULL WHERE id = ?', [id]);
+  mutate('UPDATE tasks SET archived = 0 WHERE case_id = ?', [id]);
 }
 function archiveClient(id) {
   mutate('UPDATE clients SET archived = 1 WHERE id = ?', [id]);
@@ -743,14 +748,14 @@ function unarchiveClient(id) {
 }
 
 function getArchivedCases() {
-  return query("SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id WHERE cases.archived = 1 ORDER BY cases.created_date DESC");
+  return query("SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.archived_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id WHERE cases.archived = 1 ORDER BY cases.archived_date DESC, cases.created_date DESC");
 }
 
 function autoArchive() {
-  const stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', '-90 days') LIMIT 100");
+  const stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', 'localtime', '-90 days') LIMIT 100");
   if (!stale.length) return 0;
   for (let i = 0; i < stale.length; i++) {
-    db.run('UPDATE cases SET archived = 1 WHERE id = ?', [stale[i].id]);
+    db.run("UPDATE cases SET archived = 1, archived_date = date('now','localtime') WHERE id = ?", [stale[i].id]);
   }
   return stale.length;
 }
@@ -774,19 +779,21 @@ function getCasesByClient(clientId) {
 }
 
 function getAllClients() {
-  const clients = query('SELECT * FROM clients ORDER BY name ASC');
-  return clients.map(c => {
-    const cases = query('SELECT COUNT(*) as cnt, COALESCE(SUM(paid_fees),0) as paid, COALESCE(SUM(total_fees),0) as fees FROM cases WHERE client_id = ?', [
-      c.id
-    ]);
-    const logs = query('SELECT created_at FROM activity_log WHERE details LIKE ? ORDER BY created_at DESC LIMIT 1', ['%@' + c.id + '%']);
-    return {
-      ...c,
-      _caseCount: cases[0]?.cnt || 0,
-      _balance: (cases[0]?.fees || 0) - (cases[0]?.paid || 0),
-      _lastActivity: logs[0]?.created_at?.slice(0, 10) || ''
-    };
-  });
+  return query(`
+    SELECT c.*,
+      COALESCE(cs.cnt, 0) as _caseCount,
+      COALESCE(cs.fees, 0) - COALESCE(cs.paid, 0) as _balance,
+      COALESCE(
+        (SELECT created_at FROM activity_log WHERE details LIKE '%@' || c.id || '%' ORDER BY created_at DESC LIMIT 1),
+        ''
+      ) as _lastActivity
+    FROM clients c
+    LEFT JOIN (
+      SELECT client_id, COUNT(*) as cnt, COALESCE(SUM(paid_fees),0) as paid, COALESCE(SUM(total_fees),0) as fees
+      FROM cases WHERE client_id IS NOT NULL GROUP BY client_id
+    ) cs ON cs.client_id = c.id
+    ORDER BY c.name ASC
+  `);
 }
 
 function normalizePhone(phone) {
@@ -1245,7 +1252,7 @@ function applyWorkflow(caseId, workflowId) {
   if (!w || !w.steps) return;
   transaction(() => {
     w.steps.forEach(s => {
-      const dueDate = s.due_days ? new Date(Date.now() + s.due_days * 86400000).toISOString().slice(0, 10) : null;
+      const dueDate = s.due_days ? localDateStr(new Date(Date.now() + s.due_days * 86400000)) : null;
       mutate("INSERT INTO tasks (title, case_id, status, due_date, workflow_id, priority) VALUES (?, ?, 'todo', ?, ?, 'medium')", [
         s.title,
         caseId,
@@ -1844,7 +1851,7 @@ function getSearchIndex(userId, userRole) {
     text: (c.case_number || '') + ' ' + (c.title || '') + ' ' + (c.client_name || '') + ' ' + (c.court || '') + ' ' + (c.description || ''),
     status: c.status || ''
   }));
-  const clients = getAllClients().map(c => ({
+  const clients = query('SELECT id, name, phone, email, address, national_id FROM clients ORDER BY name ASC').map(c => ({
     id: c.id,
     type: 'client',
     label: c.name,
@@ -1862,21 +1869,17 @@ function getSearchIndex(userId, userRole) {
       nav: 'calendar',
       text: (e.title || '') + ' ' + (e.case_number || '') + ' ' + (e.court || '') + ' ' + (e.notes || '') + ' ' + (e.type || '')
     }));
-  const allCases = getAllCases(false, userId, userRole);
-  const docs = [];
-  for (const c of allCases) {
-    const d = getDocuments(c.id);
-    d.forEach(doc =>
-      docs.push({
-        id: doc.id,
-        type: 'document',
-        label: doc.filename,
-        sub: doc.doc_type + ' — ' + (c.case_number || ''),
-        nav: 'documents',
-        text: (doc.filename || '') + ' ' + (doc.doc_type || '') + ' ' + (c.case_number || '') + ' ' + (doc.tags || '') + ' ' + (doc.notes || '')
-      })
-    );
-  }
+  const docs = query(
+    `SELECT d.id, d.filename, d.doc_type, d.tags, d.notes, COALESCE(c.case_number, '') as case_number
+     FROM documents d LEFT JOIN cases c ON d.case_id = c.id ORDER BY d.upload_date DESC LIMIT 1000`
+  ).map(doc => ({
+    id: doc.id,
+    type: 'document',
+    label: doc.filename,
+    sub: doc.doc_type + ' — ' + (doc.case_number || ''),
+    nav: 'documents',
+    text: (doc.filename || '') + ' ' + (doc.doc_type || '') + ' ' + (doc.case_number || '') + ' ' + (doc.tags || '') + ' ' + (doc.notes || '')
+  }));
   const tasks = getAllTasks().map(t => ({
     id: t.id,
     type: 'task',
@@ -1885,20 +1888,18 @@ function getSearchIndex(userId, userRole) {
     nav: 'tasks',
     text: (t.title || '') + ' ' + (t.description || '') + ' ' + (t.case_number || '') + ' ' + (t.tags || '') + ' ' + (t.status || '') + ' ' + (t.priority || '')
   }));
-  const payments = [];
-  for (const c of allCases) {
-    const p = getPaiements(c.id);
-    p.forEach(pay =>
-      payments.push({
-        id: pay.id,
-        type: 'expense',
-        label: (c.case_number || '') + ' — ' + (pay.montant || 0) + ' درهم',
-        sub: pay.date + ' ' + (pay.mode_paiement || ''),
-        nav: 'expenses',
-        text: (c.case_number || '') + ' ' + (pay.montant || '') + ' ' + (pay.mode_paiement || '') + ' ' + (pay.remarque || '') + ' ' + (pay.date || '')
-      })
-    );
-  }
+  const payments = query(
+    `SELECT p.id, p.montant, p.mode_paiement, p.date, p.remarque, COALESCE(c.case_number, '') as case_number
+     FROM paiements p LEFT JOIN cases c ON p.affaire_id = c.id
+     ORDER BY p.date DESC LIMIT 500`
+  ).map(pay => ({
+    id: pay.id,
+    type: 'expense',
+    label: (pay.case_number || '') + ' — ' + (pay.montant || 0) + ' درهم',
+    sub: pay.date + ' ' + (pay.mode_paiement || ''),
+    nav: 'expenses',
+    text: (pay.case_number || '') + ' ' + (pay.montant || '') + ' ' + (pay.mode_paiement || '') + ' ' + (pay.remarque || '') + ' ' + (pay.date || '')
+  }));
   return [...cases, ...clients, ...events, ...docs, ...tasks, ...payments];
 }
 
@@ -2075,9 +2076,14 @@ function deleteCommunication(id) {
   mutate('DELETE FROM communications WHERE id = ?', [id]);
 }
 
+let _logCleanCount = 0;
 function addLog(action, details, userId, userName) {
   try {
     mutate('INSERT INTO activity_log (action, details, user_id, user_name) VALUES (?, ?, ?, ?)', [action, details || '', userId || 0, userName || '']);
+    _logCleanCount++;
+    if (_logCleanCount % 50 === 0) {
+      mutate("DELETE FROM activity_log WHERE created_at < datetime('now', '-90 days')");
+    }
   } catch (e) {
     console.error('Log error:', e);
   }
@@ -2150,24 +2156,16 @@ function getOfficeSetting(key) {
 function setOfficeSetting(key, value) {
   mutate('INSERT OR REPLACE INTO office_settings (key, value) VALUES (?, ?)', [key, value]);
 }
-function setSecurityQuestions(userId, questions) {
-  mutate('DELETE FROM security_questions WHERE user_id=?', [userId]);
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
-    mutate('INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)', [
-      userId,
-      i + 1,
-      q.question,
-      q.answerHash
-    ]);
-  }
+function setUserPin(userId, pinHash) {
+  mutate('INSERT OR REPLACE INTO user_pin (user_id, pin_hash, updated_at) VALUES (?, ?, datetime('+"'"+'now'+"'"+", 'localtime'))", [userId, pinHash]);
 }
-function getSecurityQuestions(userId) {
-  return query('SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
+function checkUserPin(userId, pinHash) {
+  const r = query('SELECT pin_hash FROM user_pin WHERE user_id=?', [userId]);
+  return r.length ? r[0].pin_hash : null;
 }
-function getSecurityAnswer(userId, questionIndex) {
-  const r = query('SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
-  return r.length ? r[0].answer_hash : null;
+function hasUserPin(userId) {
+  const r = query('SELECT 1 FROM user_pin WHERE user_id=?', [userId]);
+  return r.length > 0;
 }
 function checkPermission(role, permission) {
   const r = query('SELECT allowed FROM permissions WHERE role=? AND permission=?', [role, permission]);
@@ -2448,7 +2446,7 @@ function exportFullArchive() {
   const meta = {
     timestamp: now.toISOString(),
     version: '2.0',
-    stats: { cases: getAllCases().length, clients: getAllClients().length, tasks: getAllTasks().length, events: getAllEvents().length }
+    stats: { cases: getAllCases(true).length, clients: getAllClients().length, tasks: getAllTasks().length, events: getAllEvents().length }
   };
   return { filename, size: buffer.length, meta };
 }
@@ -2608,9 +2606,9 @@ module.exports = {
   getUserById,
   getPasswordHashForUser,
   updateOwnProfile,
-  setSecurityQuestions,
-  getSecurityQuestions,
-  getSecurityAnswer,
+  setUserPin,
+  checkUserPin,
+  hasUserPin,
   integrityCheck,
   repairOrphans,
   transaction,

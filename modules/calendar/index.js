@@ -56,7 +56,7 @@ A.showEventForm = async function (editData) {
       <div class="input-group"><label class="input-label">${_t('eventStatusLabel')}</label><select id="fEventStatus" class="input">${statusOpts}</select></div>
     </div>
     <div class="info-grid-3">
-      <div class="input-group"><label class="input-label">${_t('eventDateLabel')}</label><input type="date" id="fEventDate" class="input" value="${esc(editData ? editData.date : new Date().toISOString().slice(0, 10))}"></div>
+      <div class="input-group"><label class="input-label">${_t('eventDateLabel')}</label><input type="date" id="fEventDate" class="input" value="${esc(editData ? editData.date : A.todayLocal())}"></div>
       <div class="input-group"><label class="input-label">${_t('eventFromLabel')}</label><input type="time" id="fEventTime" class="input" value="${esc(editData ? editData.time || '' : '')}"></div>
       <div class="input-group"><label class="input-label">${_t('eventToLabel')}</label><input type="time" id="fEventEndTime" class="input" value="${esc(editData ? editData.end_time || '' : '')}"></div>
     </div>
@@ -122,7 +122,7 @@ A.showEventForm = async function (editData) {
                 const interval = { daily: 1, weekly: 7 }[data.recurring_type] || 7;
                 nextDate.setDate(nextDate.getDate() + interval * i);
               }
-              promises.push(A.mutate('events:add', { ...data, date: nextDate.toISOString().slice(0, 10), recurring_type: 'none' }));
+              promises.push(A.mutate('events:add', { ...data, date: A.dateToLocalStr(nextDate), recurring_type: 'none' }));
             }
             await Promise.all(promises);
           }
@@ -209,21 +209,6 @@ A.openEventDetail = async function (eventId) {
 };
 
 A.initCalendar = function () {
-  document.getElementById('searchHearings')?.addEventListener(
-    'input',
-    A.debounce(() => A.renderHearingsTable(), 250)
-  );
-  document.getElementById('hearingsFilterType')?.addEventListener('change', () => A.renderHearingsTable());
-
-  document.querySelectorAll('#section-hearings .filter-btn').forEach(b =>
-    b.addEventListener('click', () => {
-      document.querySelectorAll('#section-hearings .filter-btn').forEach(x => x.classList.remove('active'));
-      b.classList.add('active');
-      A.state.hearingsFilter = b.dataset.filter;
-      A.renderHearingsTable();
-    })
-  );
-
   document.querySelectorAll('#section-calendar .view-btn').forEach(btn => btn.addEventListener('click', () => A.switchCalView(btn.dataset.view)));
 
   document.getElementById('calPrev').addEventListener('click', () => {

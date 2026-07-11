@@ -1,22 +1,15 @@
 var A = (window.App = window.App || {});
 
 A.state.hearingsFilter = 'all';
+A.state._allEvents = [];
 
 A.loadHearings = async function () {
   if (!A.state.ipc) return;
   A.showSkeleton('hearingsBody', 5, 'tableRow');
   try {
-    A.state.allEvents = (await A.cachedInvoke('events:getAll')) || [];
-    if (A.state._hearingScroll) A.state._hearingScroll.destroy();
-    A.state._hearingScroll = A.VirtualScroll.init(
-      'hearingsBody',
-      A.state.allEvents,
-      function (displayed) {
-        A._renderHearingRows(displayed);
-      },
-      30
-    );
-    A.renderMiniCalendar();
+    A.state._allEvents = (await A.cachedInvoke('events:getAll')) || [];
+    A.renderHearingsTable();
+    if (A.renderMiniCalendar) A.renderMiniCalendar();
   } catch (e) {
     A.logError('loadHearings', e);
     const mainEl = document.getElementById('hearingsBody')?.parentElement;
@@ -30,7 +23,7 @@ A._renderHearingRows = function (displayed) {
     displayed.length
       ? displayed
           .map(e => {
-            const today = new Date().toISOString().slice(0, 10);
+            const today = A.todayLocal();
             const statusBadge =
               e.date < today
                 ? '<span class="badge badge-closed">' + _t('hearingsPast') + '</span>'
@@ -55,24 +48,64 @@ A._renderHearingRows = function (displayed) {
 };
 
 A.renderHearingsTable = function () {
-  let list = A.state.allEvents.filter(e => ['hearing', 'deadline'].includes(e.type));
-  if (A.state.hearingsFilter === 'upcoming') list = list.filter(e => e.date >= new Date().toISOString().slice(0, 10));
-  else if (A.state.hearingsFilter === 'past') list = list.filter(e => e.date < new Date().toISOString().slice(0, 10));
-  const typeFilter = document.getElementById('hearingsFilterType')?.value || 'all';
-  if (typeFilter !== 'all') list = list.filter(e => e.type === typeFilter);
-  const q = document.getElementById('searchHearings').value.toLowerCase();
-  if (q)
-    list = list.filter(
-      e => (e.title || '').toLowerCase().includes(q) || (e.case_number || '').toLowerCase().includes(q) || (e.court || '').toLowerCase().includes(q)
-    );
-  list.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
-  if (A.state._hearingScroll) A.state._hearingScroll.destroy();
-  A.state._hearingScroll = A.VirtualScroll.init('hearingsBody', list, A._renderHearingRows, 30);
+  try {
+    let list = A.state._allEvents;
+    const typeFilter = document.getElementById('hearingsFilterType')?.value || 'all';
+    if (typeFilter !== 'all') list = list.filter(e => e.type === typeFilter);
+    if (A.state.hearingsFilter === 'upcoming') list = list.filter(e => e.date >= A.todayLocal());
+    else if (A.state.hearingsFilter === 'past') list = list.filter(e => e.date < A.todayLocal());
+    const q = document.getElementById('searchHearings')?.value.toLowerCase() || '';
+    if (q)
+      list = list.filter(
+        e => (e.title || '').toLowerCase().includes(q) || (e.case_number || '').toLowerCase().includes(q) || (e.court || '').toLowerCase().includes(q)
+      );
+    list.sort((a, b) => a.date.localeCompare(b.date) || (a.time || '').localeCompare(b.time || ''));
+    if (A.state._hearingScroll) A.state._hearingScroll.destroy();
+    A.state._hearingScroll = A.VirtualScroll.init('hearingsBody', list, A._renderHearingRows, 30);
+  } catch (e) {
+    A.logError('renderHearingsTable', e);
+  }
 };
 
 A.initHearings = function () {
   document.getElementById('hearingsFilterBtn')?.addEventListener('click', () => {
     const bar = document.getElementById('hearingsFilterBar');
     if (bar) bar.style.display = bar.style.display === 'none' ? 'block' : 'none';
+  });
+  document.getElementById('searchHearings')?.addEventListener('input', A.debounce(() => A.renderHearingsTable(), 250));
+  document.getElementById('hearingsFilterType')?.addEventListener('change', () => A.renderHearingsTable());
+  document.querySelectorAll('#hearingsFilterBar .filter-btn').forEach(btn =>
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#hearingsFilterBar .filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      A.state.hearingsFilter = btn.dataset.filter;
+      A.renderHearingsTable();
+    })
+  );
+  document.getElementById('addHearingBtn')?.addEventListener('click', () => {
+    const typeOpts = ['hearing', 'deadline', 'meeting', 'task', 'document', 'payment']
+      .map(t => `<option value="${t}">${{ hearing: _t('eventTypeHearing'), deadline: _t('eventTypeDeadline'), meeting: _t('eventTypeMeeting'), task: _t('eventTypeTask'), document: _t('eventTypeDocument'), payment: _t('eventTypePayment') }[t]}</option>`)
+      .join('');
+    A.showModal(_t('newHearingBtn'), `
+      <div class="input-group"><label class="input-label">${_t('eventTitleLabel')}</label><input type="text" id="fHearingTitle" class="input" placeholder="${_t('eventTitlePlaceholder')}"></div>
+      <div class="info-grid-2">
+        <div class="input-group"><label class="input-label">${_t('hearingDateLabel')}</label><input type="date" id="fHearingDate" class="input" value="${A.todayLocal()}"></div>
+        <div class="input-group"><label class="input-label">${_t('eventTypeLabel')}</label><select id="fHearingType" class="input">${typeOpts}</select></div>
+      </div>
+      <div class="input-group"><label class="input-label">${_t('hearingNotesLabel')}</label><textarea id="fHearingNotes" class="input" rows="3"></textarea></div>
+    `, async () => {
+      const title = document.getElementById('fHearingTitle').value.trim();
+      if (!title) { A.showToast(_t('eventTitleRequired'), 'error'); return; }
+      try {
+        await A.mutate('events:add', {
+          date: document.getElementById('fHearingDate').value,
+          type: document.getElementById('fHearingType').value,
+          title,
+          notes: document.getElementById('fHearingNotes').value
+        });
+      } catch (e) { A.logError('addEvent', e); A.showToast(_t('hearingAddFailed'), 'error'); return; }
+      A.hideModal();
+      A.loadHearings();
+    });
   });
 };

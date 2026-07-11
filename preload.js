@@ -32,6 +32,8 @@ const VALID_CHANNELS = [
   'auth:verifyPassword',
   'auth:resetPassword',
   'auth:resetWithMasterKey',
+  'auth:getMasterKey',
+  'auth:checkPin',
   'db:getAllCases',
   'db:addCase',
   'db:deleteCase',
@@ -111,6 +113,7 @@ const VALID_CHANNELS = [
   'events:update',
   'events:delete',
   'notif:getCacheStats',
+  'audit:log',
   'logger:log',
   'logger:getLogs',
   'logger:export',
@@ -125,6 +128,7 @@ const VALID_CHANNELS = [
   'ai:getConfig',
   'ai:saveConfig',
   'ai:analyzeDocument',
+  'help:getSystemHealth',
   'app:navigateToCase',
   'app:checkMasterKey',
   'cert:getPinnedStatus',
@@ -238,6 +242,16 @@ const IPC_SCHEMAS = {
         userId: s_integer({ positive: true }),
         newPassword: s_string({ minLength: 8 }),
         masterKey: s_string({ minLength: 1 })
+      })
+    ],
+    strict: true
+  },
+  'auth:getMasterKey': { args: [], strict: true },
+  'auth:checkPin': {
+    args: [
+      s_object({
+        userId: s_integer({ positive: true }),
+        pin: s_string({ minLength: 1 })
       })
     ],
     strict: true
@@ -727,6 +741,12 @@ const IPC_SCHEMAS = {
 
   // ───── Notifications ─────
   'notif:getCacheStats': { args: [], strict: true },
+
+  // ───── Audit ─────
+  'audit:log': {
+    args: [s_string({ maxLength: 100 }), s_string({ maxLength: 2000 })],
+    strict: true
+  },
 
   // ───── Logger ─────
   'logger:log': {

@@ -21,7 +21,7 @@ A._renderTaskCards = function (displayed, container) {
             const priorityColors = { critical: 'var(--destructive)', high: 'var(--warning)', medium: 'var(--gold)', low: 'var(--success)' };
             const tags = (t.tags || '').split(',').filter(Boolean);
             const progress = t.subtask_count > 0 ? Math.round((t.subtask_done / t.subtask_count) * 100) : t.progress || 0;
-            const isOverdue = t.due_date && t.due_date < new Date().toISOString().slice(0, 10) && !isDone;
+            const isOverdue = t.due_date && t.due_date < A.todayLocal() && !isDone;
             return `<div class="task-card-v8 ${isDone ? 'done' : ''}" data-click="task:open:${t.id}">
       <div class="priority-indicator" style="background:${priorityColors[t.priority] || 'var(--border)'};"></div>
       <div class="task-check ${isDone ? 'checked' : ''}" data-click="task:toggle:${t.id}">${isDone ? '<i class="ri-check-line" style="font-size:10px;"></i>' : ''}</div>
@@ -29,7 +29,7 @@ A._renderTaskCards = function (displayed, container) {
         <div class="task-title">${esc(t.title)}</div>
         <div class="task-meta">
           ${t.case_number ? `<span><i class="ri-folder-2-line"></i> ${esc(t.case_number)}</span>` : ''}
-          ${t.due_date ? `<span style="color:${isOverdue ? 'var(--destructive)' : 'var(--muted-foreground)'};"><i class="ri-alarm-warning-line"></i> ${esc(t.due_date)}${isOverdue ? ' (متأخرة)' : ''}</span>` : ''}
+          ${t.due_date ? `<span style="color:${isOverdue ? 'var(--destructive)' : 'var(--muted-foreground)'};"><i class="ri-alarm-warning-line"></i> ${esc(t.due_date)}${isOverdue ? _t('overdueSuffix') : ''}</span>` : ''}
           ${t.assigned_to ? `<span><i class="ri-user-line"></i> ${esc(t.assigned_to)}</span>` : ''}
         </div>
         ${
@@ -48,7 +48,7 @@ A._renderTaskCards = function (displayed, container) {
     </div>`;
           })
           .join('')
-      : '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-checkbox-line" style="font-size:var(--icon-xl);display:block;margin-bottom:8px;"></i>لا توجد مهام</div>'
+      : '<div style="text-align:center;padding:60px 20px;color:var(--muted-foreground);"><i class="ri-checkbox-line" style="font-size:var(--icon-xl);display:block;margin-bottom:8px;"></i>' + _t('noTasksLabel') + '</div>'
   );
 };
 
@@ -66,7 +66,7 @@ A.toggleTaskStatus = async function (id) {
     await A.mutate('db:updateTask', id, { status: t.status === 'done' ? 'todo' : 'done' });
   } catch (e) {
     A.logError('toggleTaskStatus', e);
-    A.showToast('فشل تحديث المهمة', 'error');
+    A.showToast(_t('taskUpdateFailed'), 'error');
     return;
   }
   A.loadTasks();
@@ -75,8 +75,10 @@ window.toggleTaskStatus = A.toggleTaskStatus;
 
 A.renderKanban = function () {
   const cols = ['backlog', 'todo', 'in_progress', 'waiting', 'review', 'done'];
+  const _cols = {};
+  cols.forEach(col => { _cols[col] = document.getElementById(`kanban${col.charAt(0).toUpperCase() + col.slice(1)}`); });
   cols.forEach(col => {
-    const el = document.getElementById(`kanban${col.charAt(0).toUpperCase() + col.slice(1)}`);
+    const el = _cols[col];
     if (!el) return;
     const items = A.state.allTasks.filter(t => t.status === col);
     A.safeSet(el, esc =>
@@ -105,10 +107,10 @@ A.renderPriorityView = function () {
   const container = document.getElementById('priorityView');
   if (!container) return;
   const groups = [
-    { key: 'critical', label: 'حرج', color: 'var(--destructive)' },
-    { key: 'high', label: 'عالي', color: 'var(--warning)' },
-    { key: 'medium', label: 'متوسط', color: 'var(--gold)' },
-    { key: 'low', label: 'منخفض', color: 'var(--success)' }
+    { key: 'critical', label: _t('priorityCritical'), color: 'var(--destructive)' },
+    { key: 'high', label: _t('priorityHigh'), color: 'var(--warning)' },
+    { key: 'medium', label: _t('priorityMedium'), color: 'var(--gold)' },
+    { key: 'low', label: _t('priorityLow'), color: 'var(--success)' }
   ];
   A.safeSet(
     container,
@@ -132,7 +134,7 @@ A.renderPriorityView = function () {
         .join('')}
     </div>`;
         })
-        .join('') || '<div style="text-align:center;padding:40px;color:var(--muted-foreground);">جميع المهام منجزة</div>'
+        .join('') || '<div style="text-align:center;padding:40px;color:var(--muted-foreground);">' + _t('allTasksDoneLabel') + '</div>'
   );
 };
 
@@ -144,18 +146,18 @@ A.renderTaskAnalytics = async function () {
     A.safeSetStatic(
       container,
       `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);margin-bottom:var(--spacing-3);">
-      <div class="task-analytics-card"><h4>إجمالي المهام</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.total))}</div></div>
-      <div class="task-analytics-card"><h4>منجز هذا الأسبوع</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.completedThisWeek))}</div></div>
-      <div class="task-analytics-card"><h4>متأخرة</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--destructive)' : 'var(--success)'};">${A.escapeHtml(String(stats.overdue))}</div></div>
+      <div class="task-analytics-card"><h4>${_t('totalTasksLabel')}</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.total))}</div></div>
+      <div class="task-analytics-card"><h4>${_t('completedThisWeekLabel')}</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.completedThisWeek))}</div></div>
+      <div class="task-analytics-card"><h4>${_t('overdueAnalyticsLabel')}</h4><div class="task-analytics-number" style="color:${stats.overdue > 0 ? 'var(--destructive)' : 'var(--success)'};">${A.escapeHtml(String(stats.overdue))}</div></div>
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--spacing-3);">
-      <div class="task-analytics-card"><h4>متروكة</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.byStatus.backlog || 0))}</div></div>
-      <div class="task-analytics-card"><h4>قيد التنفيذ</h4><div class="task-analytics-number">${A.escapeHtml(String((stats.byStatus.todo || 0) + (stats.byStatus.in_progress || 0)))}</div></div>
-      <div class="task-analytics-card"><h4>معدل الإنجاز</h4><div class="task-analytics-number" style="font-size:20px;">${A.escapeHtml(String(stats.avgCompletionDays))} يوم</div></div>
+      <div class="task-analytics-card"><h4>${_t('backlogAnalyticsLabel')}</h4><div class="task-analytics-number">${A.escapeHtml(String(stats.byStatus.backlog || 0))}</div></div>
+      <div class="task-analytics-card"><h4>${_t('taskInProgress')}</h4><div class="task-analytics-number">${A.escapeHtml(String((stats.byStatus.todo || 0) + (stats.byStatus.in_progress || 0)))}</div></div>
+      <div class="task-analytics-card"><h4>${_t('completionRateLabel')}</h4><div class="task-analytics-number" style="font-size:20px;">${A.escapeHtml(String(stats.avgCompletionDays))} ${_t('dayLabel')}</div></div>
     </div>`
     );
   } catch (e) {
     A.logError('renderTaskAnalytics', e);
-    A.safeSetStatic(container, '<div style="text-align:center;padding:40px;color:var(--muted-foreground);">' + A.escapeHtml('تعذر تحميل تحليلات المهام') + '</div>');
+    A.safeSetStatic(container, '<div style="text-align:center;padding:40px;color:var(--muted-foreground);">' + A.escapeHtml(_t('failedLoadTaskAnalytics')) + '</div>');
   }
 };

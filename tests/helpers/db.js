@@ -71,7 +71,7 @@ async function createDb() {
   );
   db.run('CREATE TABLE IF NOT EXISTS office_settings (key TEXT PRIMARY KEY, value TEXT)');
   db.run(
-    'CREATE TABLE IF NOT EXISTS security_questions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_index INTEGER NOT NULL, question TEXT NOT NULL, answer_hash TEXT NOT NULL, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, UNIQUE(user_id, question_index))'
+    "CREATE TABLE IF NOT EXISTS user_pin (user_id INTEGER PRIMARY KEY, pin_hash TEXT NOT NULL, updated_at TEXT DEFAULT (datetime('now', 'localtime')))"
   );
   db.run(
     "CREATE TABLE IF NOT EXISTS activity_log (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER DEFAULT 0, user_name TEXT DEFAULT '', action TEXT NOT NULL, details TEXT, created_at TEXT DEFAULT (datetime('now', 'localtime')))"
@@ -173,24 +173,12 @@ function getChanges(db) {
   return db.exec('SELECT changes() as c')[0]?.values[0]?.[0] || 0;
 }
 
-function setSecurityQuestions(db, userId, questions) {
-  mutate(db, 'DELETE FROM security_questions WHERE user_id=?', [userId]);
-  for (let i = 0; i < questions.length; i++) {
-    const q = questions[i];
-    mutate(db, 'INSERT OR IGNORE INTO security_questions (user_id, question_index, question, answer_hash) VALUES (?, ?, ?, ?)', [
-      userId,
-      i + 1,
-      q.question,
-      q.answerHash
-    ]);
-  }
+function setUserPin(db, userId, pinHash) {
+  mutate(db, 'INSERT OR REPLACE INTO user_pin (user_id, pin_hash) VALUES (?, ?)', [userId, pinHash]);
 }
-function getSecurityQuestions(db, userId) {
-  return query(db, 'SELECT question_index, question FROM security_questions WHERE user_id=? ORDER BY question_index', [userId]);
-}
-function getSecurityAnswer(db, userId, questionIndex) {
-  const r = query(db, 'SELECT answer_hash FROM security_questions WHERE user_id=? AND question_index=?', [userId, questionIndex]);
-  return r.length ? r[0].answer_hash : null;
+function getUserPinHash(db, userId) {
+  const r = query(db, 'SELECT pin_hash FROM user_pin WHERE user_id=?', [userId]);
+  return r.length ? r[0].pin_hash : null;
 }
 
-module.exports = { createDb, query, mutate, runTransaction, validateRef, getChanges, setSecurityQuestions, getSecurityQuestions, getSecurityAnswer };
+module.exports = { createDb, query, mutate, runTransaction, validateRef, getChanges, setUserPin, getUserPinHash };

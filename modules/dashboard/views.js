@@ -18,12 +18,13 @@ A.renderDashboard = function (data) {
   }
   A.renderWelcomeHeader(safeCases.length);
   A.renderKpiCards(stats, safeExt, safeCases, safeClients, chartData);
-  A.renderChartRow(chartData, safeExt);
+  const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  A.renderChartRow(chartData, safeExt, chartFontFamily);
   A.renderUpcomingWidget();
   A.renderUrgentTasks(tasks);
   A.loadActivityTimeline();
   A.loadNotifications();
-  A.renderRevenueLine(safeExt);
+  A.renderRevenueLine(safeExt, chartFontFamily);
   A.renderTomorrowHearings();
   A.initQuickActions();
   A.initQuickActionsBar();
@@ -43,8 +44,7 @@ A.renderWelcomeHeader = function (totalCases) {
       if (user && user.name) userName = user.name;
       if (avatarEl) avatarEl.textContent = userName.charAt(0);
       if (userEl) {
-        const greeting = 'السلام عليكم، ' + userName;
-        userEl.textContent = greeting;
+        userEl.textContent = _t('greetingHello').replace('{name}', userName);
       }
     }).catch(function () {
       if (avatarEl) avatarEl.textContent = (_t('defaultLawyer') || 'محامي').charAt(0);
@@ -75,16 +75,16 @@ A.renderWelcomeHeader = function (totalCases) {
       const todayCount = deadlines.filter(function (d) { return d.days_remaining <= 1; }).length;
       const parts = [];
       if (weekCount > 0) {
-        const hText = weekCount === 1 ? 'لديك جلسة واحدة هذا الأسبوع' : 'لديك ' + weekCount + ' جلسات هذا الأسبوع';
+        const hText = weekCount === 1 ? _t('weekOneHearing') : _t('weekHearings').replace('{n}', weekCount);
         parts.push(hText);
       }
       if (todayCount > 0) {
-        const dText = todayCount === 1 ? 'وقضية تحتاج متابعة اليوم' : 'وقضيتان تحتاجان متابعة اليوم';
+        const dText = todayCount === 1 ? _t('todayOneFollowUp') : _t('todayTwoFollowUp');
         parts.push(dText);
       }
-      subEl.textContent = parts.length ? parts.join(' و') : 'مرحباً بك في لوحة التحكم';
+      subEl.textContent = parts.length ? parts.join(' ' + _t('and') + ' ') : _t('welcomeDashboard');
     }).catch(function () {
-      subEl.textContent = 'مرحباً بك في لوحة التحكم';
+      subEl.textContent = _t('welcomeDashboard');
     });
   }
 };
@@ -97,12 +97,26 @@ A.renderKpiCards = function (stats, ext, cases, clients, chartData) {
   const totalDocs = cases.reduce((sum, c) => sum + (c.doc_count || 0), 0);
   const thisWeekHearings = stats.thisWeekAppointments || 0;
 
-  A.setKpi('kpiNumActiveCases', activeCases, 'kpiTrendActiveCases', ext.trend?.activeCasesNow, ext.trend?.activeCasesPrev);
-  A.setKpi('kpiNumClients', totalClients, 'kpiTrendClients', ext.trend?.clientsNow, ext.trend?.clientsPrev);
-  A.setKpi('kpiNumHearings', thisWeekHearings, 'kpiTrendHearings', ext.trend?.hearingsNow, ext.trend?.hearingsPrev);
-  A.setKpi('kpiNumRevenue', totalRevenue.toLocaleString() + _t('currencyMAD'), 'kpiTrendRevenue', ext.trend?.revenueNow, ext.trend?.revenuePrev);
-  A.setKpi('kpiNumTasks', pendingTasksCount, 'kpiTrendTasks', ext.trend?.tasksNow, ext.trend?.tasksPrev, true);
-  A.setKpi('kpiNumDocs', totalDocs || 0, 'kpiTrendDocs', ext.trend?.docsNow, ext.trend?.docsPrev);
+  const _kpiEls = {
+    numActiveCases: document.getElementById('kpiNumActiveCases'),
+    trendActiveCases: document.getElementById('kpiTrendActiveCases'),
+    numClients: document.getElementById('kpiNumClients'),
+    trendClients: document.getElementById('kpiTrendClients'),
+    numHearings: document.getElementById('kpiNumHearings'),
+    trendHearings: document.getElementById('kpiTrendHearings'),
+    numRevenue: document.getElementById('kpiNumRevenue'),
+    trendRevenue: document.getElementById('kpiTrendRevenue'),
+    numTasks: document.getElementById('kpiNumTasks'),
+    trendTasks: document.getElementById('kpiTrendTasks'),
+    numDocs: document.getElementById('kpiNumDocs'),
+    trendDocs: document.getElementById('kpiTrendDocs')
+  };
+  A.setKpi(_kpiEls.numActiveCases, activeCases, _kpiEls.trendActiveCases, ext.trend?.activeCasesNow, ext.trend?.activeCasesPrev);
+  A.setKpi(_kpiEls.numClients, totalClients, _kpiEls.trendClients, ext.trend?.clientsNow, ext.trend?.clientsPrev);
+  A.setKpi(_kpiEls.numHearings, thisWeekHearings, _kpiEls.trendHearings, ext.trend?.hearingsNow, ext.trend?.hearingsPrev);
+  A.setKpi(_kpiEls.numRevenue, totalRevenue.toLocaleString() + _t('currencyMAD'), _kpiEls.trendRevenue, ext.trend?.revenueNow, ext.trend?.revenuePrev);
+  A.setKpi(_kpiEls.numTasks, pendingTasksCount, _kpiEls.trendTasks, ext.trend?.tasksNow, ext.trend?.tasksPrev, true);
+  A.setKpi(_kpiEls.numDocs, totalDocs || 0, _kpiEls.trendDocs, ext.trend?.docsNow, ext.trend?.docsPrev);
 
   A.renderSparklines(chartData, ext);
 };
@@ -113,13 +127,22 @@ A.renderSparklines = function (chartData, ext) {
   const lineColor = darkMode ? 'rgba(198,161,91,0.6)' : 'rgba(198,161,91,0.7)';
   const fillColor = darkMode ? 'rgba(198,161,91,0.08)' : 'rgba(198,161,91,0.06)';
 
+  const _sparkCtx = {
+    activeCases: document.getElementById('sparkActiveCases')?.getContext('2d'),
+    clients: document.getElementById('sparkClients')?.getContext('2d'),
+    hearings: document.getElementById('sparkHearings')?.getContext('2d'),
+    revenue: document.getElementById('sparkRevenue')?.getContext('2d')
+  };
+
   const monthly = chartData.monthly || [];
   const revData = ext.monthlyRevenue || [];
 
-  function drawSpark(canvasId, data, color) {
-    const ctx = document.getElementById(canvasId)?.getContext('2d');
+  if (A._sparkCharts) A._sparkCharts.forEach(c => { try { c.destroy(); } catch (e) {} });
+  A._sparkCharts = [];
+
+  function drawSpark(ctx, data, color) {
     if (!ctx || !data.length) return;
-    new Chart(ctx, {
+    A._sparkCharts.push(new Chart(ctx, {
       type: 'line',
       data: {
         labels: data.map(function (_, i) { return i; }),
@@ -144,35 +167,33 @@ A.renderSparklines = function (chartData, ext) {
         },
         elements: { point: { radius: 0 } }
       }
-    });
+    }));
   }
 
   const spColor = darkMode ? 'rgba(198,161,91,0.5)' : 'rgba(198,161,91,0.6)';
   if (monthly.length) {
-    drawSpark('sparkActiveCases', monthly.map(function (m) { return m.count; }), spColor);
+    drawSpark(_sparkCtx.activeCases, monthly.map(function (m) { return m.count; }), spColor);
   }
   if (ext.trend && ext.trend.clientsNow !== undefined) {
     const synthClients = [];
     for (var i = 0; i < 8; i++) {
       synthClients.push(Math.max(0, Math.round((ext.trend.clientsNow || 0) * (0.7 + Math.random() * 0.6))));
     }
-    drawSpark('sparkClients', synthClients, spColor);
+    drawSpark(_sparkCtx.clients, synthClients, spColor);
   }
   if (ext.trend && ext.trend.hearingsNow !== undefined) {
     const synthHearings = [];
     for (var i = 0; i < 8; i++) {
       synthHearings.push(Math.max(0, Math.round((ext.trend.hearingsNow || 0) * (0.7 + Math.random() * 0.6))));
     }
-    drawSpark('sparkHearings', synthHearings, spColor);
+    drawSpark(_sparkCtx.hearings, synthHearings, spColor);
   }
   if (revData.length) {
-    drawSpark('sparkRevenue', revData.map(function (m) { return parseFloat(m.total) || 0; }), spColor);
+    drawSpark(_sparkCtx.revenue, revData.map(function (m) { return parseFloat(m.total) || 0; }), spColor);
   }
 };
 
-A.setKpi = function (numId, value, trendId, now, prev, invertBad) {
-  const numEl = document.getElementById(numId);
-  const trendEl = document.getElementById(trendId);
+A.setKpi = function (numEl, value, trendEl, now, prev, invertBad) {
   if (numEl) {
     numEl.textContent = value;
     numEl.classList.toggle('is-zero', value === 0 || value === '0' || value === '0MAD' || value === '0.00MAD');
@@ -198,7 +219,7 @@ A.setKpi = function (numId, value, trendId, now, prev, invertBad) {
   }
 };
 
-A.renderChartRow = function (chartData, ext) {
+A.renderChartRow = function (chartData, ext, chartFontFamily) {
   if (typeof Chart === 'undefined') return;
   if (A._casesBarChart) {
     A._casesBarChart.destroy();
@@ -209,9 +230,12 @@ A.renderChartRow = function (chartData, ext) {
     A._typeDonut = null;
   }
 
-  const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
+  chartFontFamily = chartFontFamily || getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  if (!A.MONTH_NAMES) {
+    A.MONTH_NAMES = A.getMonthNames();
+  }
+  const monthNames = A.MONTH_NAMES;
 
-  const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
   const darkMode = document.body.classList.contains('dark-mode');
   const gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
   const tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
@@ -421,7 +445,7 @@ A.loadActivityTimeline = async function () {
       return;
     }
     const iconMap = { ajout: 'ri-add-circle-line', modification: 'ri-edit-line', suppression: 'ri-delete-bin-line', default: 'ri-history-line' };
-    const colorMap = { ajout: '#1A8A5C', modification: '#4A8BC2', suppression: '#D94A4A', default: '#8C8A84' };
+    const colorMap = { ajout: '#C6A15B', modification: '#4A8BC2', suppression: '#D94A4A', default: '#8C8A84' };
     A.safeSet(container, esc =>
       recent
         .map(l => {
@@ -471,7 +495,7 @@ A.loadNotifications = async function () {
   }
 };
 
-A.renderRevenueLine = function (ext) {
+A.renderRevenueLine = function (ext, chartFontFamily) {
   if (typeof Chart === 'undefined') return;
   if (A._revenueLine) {
     A._revenueLine.destroy();
@@ -479,7 +503,8 @@ A.renderRevenueLine = function (ext) {
   }
   const ctx = document.getElementById('revenueLineChart')?.getContext('2d');
   if (!ctx) return;
-  const monthNames = ['يناير', 'فبراير', 'مارس', 'أبريل', 'ماي', 'يونيو', 'يوليوز', 'غشت', 'شتنبر', 'أكتوبر', 'نونبر', 'دجنبر'];
+  chartFontFamily = chartFontFamily || getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
+  const monthNames = A.MONTH_NAMES || A.getMonthNames();
   const revData = ext.monthlyRevenue || [];
   const labels = revData.map(function (m) { return monthNames[parseInt(m.month, 10) - 1] || m.month; });
   const values = revData.map(function (m) { return parseFloat(m.total) || 0; });
@@ -487,7 +512,6 @@ A.renderRevenueLine = function (ext) {
   const tooltipBg = darkMode ? '#1F2937' : '#FFFFFF';
   const tooltipBorder = darkMode ? '#374151' : '#E8E7E5';
   const gridColor = darkMode ? 'rgba(140,138,132,0.1)' : 'rgba(140,138,132,0.15)';
-  const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
   if (values.length) {
     A._revenueLine = new Chart(ctx, {
       type: 'line',
@@ -538,7 +562,7 @@ A.renderRevenueLine = function (ext) {
             bodyFont: { family: chartFontFamily, size: 11 },
             callbacks: {
               label: function (context) {
-                return context.parsed.y.toLocaleString() + ' درهم';
+                return context.parsed.y.toLocaleString() + _t('currencyMAD');
               }
             }
           }
@@ -575,7 +599,7 @@ A.renderTomorrowHearings = async function () {
     const events = await A.cachedInvoke('events:getAll');
     const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = tomorrow.toISOString().slice(0, 10);
+    const dateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
     const hearingEvents = (events || []).filter(e => e.type === 'hearing' && e.date === dateStr && e.status !== 'cancelled');
     if (!hearingEvents.length) {
       A.safeSetStatic(container, '<span class="empty-state-sm" style="color:rgba(255,255,255,0.5);">' + _t('noTomorrowHearings') + '</span>');
