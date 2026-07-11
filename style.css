@@ -2012,6 +2012,9 @@ body {
   font-weight: 600;
   color: var(--foreground);
   margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .ws-doc-meta {
   font-size: var(--type-caption);
