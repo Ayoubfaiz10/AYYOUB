@@ -108,9 +108,7 @@ A.initAi = function () {
       return;
     }
     A.state.aiModel = model;
-    console.log('[AI-Renderer] Calling ai:saveConfig, key length:', key.length, 'provider:', A.state.aiProvider, 'model:', model);
     const result = await A.mutate('ai:saveConfig', { apiKey: key, provider: A.state.aiProvider, model: model });
-    console.log('[AI-Renderer] ai:saveConfig result:', JSON.stringify(result));
     if (result && result.ok) {
       A.state.aiConfigured = true;
       aiSetup.style.display = 'none';
@@ -379,9 +377,7 @@ A.loadAI = async function () {
     A.showSkeleton('aiMessages', 3, 'aiMsg');
   }
   try {
-    console.log('[AI-Renderer] Calling ai:getConfig...');
     const config = await A.state.ipc.invoke('ai:getConfig');
-    console.log('[AI-Renderer] ai:getConfig result:', JSON.stringify(config));
     if (config && config.hasKey) {
       A.state.aiConfigured = true;
       A.state.aiProvider = config.provider || 'groq';
@@ -393,7 +389,6 @@ A.loadAI = async function () {
       A.updateModelBar();
     }
   } catch (e) {
-    console.error('[AI-Renderer] loadAI error:', e);
     A.logError('loadAI', e);
   }
 };

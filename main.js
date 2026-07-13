@@ -2363,24 +2363,20 @@ async function saveAiConfig(config) {
 }
 
 safeIpc('ai:getConfig', withPerm('use_ai')(async () => {
-  console.log('[AI] ai:getConfig called');
   try {
     const config = await getAiConfig();
-    console.log('[AI] getAiConfig result:', { hasKey: !!config.apiKey, provider: config.provider });
     return { provider: config.provider || 'groq', model: config.model || '', hasKey: !!config.apiKey };
   } catch (e) {
-    console.error('[AI] ai:getConfig error:', e.message);
+    console.warn('ai:getConfig error:', e.message);
     return { provider: 'groq', model: '', hasKey: false };
   }
 }));
 safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
-  console.log('[AI] ai:saveConfig called, apiKey length:', config?.apiKey?.length);
   try {
     await saveAiConfig(config);
-    console.log('[AI] saveAiConfig completed successfully');
     return { ok: true };
   } catch (e) {
-    console.error('[AI] saveAiConfig failed:', e.message);
+    console.warn('ai:saveConfig error:', e.message);
     return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
   }
 }));
