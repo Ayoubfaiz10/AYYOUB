@@ -27,7 +27,7 @@
   </head>
   <body>
     <div id="startupOverlay">
-      <div class="startup-logo"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
+      <div class="startup-logo"><svg viewBox="0 0 400 400" width="100%" height="100%" style="display:block"><defs><linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#E6C27A"/><stop offset="100%" style="stop-color:#C9A96E"/></linearGradient><linearGradient id="n1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1A2A4A"/><stop offset="100%" style="stop-color:#0F1A2E"/></linearGradient></defs><circle cx="200" cy="200" r="180" fill="#F8F6F0"/><polygon points="280,60 120,300 150,320 310,80" fill="url(#g1)"/><polygon points="120,300 90,340 130,315" fill="#B8860B"/><path d="M 280,60 Q 330,20 370,60 Q 330,100 280,60" fill="url(#g1)" stroke="#A67B2E" stroke-width="3"/><path d="M 280,60 Q 310,40 330,60" stroke="#A67B2E" stroke-width="2" fill="none"/><rect x="40" y="320" width="110" height="25" rx="5" fill="url(#n1)"/><rect x="40" y="40" width="110" height="25" rx="5" fill="url(#n1)"/><rect x="65" y="65" width="60" height="255" rx="6" fill="url(#n1)"/><line x1="85" y1="65" x2="85" y2="320" stroke="#2A406A" stroke-width="4"/><line x1="105" y1="65" x2="105" y2="320" stroke="#2A406A" stroke-width="4"/></svg></div>
       <div class="startup-name" data-i18n="startupName">LexOffece</div>
       <div class="startup-sub" data-i18n="startupSub">منصة إدارة المكاتب القانونية</div>
       <div class="startup-bar"><div class="startup-bar-inner" id="startupBar"></div></div>
@@ -334,7 +334,7 @@
         <aside id="sidebar">
           <div class="sidebar-header">
             <div class="sidebar-brand">
-              <div class="sidebar-brand-icon"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
+              <div class="sidebar-brand-icon"><svg viewBox="0 0 400 400" width="100%" height="100%" style="display:block"><defs><linearGradient id="g2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#E6C27A"/><stop offset="100%" style="stop-color:#C9A96E"/></linearGradient><linearGradient id="n2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1A2A4A"/><stop offset="100%" style="stop-color:#0F1A2E"/></linearGradient></defs><circle cx="200" cy="200" r="180" fill="#F8F6F0"/><polygon points="280,60 120,300 150,320 310,80" fill="url(#g2)"/><polygon points="120,300 90,340 130,315" fill="#B8860B"/><path d="M 280,60 Q 330,20 370,60 Q 330,100 280,60" fill="url(#g2)" stroke="#A67B2E" stroke-width="3"/><path d="M 280,60 Q 310,40 330,60" stroke="#A67B2E" stroke-width="2" fill="none"/><rect x="40" y="320" width="110" height="25" rx="5" fill="url(#n2)"/><rect x="40" y="40" width="110" height="25" rx="5" fill="url(#n2)"/><rect x="65" y="65" width="60" height="255" rx="6" fill="url(#n2)"/><line x1="85" y1="65" x2="85" y2="320" stroke="#2A406A" stroke-width="4"/><line x1="105" y1="65" x2="105" y2="320" stroke="#2A406A" stroke-width="4"/></svg></div>
               <div class="sidebar-brand-text">
                 <span class="sidebar-brand-title" data-i18n="startupName">LexOffece</span>
                 <span class="sidebar-brand-sub">LexOffece</span>
@@ -503,24 +503,6 @@
               </div>
             </div>
 
-            <!-- Widgets -->
-            <div class="dash-grid-2col">
-              <div class="dash-card">
-                <div class="dash-card-header">
-                  <h3><i class="ri-calendar-todo-line"></i> <span data-i18n="dashUpcomingHearings">الجلسات القادمة</span></h3>
-                  <button class="btn btn-secondary btn-xs" data-click="nav:hearings" data-i18n="viewAll">عرض الكل</button>
-                </div>
-                <div id="dashUpcomingWidget" class="dash-card-body"></div>
-              </div>
-              <div class="dash-card">
-                <div class="dash-card-header">
-                  <h3><i class="ri-error-warning-line"></i> <span data-i18n="dashUrgentTasks">المهام العاجلة</span></h3>
-                  <button class="btn btn-secondary btn-xs" data-click="nav:tasks" data-i18n="viewAll">عرض الكل</button>
-                </div>
-                <div id="dashUrgentTasks" class="dash-card-body"></div>
-              </div>
-            </div>
-
             <!-- Feeds -->
             <div class="dash-grid-2col">
               <div class="dash-card">
@@ -544,14 +526,6 @@
                 <h3><i class="ri-line-chart-line"></i> <span data-i18n="dashRevenue12m">الإيرادات الشهرية خلال 12 شهراً</span></h3>
               </div>
               <div class="dash-chart-box" style="height: 260px"><canvas id="revenueLineChart"></canvas></div>
-            </div>
-
-            <!-- Tomorrow hearings -->
-            <div id="dashTomorrowHearings" class="dash-tomorrow-bar">
-              <div class="dash-tomorrow-label"><i class="ri-scales-3-line"></i> <span data-i18n="dashTomorrowHearings">جلسات الغد</span></div>
-              <div class="dash-tomorrow-list" id="dashTomorrowList">
-                <span class="empty-state-sm" data-i18n="dashNoTomorrowHearings">لا توجد جلسات غداً</span>
-              </div>
             </div>
           </section>
 
@@ -1043,94 +1017,6 @@
             </div>
           </section>
 
-          <!-- ═══ DOCUMENT VIEWER V6 ═══ -->
-          <div id="docViewerOverlay" class="modal-overlay" style="display: none">
-            <div class="modal modal-workspace">
-              <div class="ws-header">
-                <div class="ws-header-left">
-                  <button class="ws-back" id="docViewerClose" data-click="close:docViewerOverlay"><i class="ri-arrow-right-s-line"></i></button>
-                  <div class="ws-title-area">
-                    <h3 id="docViewerTitle">الوثيقة</h3>
-                    <span class="ws-badge" id="docViewerType">عقد</span>
-                  </div>
-                </div>
-                <div class="ws-header-actions">
-                  <button class="btn btn-secondary btn-xs" id="docViewerOpen"><i class="ri-external-link-line"></i> <span data-i18n="docViewerOpenBtn">فتح</span></button>
-                  <button class="btn btn-primary btn-xs" id="docViewerDownload"><i class="ri-download-line"></i> <span data-i18n="docViewerDownloadBtn">تحميل</span></button>
-                  <button
-                    class="btn btn-outline btn-xs"
-                    id="docViewerAnalyze"
-                    style="color: var(--gold); border-color: var(--gold)"
-                    title="تحليل بالذكاء الاصطناعي"
-                    data-i18n="docViewerAnalyzeTitle"
-                    data-i18n-attr="title"
-                  >
-                    <i class="ri-robot-3-line"></i> <span data-i18n="docViewerAnalyzeBtn">تحليل</span>
-                  </button>
-                  <button
-                    class="btn btn-outline btn-xs"
-                    id="docViewerDelete"
-                    style="color: var(--destructive); border-color: var(--destructive)"
-                    title="حذف الوثيقة"
-                    data-i18n="docViewerDeleteTitle"
-                    data-i18n-attr="title"
-                  >
-                    <i class="ri-delete-bin-line"></i> <span data-i18n="docViewerDeleteBtn">حذف</span>
-                  </button>
-                  <button class="modal-close" style="position: static" data-click="close:docViewerOverlay"><i class="ri-close-line"></i></button>
-                </div>
-              </div>
-              <div class="ws-body doc-viewer-body">
-                <div
-                  style="
-                    padding: var(--spacing-3-5);
-                    overflow-y: auto;
-                    background: var(--muted);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    min-height: 400px;
-                  "
-                >
-                  <div style="text-align: center; color: var(--muted-foreground)">
-                    <i class="ri-file-4-line" style="font-size: var(--icon-2xl); display: block; margin-bottom: 16px"></i>
-                    <p id="docViewerPreview">معاينة الملف</p>
-                  </div>
-                </div>
-                <div>
-                  <div class="ws-info-card" style="box-shadow: none; padding: 0">
-                    <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelInfo">معلومات</h4>
-                    <div class="ws-info-row">
-                      <span class="ws-info-label" data-i18n="thCaseNumber">القضية</span><span class="ws-info-value" id="docVCase">—</span>
-                    </div>
-                    <div class="ws-info-row">
-                      <span class="ws-info-label" data-i18n="thClient">الموكل</span><span class="ws-info-value" id="docVClient">—</span>
-                    </div>
-                    <div class="ws-info-row">
-                      <span class="ws-info-label" data-i18n="docVUploadDate">تاريخ الرفع</span><span class="ws-info-value" id="docVDate">—</span>
-                    </div>
-                    <div class="ws-info-row">
-                      <span class="ws-info-label" data-i18n="docVSize">الحجم</span><span class="ws-info-value" id="docVSize">—</span>
-                    </div>
-                  </div>
-                  <div class="ws-info-card" style="box-shadow: none; padding: 0; margin-top: var(--spacing-3)">
-                    <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelTags">الوسوم</h4>
-                    <div id="docVTags" class="doc-viewer-tags"></div>
-                  </div>
-                  <div class="ws-info-card" style="box-shadow: none; padding: 0; margin-top: var(--spacing-3)">
-                    <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelVersions">الإصدارات</h4>
-                    <div id="docVVersions" class="doc-viewer-versions"></div>
-                  </div>
-                  <div class="ws-info-card" style="box-shadow: none; padding: 0; margin-top: var(--spacing-3)">
-                    <h4 style="margin-bottom: var(--spacing-2)" data-i18n="labelNotes">ملاحظات</h4>
-                    <textarea id="docVNotes" class="input" rows="2" placeholder="ملاحظات قانونية..." data-i18n="docVNotesPlaceholder"></textarea>
-                    <button class="btn btn-primary btn-xs" style="margin-top: 8px" id="docVSaveNotes" data-i18n="saveBtn">حفظ</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
           <!-- ═══ EXPENSES ═══ -->
           <section id="section-expenses" class="section">
             <div class="section-header">
@@ -1382,7 +1268,7 @@
           <section id="section-about" class="section" style="display: none">
             <div class="sales-page">
               <div style="text-align: center; margin-bottom: var(--spacing-4)">
-                <div class="startup-logo" style="margin: 0 auto var(--spacing-3)"><svg viewBox="0 0 100 100" width="100%" height="100%" style="display:block"><rect width="100" height="100" rx="22" fill="#1e2a38"/><path d="M50 12 L82 26 L82 56 C82 74 64 86 50 90 C36 86 18 74 18 56 L18 26 Z" fill="none" stroke="#c6a15b" stroke-width="4.5" stroke-linejoin="round"/><path d="M40 70 L58 35" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><path d="M58 35 L64 40" stroke="#c6a15b" stroke-width="3.5" stroke-linecap="round"/><polygon points="38,72 34,80 43,76" fill="#c6a15b"/></svg></div>
+                <div class="startup-logo" style="margin: 0 auto var(--spacing-3)"><svg viewBox="0 0 400 400" width="100%" height="100%" style="display:block"><defs><linearGradient id="g3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#E6C27A"/><stop offset="100%" style="stop-color:#C9A96E"/></linearGradient><linearGradient id="n3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#1A2A4A"/><stop offset="100%" style="stop-color:#0F1A2E"/></linearGradient></defs><circle cx="200" cy="200" r="180" fill="#F8F6F0"/><polygon points="280,60 120,300 150,320 310,80" fill="url(#g3)"/><polygon points="120,300 90,340 130,315" fill="#B8860B"/><path d="M 280,60 Q 330,20 370,60 Q 330,100 280,60" fill="url(#g3)" stroke="#A67B2E" stroke-width="3"/><path d="M 280,60 Q 310,40 330,60" stroke="#A67B2E" stroke-width="2" fill="none"/><rect x="40" y="320" width="110" height="25" rx="5" fill="url(#n3)"/><rect x="40" y="40" width="110" height="25" rx="5" fill="url(#n3)"/><rect x="65" y="65" width="60" height="255" rx="6" fill="url(#n3)"/><line x1="85" y1="65" x2="85" y2="320" stroke="#2A406A" stroke-width="4"/><line x1="105" y1="65" x2="105" y2="320" stroke="#2A406A" stroke-width="4"/></svg></div>
                 <h1 style="margin-bottom: 4px">LexOffece</h1>
                 <p style="color: var(--muted-foreground); font-size: var(--type-body); margin-bottom: var(--spacing-2)">
                   منصة إدارة المكاتب القانونية

@@ -21,7 +21,7 @@ A._renderDocCards = function (displayed, container) {
     displayed.length
       ? displayed
           .map(
-            d => `<div class="doc-card-v6" data-click="doc:open:${d.id}">
+            d => `<div class="doc-card-v6" data-click="doc:openFile:${d.id}">
       <i class="ri-file-4-line doc-card-icon" style="color:${d.doc_type === 'Contract' ? 'var(--success)' : d.doc_type === 'Jugement' ? 'var(--foreground)' : d.doc_type === 'Preuve' ? 'var(--info)' : 'var(--gold)'};"></i>
       <div class="doc-card-title">${esc(d.filename)}</div>
       <div class="doc-card-meta">${esc(d.case_number || '')} · ${d.upload_date ? esc(A.formatDate(d.upload_date)) : ''}</div>
@@ -35,7 +35,6 @@ A._renderDocCards = function (displayed, container) {
         <span class="badge badge-gold" style="font-size:9px;">${esc(d.doc_type)}</span>
         <div class="doc-card-actions">
           <button data-click="doc:openFile:${d.id}" data-click-stop="true" title="${_t('openBtnTooltip')}"><i class="ri-external-link-line"></i></button>
-          <button data-click="doc:open:${d.id}" data-click-stop="true" title="${_t('detailsBtnTooltip')}"><i class="ri-eye-line"></i></button>
           <button data-click="doc:analyze:${d.id}" data-click-stop="true" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button>
         </div>
       </div>
@@ -60,7 +59,7 @@ A.renderDocTable = function () {
       ? list
           .map(
             d => `<tr>
-      <td><strong style="cursor:pointer;color:var(--foreground);" data-click="doc:open:${d.id}">${esc(d.filename)}</strong></td>
+      <td><strong style="cursor:pointer;color:var(--foreground);" data-click="doc:openFile:${d.id}">${esc(d.filename)}</strong></td>
       <td><span class="badge badge-gold">${esc(d.doc_type)}</span></td>
       <td>${esc(d.case_number || '')}</td>
       <td>${esc(d.client_name || '')}</td>
@@ -74,7 +73,7 @@ A.renderDocTable = function () {
           .map(t => `<span class="doc-card-tag">${esc(t.trim())}</span>`)
           .join('') || '-'
       }</td>
-      <td><button class="btn-icon" data-click="doc:open:${d.id}" title="${_t('detailsBtnTooltip')}"><i class="ri-eye-line"></i></button><button class="btn-icon" data-click="doc:analyze:${d.id}" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
+      <td><button class="btn-icon" data-click="doc:analyze:${d.id}" title="${_t('aiAnalysisBtnTooltip')}" style="color:var(--gold);"><i class="ri-robot-3-line"></i></button></td>
     </tr>`
           )
           .join('')

@@ -152,7 +152,7 @@ A.hideLoading = function (elementId) {
   const el = typeof elementId === 'string' ? document.getElementById(elementId) : elementId;
   if (!el) return;
   if (el.dataset._ldOrigHtml) {
-    el.innerHTML = '';
+    el.innerHTML = el.dataset._ldOrigHtml;
     delete el.dataset._ldOrigHtml;
   }
 };
@@ -277,9 +277,10 @@ document.addEventListener('click', function (e) {
   const cmd = attr.cmd;
   const arg = attr.arg;
   if (ns === 'nav') {
-    if (cmd === 'cases' && parts[2] && parts[2] === 'open') {
+    if (cmd === 'cases' && arg && arg.indexOf('open') === 0) {
+      const caseId = parseInt(arg.replace('open:', ''), 10);
       window.navigateTo('cases');
-      setTimeout(function(){ window.openCaseDetail && window.openCaseDetail(parseInt(parts.slice(3).join(':'), 10)); }, 200);
+      if (caseId) setTimeout(function(){ window.openCaseDetail && window.openCaseDetail(caseId); }, 200);
     } else {
       window.navigateTo(cmd);
     }
@@ -300,8 +301,7 @@ document.addEventListener('click', function (e) {
   } else if (ns === 'client') {
     if (cmd === 'open') window.openClientDetail && window.openClientDetail(parseInt(arg, 10));
   } else if (ns === 'doc') {
-    if (cmd === 'open') window.openDocViewer && window.openDocViewer(parseInt(arg, 10));
-    else if (cmd === 'analyze') window.analyzeDoc && window.analyzeDoc(parseInt(arg, 10));
+    if (cmd === 'analyze') window.analyzeDoc && window.analyzeDoc(parseInt(arg, 10));
     else if (cmd === 'openFile') (async()=>{ try { await A.state.ipc.invoke('db:openDocument', parseInt(arg, 10)); } catch(e) { A.logError('openDoc', e); A.showToast(_t('failedOpenFile'), 'error'); } })();
     else if (cmd === 'filter') { document.getElementById('searchDocs').value = arg; A.renderDocGrid && A.renderDocGrid(); A.renderDocTable && A.renderDocTable(); }
   } else if (ns === 'event') {

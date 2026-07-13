@@ -1,11 +1,13 @@
 var A = (window.App = window.App || {});
 
-const chartCorporateBlue = '#1E40AF';
-const chartAccentBlue = '#2563EB';
+const chartGold = '#c6a15b';
+const chartGoldLight = '#d9ba62';
+const chartGoldDark = '#a8883e';
+const chartGoldAccent = '#e5ce87';
 const chartSlateGray = '#475569';
 
 A.renderDashboard = function (data) {
-  const { stats, ext, cases: casesList, clients, chartData, tasks } = data;
+  const { stats, ext, cases: casesList, clients, chartData } = data;
   const safeCases = casesList || [];
   const safeClients = clients || [];
   const safeExt = ext || {};
@@ -20,12 +22,9 @@ A.renderDashboard = function (data) {
   A.renderKpiCards(stats, safeExt, safeCases, safeClients, chartData);
   const chartFontFamily = getComputedStyle(document.documentElement).getPropertyValue('--font-primary').trim() || "'Inter', sans-serif";
   A.renderChartRow(chartData, safeExt, chartFontFamily);
-  A.renderUpcomingWidget();
-  A.renderUrgentTasks(tasks);
   A.loadActivityTimeline();
   A.loadNotifications();
   A.renderRevenueLine(safeExt, chartFontFamily);
-  A.renderTomorrowHearings();
   A.initQuickActions();
   A.initQuickActionsBar();
   A.initKpiCardClicks();
@@ -249,9 +248,9 @@ A.renderChartRow = function (chartData, ext, chartFontFamily) {
     const values = monthly.map(function (m) { return m.count; });
     if (values.length) {
       const barGradient = barCtx.createLinearGradient(0, 0, 0, 280);
-      barGradient.addColorStop(0, chartCorporateBlue);
-      barGradient.addColorStop(0.5, chartAccentBlue);
-      barGradient.addColorStop(1, '#1D4ED8');
+      barGradient.addColorStop(0, chartGold);
+      barGradient.addColorStop(0.5, chartGoldLight);
+      barGradient.addColorStop(1, chartGoldDark);
       A._casesBarChart = new Chart(barCtx, {
         type: 'bar',
         data: {
@@ -297,8 +296,8 @@ A.renderChartRow = function (chartData, ext, chartFontFamily) {
   const donutCtx = document.getElementById('typeDoughnutChart')?.getContext('2d');
   if (donutCtx) {
     const tData = ext.casesByType || [];
-    const typeColors = { 'مدني': chartCorporateBlue, 'تجاري': chartAccentBlue, 'أسرة': '#0EA5E9', 'إداري': '#64748B', 'جنائي': '#94A3B8' };
-    const defaultColors = [chartCorporateBlue, chartAccentBlue, '#0EA5E9', '#64748B', '#94A3B8', '#475569', '#6B7280'];
+    const typeColors = { 'مدني': chartGold, 'تجاري': chartGoldLight, 'أسرة': chartGoldAccent, 'إداري': '#64748B', 'جنائي': '#94A3B8' };
+    const defaultColors = [chartGold, chartGoldLight, chartGoldAccent, chartGoldDark, '#64748B', '#94A3B8', '#6B7280'];
     const colors = tData.map(function (t) { return typeColors[t.case_type] || defaultColors[tData.indexOf(t) % defaultColors.length]; });
     if (tData.length) {
       A._typeDonut = new Chart(donutCtx, {
@@ -366,74 +365,6 @@ A.renderChartRow = function (chartData, ext, chartFontFamily) {
   }
 };
 
-A.renderUpcomingWidget = async function () {
-  const container = document.getElementById('dashUpcomingWidget');
-  if (!container || !A.state.ipc) return;
-  try {
-    const [hearings, deadlines] = await Promise.all([A.cachedInvoke('db:getUpcomingHearings'), A.cachedInvoke('db:getUpcomingDeadlines')]);
-    const items = [];
-    (hearings || []).slice(0, 4).forEach(h =>
-      items.push({
-        icon: 'ri-scales-3-line',
-        color: '#C6A15B',
-        title: _t('hearingColon').replace('{n}', A.escapeHtml(h.case_number || '')),
-        sub: h.date ? h.date.slice(0, 10) : '',
-        time: h.days_remaining ? _t('remainingDays').replace('{n}', h.days_remaining) : ''
-      })
-    );
-    (deadlines || []).slice(0, 3).forEach(d =>
-      items.push({
-        icon: 'ri-timer-flash-line',
-        color: '#D94A4A',
-        title: _t('deadlineColon').replace('{n}', A.escapeHtml(d.case_number || '')),
-        sub: '',
-        time: d.days_remaining ? _t('remainingDays').replace('{n}', d.days_remaining) : ''
-      })
-    );
-    if (!items.length) {
-      A.safeSetStatic(container, '<div class="empty-state"><i class="ri-calendar-todo-line"></i><h3>' + _t('noUpcomingLabel') + '</h3><button class="dash-empty-btn btn btn-sm btn-secondary" data-click="nav:hearings"><i class="ri-add-line"></i> ' + _t('dashNewHearing') + '</button></div>');
-      return;
-    }
-    items.sort((a, b) => parseInt(a.time, 10) - parseInt(b.time));
-    A.safeSet(container, esc =>
-      items
-        .slice(0, 5)
-        .map(
-          i => `<div class="tl-item">
-      <span class="tl-time">${esc(i.time)}</span>
-      <div class="tl-icon" style="background:${i.color}15;color:${i.color};"><i class="${i.icon}"></i></div>
-      <div class="tl-body"><div class="tl-title">${esc(i.title)}</div>${i.sub ? '<div class="tl-sub">' + esc(i.sub) + '</div>' : ''}</div>
-    </div>`
-        )
-        .join('')
-    );
-  } catch (e) {
-    A.logError('renderUpcomingWidget', e);
-    A.showError(container, _t('failedLoad'), () => A.renderUpcomingWidget());
-  }
-};
-
-A.renderUrgentTasks = function (tasks) {
-  const container = document.getElementById('dashUrgentTasks');
-  if (!container) return;
-  const urgent = (tasks || []).filter(t => t.priority === 'high' && t.status !== 'done' && t.status !== 'archived').slice(0, 6);
-  A.safeSet(container, esc =>
-    urgent.length
-      ? urgent
-          .map(
-            t => `<div class="tl-item">
-        <span class="tl-time">${t.due_date ? esc(t.due_date.slice(0, 10)) : ''}</span>
-        <div class="tl-icon" style="background:rgba(217,74,74,0.1);color:var(--destructive);"><i class="ri-error-warning-line"></i></div>
-        <div class="tl-body"><div class="tl-title" style="color:var(--destructive);">${esc(t.title)}</div>
-          <div class="tl-sub">${t.case_number ? esc(t.case_number) : ''}</div>
-        </div>
-      </div>`
-          )
-          .join('')
-      : '<div class="empty-state"><i class="ri-error-warning-line"></i><h3>' + _t('noUrgentTasks') + '</h3><button class="dash-empty-btn btn btn-sm btn-secondary" data-click="nav:tasks"><i class="ri-add-line"></i> ' + _t('addTask') + '</button></div>'
-  );
-};
-
 A.loadActivityTimeline = async function () {
   const container = document.getElementById('dashActivityTimeline');
   if (!container || !A.state.ipc) return;
@@ -445,7 +376,7 @@ A.loadActivityTimeline = async function () {
       return;
     }
     const iconMap = { ajout: 'ri-add-circle-line', modification: 'ri-edit-line', suppression: 'ri-delete-bin-line', default: 'ri-history-line' };
-    const colorMap = { ajout: '#C6A15B', modification: '#4A8BC2', suppression: '#D94A4A', default: '#8C8A84' };
+    const colorMap = { ajout: '#C6A15B', modification: '#d9ba62', suppression: '#D94A4A', default: '#8C8A84' };
     A.safeSet(container, esc =>
       recent
         .map(l => {
@@ -462,36 +393,6 @@ A.loadActivityTimeline = async function () {
   } catch (e) {
     A.logError('loadActivityTimeline', e);
     A.showError(container, _t('failedLoadActivity'), () => A.loadActivityTimeline());
-  }
-};
-
-A.loadNotifications = async function () {
-  const container = document.getElementById('dashNotifications');
-  const badge = document.getElementById('dashNotifBadge');
-  if (!container || !A.state.ipc) return;
-  try {
-    const logs = await A.cachedInvoke('db:getLogs', { limit: 6 });
-    const recent = (logs || []).slice(0, 4);
-    if (!recent.length) {
-      A.safeSetStatic(container, '<p class="empty-state-sm">' + _t('notifNoNotifs') + '</p>');
-      if (badge) badge.textContent = '0';
-      return;
-    }
-    A.safeSet(container, esc =>
-      recent
-        .map(
-          l => `<div class="tl-item">
-      <div class="tl-icon" style="background:var(--muted);color:var(--muted-foreground);"><i class="ri-notification-3-line"></i></div>
-      <div class="tl-body"><div class="tl-title">${esc(l.details || '')}</div></div>
-      <span class="tl-time">${l.created_at ? l.created_at.slice(11, 16) : ''}</span>
-    </div>`
-        )
-        .join('')
-    );
-    if (badge) badge.textContent = recent.length;
-  } catch (e) {
-    A.logError('loadNotifications', e);
-    A.showError(container, _t('failedLoadNotifications'), () => A.loadNotifications());
   }
 };
 
@@ -521,21 +422,21 @@ A.renderRevenueLine = function (ext, chartFontFamily) {
           {
             label: _t('revenueLabel'),
             data: values,
-            borderColor: chartCorporateBlue,
+            borderColor: chartGold,
             backgroundColor: function (context) {
               const chart = context.chart;
               const ctx2 = chart.ctx;
               const gradient = ctx2.createLinearGradient(0, 0, 0, chart.height);
-              gradient.addColorStop(0, chartCorporateBlue + '30');
-              gradient.addColorStop(1, chartCorporateBlue + '02');
+              gradient.addColorStop(0, chartGold + '30');
+              gradient.addColorStop(1, chartGold + '02');
               return gradient;
             },
             fill: true,
             tension: 0.4,
-            pointBackgroundColor: chartCorporateBlue,
+            pointBackgroundColor: chartGold,
             pointRadius: 3,
             pointHoverRadius: 6,
-            pointHoverBackgroundColor: chartCorporateBlue,
+            pointHoverBackgroundColor: chartGold,
             pointHoverBorderColor: '#FFFFFF',
             pointHoverBorderWidth: 2,
             borderWidth: 2.5
@@ -589,34 +490,6 @@ A.renderRevenueLine = function (ext, chartFontFamily) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('—', ctx.canvas.width / 2, ctx.canvas.height / 2);
-  }
-};
-
-A.renderTomorrowHearings = async function () {
-  const container = document.getElementById('dashTomorrowList');
-  if (!container || !A.state.ipc) return;
-  try {
-    const events = await A.cachedInvoke('events:getAll');
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateStr = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-    const hearingEvents = (events || []).filter(e => e.type === 'hearing' && e.date === dateStr && e.status !== 'cancelled');
-    if (!hearingEvents.length) {
-      A.safeSetStatic(container, '<span class="empty-state-sm" style="color:rgba(255,255,255,0.5);">' + _t('noTomorrowHearings') + '</span>');
-      return;
-    }
-    A.safeSet(container, esc =>
-      hearingEvents
-        .map(
-          e => `<div class="dash-tomorrow-item" data-click="nav:hearings">
-      <span class="tt-time">${e.time ? esc(e.time.slice(0, 5)) : '--:--'}</span>
-      <span class="tt-court">${esc(e.court || e.title || '')}</span>
-    </div>`
-        )
-        .join('')
-    );
-  } catch (e) {
-    A.logError('renderTomorrowHearings', e);
   }
 };
 

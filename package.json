@@ -43,12 +43,30 @@
       "language": "1033"
     },
     "files": [
-      "!modules_backup/**"
+      "!modules_backup/**",
+      "!.env",
+      "!storage/**",
+      "!backup-lawyer-manager/**",
+      "!main.backup.js",
+      "!check_users.js",
+      "!reset_user.py",
+      "!test/**",
+      "!tests/**",
+      "!test-results/**",
+      "!playwright.config.js",
+      "!ara.traineddata",
+      "!fra.traineddata"
     ],
     "asarUnpack": [
       "ocr-worker.js",
       "node_modules/sql.js/dist/*.wasm",
       "node_modules/tesseract.js-core/*.wasm"
+    ],
+    "extraResources": [
+      {
+        "from": ".env",
+        "to": ".env"
+      }
     ]
   },
   "dependencies": {
@@ -68,7 +86,8 @@
     "eslint": "^10.6.0",
     "eslint-config-prettier": "^10.1.8",
     "mocha": "^11.7.6",
-    "prettier": "^3.9.4"
+    "prettier": "^3.9.4",
+    "sharp": "^0.35.3"
   },
   "allowScripts": {},
   "overrides": {

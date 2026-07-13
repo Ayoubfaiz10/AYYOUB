@@ -20,8 +20,8 @@ var ROLE_ACCESS = {
     'ai',
     'archive',
     'help',
-    'support',
-    'settings'
+    'settings',
+    'profile'
   ],
   senior_lawyer: [
     'dashboard',
@@ -37,15 +37,15 @@ var ROLE_ACCESS = {
     'reports',
     'ai',
     'archive',
-    'support'
+    'profile'
   ],
-  junior_lawyer: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'ai', 'help', 'support'],
-  assistant: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'help', 'support'],
-  intern: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'tasks', 'help', 'support'],
-  external: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'help', 'support']
+  junior_lawyer: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'ai', 'help', 'profile'],
+  assistant: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'help', 'profile'],
+  intern: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'tasks', 'help', 'profile'],
+  external: ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'help', 'profile']
 };
 A.ROLE_ACCESS = ROLE_ACCESS;
-A.SECTIONS = ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'expenses', 'reports', 'ai', 'archive', 'help', 'support', 'settings'];
+A.SECTIONS = ['dashboard', 'search', 'notifications', 'clients', 'cases', 'hearings', 'documents', 'calendar', 'tasks', 'expenses', 'reports', 'ai', 'archive', 'help', 'settings', 'profile'];
 
 A.canAccess = function (sectionId) {
   const role = (A.state.currentUser && A.state.currentUser.role) || 'admin';

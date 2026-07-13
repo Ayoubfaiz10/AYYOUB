@@ -49,7 +49,6 @@ body {
   line-height: var(--line-height);
   height: 100vh;
   overflow: hidden;
-  direction: rtl;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
@@ -1294,67 +1293,6 @@ body {
   font-weight: 600;
 }
 
-/* ─── Tomorrow hearings bar ─── */
-.dash-tomorrow-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-3) var(--spacing-4);
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--rounded-lg);
-  color: var(--foreground);
-}
-
-.dash-tomorrow-label {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  font-weight: 600;
-  font-size: var(--type-body);
-  white-space: nowrap;
-}
-
-.dash-tomorrow-label i {
-  font-size: 16px;
-}
-
-.dash-tomorrow-list {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-  overflow-x: auto;
-  flex: 1;
-}
-
-.dash-tomorrow-item {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  background: var(--muted);
-  padding: 4px 10px;
-  border-radius: var(--radius-pill);
-  white-space: nowrap;
-  font-size: var(--text-caption);
-  cursor: pointer;
-  transition: background var(--transition-fast);
-  color: var(--foreground);
-}
-
-.dash-tomorrow-item:hover {
-  background: var(--border);
-}
-
-.dash-tomorrow-item .tt-time {
-  color: var(--foreground);
-  font-weight: 600;
-}
-
-.dash-tomorrow-item .tt-court {
-  color: var(--muted-foreground);
-  font-family: var(--font-secondary);
-}
-
 /* ─── Empty State ─── */
 .dash-empty-state {
   text-align: center;
@@ -1428,14 +1366,6 @@ body {
   }
   .dash-kpi-ops {
     grid-template-columns: 1fr;
-  }
-  .dash-tomorrow-bar {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--spacing-2);
-  }
-  .dash-tomorrow-list {
-    flex-wrap: wrap;
   }
 }
 
@@ -1735,9 +1665,8 @@ body {
    ══════════════════════════════════════════════ */
 
 .modal-workspace {
-  width: 96vw;
-  max-width: 1600px;
-  height: 94vh;
+  width: min(98vw, 1800px);
+  height: 98vh;
   display: flex;
   flex-direction: column;
   padding: 0;
@@ -1748,7 +1677,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--spacing-4) var(--spacing-6);
+  padding: var(--spacing-3) var(--spacing-5);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   flex-wrap: nowrap;
@@ -1781,16 +1710,17 @@ body {
   display: flex;
   align-items: center;
   gap: var(--spacing-3);
+  min-width: 0;
+  flex: 1;
 }
 .ws-title-area h3 {
   font-size: var(--type-subtitle);
   font-weight: 600;
   color: var(--foreground);
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  max-width: 400px;
+  overflow-wrap: anywhere;
+  min-width: 0;
+  flex: 1;
 }
 .ws-badge {
   font-size: var(--type-caption);
@@ -1808,7 +1738,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 6px var(--spacing-6);
+  padding: 4px var(--spacing-5);
   font-size: var(--type-caption);
   color: var(--muted-foreground);
   border-bottom: 1px solid var(--border);
@@ -1833,7 +1763,7 @@ body {
 .ws-tabs {
   display: flex;
   gap: 0;
-  padding: 0 var(--spacing-6);
+  padding: 0 var(--spacing-5);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
   overflow-x: auto;
@@ -1842,7 +1772,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: var(--spacing-3) var(--spacing-4);
+  padding: var(--spacing-2-5) var(--spacing-3-5);
   border: none;
   background: transparent;
   font-size: var(--text-body);
@@ -1866,46 +1796,9 @@ body {
 .ws-body {
   flex: 1;
   overflow-y: auto;
-  padding: var(--spacing-5) var(--spacing-6);
+  padding: var(--spacing-4) var(--spacing-5);
 }
 
-.doc-viewer-body {
-  display: grid;
-  grid-template-columns: 1fr 380px;
-  grid-template-rows: 1fr;
-  gap: 0;
-  padding: 0;
-  overflow: auto;
-  min-height: 0;
-  min-width: 0;
-  flex: 1;
-}
-.doc-viewer-body > div {
-  min-height: 0;
-  min-width: 0;
-  overflow: auto;
-}
-.doc-viewer-body > div:first-child {
-  min-height: 200px;
-}
-.doc-viewer-body > div:last-child {
-  border-inline-start: 1px solid var(--border);
-  padding: var(--spacing-3-5);
-  display: flex;
-  flex-direction: column;
-  overflow: auto;
-}
-
-@media (max-width: 1100px) {
-  .doc-viewer-body {
-    grid-template-columns: 1fr;
-    overflow-y: auto;
-  }
-  .doc-viewer-body > div:last-child {
-    border-inline-start: none;
-    border-block-start: 1px solid var(--border);
-  }
-}
 .ws-panel {
   display: none;
 }
@@ -1916,17 +1809,17 @@ body {
 /* ─── Overview Tab ─── */
 .ws-overview-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
-  gap: var(--spacing-5);
+  grid-template-columns: 1.6fr 1.2fr;
+  gap: var(--spacing-4);
 }
 .ws-info-card {
-  padding: var(--spacing-5);
+  padding: var(--spacing-4);
 }
 .ws-info-card h4 {
   font-size: var(--type-body);
-  font-weight: 500;
-  color: var(--muted-foreground);
-  margin-bottom: var(--spacing-3);
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: var(--spacing-2);
 }
 .ws-info-row {
   display: flex;
@@ -2687,55 +2580,6 @@ body {
   color: var(--foreground);
 }
 .doc-folder-count {
-  font-size: var(--type-caption);
-  color: var(--muted-foreground);
-}
-
-.doc-viewer-body .ws-info-card:last-child {
-  margin-top: 0;
-}
-.doc-viewer-tags {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-}
-.doc-viewer-tag {
-  font-size: var(--type-caption);
-  padding: 2px 10px;
-  border-radius: var(--rounded-lg);
-  background: var(--muted);
-  color: var(--foreground);
-  font-weight: 500;
-}
-.doc-viewer-versions {
-  display: flex;
-  flex-direction: column;
-  gap: var(--spacing-1);
-  max-height: 180px;
-  overflow-y: auto;
-}
-.doc-version-item {
-  font-size: var(--text-xs);
-  padding: var(--spacing-2);
-  border-radius: var(--rounded-sm);
-  background: var(--muted);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.doc-version-item:hover {
-  background: var(--border);
-}
-.doc-version-item.current {
-  border: 1px solid var(--gold);
-}
-.doc-version-label {
-  font-weight: var(--font-weight-medium);
-  color: var(--foreground);
-}
-.doc-version-date {
   font-size: var(--type-caption);
   color: var(--muted-foreground);
 }
@@ -4862,14 +4706,14 @@ select.input {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+  background: linear-gradient(135deg, var(--gold-dark, #a8883e) 0%, var(--gold, #c6a15b) 100%);
   color: #ffffff;
   border: none;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
-  box-shadow: 0 4px 16px rgba(30, 64, 175, 0.3);
+  box-shadow: var(--shadow-gold, 0 4px 16px rgba(198, 161, 91, 0.3));
   transition: all var(--transition-base);
   font-size: 18px;
   user-select: none;
@@ -4877,8 +4721,8 @@ select.input {
 }
 .ai-float-btn:hover {
   transform: scale(1.08);
-  box-shadow: 0 6px 24px rgba(30, 64, 175, 0.4);
-  background: linear-gradient(135deg, #1D4ED8 0%, #3B82F6 100%);
+  box-shadow: var(--shadow-gold-hover, 0 6px 24px rgba(198, 161, 91, 0.4));
+  background: linear-gradient(135deg, var(--gold, #c6a15b) 0%, var(--gold-400, #d9ba62) 100%);
 }
 .ai-float-btn:active {
   cursor: grabbing;
@@ -5879,19 +5723,44 @@ select.input {
   direction: ltr;
   font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
 }
+.lang-fr #sidebar {
+  border-left: none;
+  border-right: 1px solid var(--border);
+}
 .lang-fr .sidebar-header {
   flex-direction: row;
+  padding: var(--spacing-4) var(--spacing-3) var(--spacing-4) var(--spacing-4);
 }
 .lang-fr .sidebar-brand {
   flex-direction: row;
 }
+.lang-fr .sidebar-brand-text {
+  text-align: left;
+}
 .lang-fr .nav-item {
   flex-direction: row;
   text-align: left;
+  justify-content: flex-start;
 }
 .lang-fr .nav-item .nav-icon {
   margin-left: 10px;
   margin-right: 0;
+}
+.lang-fr .nav-label {
+  text-align: left;
+}
+.lang-fr .dash-kpi-card {
+  text-align: left;
+}
+.lang-fr .table thead th {
+  text-align: left;
+}
+.lang-fr .settings-nav-item {
+  text-align: left;
+}
+.lang-fr .help-shortcuts th,
+.lang-fr .help-shortcuts td {
+  text-align: left;
 }
 .lang-fr .topbar-search {
   flex-direction: row;
@@ -5972,9 +5841,6 @@ select.input {
 }
 .lang-fr .toast {
   flex-direction: row;
-  text-align: left;
-}
-.lang-fr .sidebar-brand-text {
   text-align: left;
 }
 .lang-fr .topbar-brand-text {

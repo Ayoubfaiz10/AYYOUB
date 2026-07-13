@@ -54,7 +54,6 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initCommandPalette);
   safeInit(A.initAdvancedSearch);
   safeInit(A.initDashboard);
-  safeInit(A.initAI);
   safeInit(A.initClients);
   safeInit(A.initCases);
   safeInit(A.initKanbanDragDrop);
@@ -65,7 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
   safeInit(A.initExpenses);
   safeInit(A.initArchive);
   safeInit(A.initReports);
-  safeInit(A.initSettings);
+  // initSettings is lazy-loaded via navigateTo('settings') → lazyInit('settings')
   safeInit(A.initHelp);
   safeInit(A.initNotifications);
   safeInit(A.initProfile);
@@ -121,7 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (A.state.ipc) {
     A.state.ipc.on('app:navigateToCase', caseId => {
       A.navigateTo('cases');
-      if (typeof A.openCase === 'function') setTimeout(() => A.openCase(caseId), 200);
+      if (typeof A.openCaseDetail === 'function') setTimeout(() => A.openCaseDetail(caseId), 200);
     });
   }
 

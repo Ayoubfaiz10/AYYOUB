@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, shell, Notification, dialog, session } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, Notification, dialog, session, Menu, safeStorage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const fsp = fs.promises;
@@ -7,7 +7,13 @@ const bcrypt = require('bcryptjs');
 const os = require('os');
 const db = require('./db');
 const logger = require('./logger');
-require('dotenv').config({ path: __dirname + '/.env' });
+let dotenvResult = require('dotenv').config({ path: __dirname + '/.env', override: true });
+if (dotenvResult.error && app.isPackaged) {
+  const resourceEnv = path.join(process.resourcesPath, '.env');
+  if (fs.existsSync(resourceEnv)) {
+    require('dotenv').config({ path: resourceEnv, override: true });
+  }
+}
 
 if (!process.env.MASTER_KEY) {
   console.error('');
@@ -19,6 +25,9 @@ if (!process.env.MASTER_KEY) {
   console.error('');
   process.exit(1);
 }
+
+app.setName('LexOffece');
+if (process.platform === 'win32') app.setAppUserModelId('com.lexoffece.app');
 
 /* ─── Path security: prevent directory traversal ─── */
 const PATH_CACHE = new Map();
@@ -463,7 +472,8 @@ function createWindow() {
     y: savedState.y,
     minWidth: 900,
     minHeight: 600,
-    title: 'مدير مكتب المحامي',
+    title: 'LexOffece',
+    icon: path.join(__dirname, 'icon.png'),
     titleBarStyle: 'hiddenInset',
     webPreferences: {
       nodeIntegration: false,
@@ -488,6 +498,37 @@ function createWindow() {
   });
 
   mainWindow.loadFile('index.html');
+
+  // Right-click context menu: Cut / Copy / Paste / Select All
+  mainWindow.webContents.on('context-menu', (_event, params) => {
+    const template = [];
+    if (params.isEditable) {
+      if (params.selectionText) {
+        template.push({ label: 'قص', accelerator: 'CmdOrCtrl+X', role: 'cut' });
+        template.push({ label: 'نسخ', accelerator: 'CmdOrCtrl+C', role: 'copy' });
+      }
+      template.push({ label: 'لصق', accelerator: 'CmdOrCtrl+V', role: 'paste' });
+      template.push({ type: 'separator' });
+      template.push({ label: 'تحديد الكل', accelerator: 'CmdOrCtrl+A', role: 'selectAll' });
+    } else {
+      template.push({ label: 'نسخ', accelerator: 'CmdOrCtrl+C', role: 'copy', enabled: params.selectionText?.length > 0 });
+      template.push({ label: 'تحديد الكل', accelerator: 'CmdOrCtrl+A', role: 'selectAll' });
+    }
+    if (template.length > 0) {
+      Menu.buildFromTemplate(template).popup({ window: mainWindow });
+    }
+  });
+
+  // Ensure Ctrl+C / Ctrl+V / Ctrl+A keyboard shortcuts always work
+  mainWindow.webContents.on('before-input-event', (_event, input) => {
+    if (!input.control && !input.meta) return;
+    if (input.type !== 'keyDown') return;
+    const key = input.key.toLowerCase();
+    if (key === 'c') { mainWindow.webContents.copy(); }
+    else if (key === 'v') { mainWindow.webContents.paste(); }
+    else if (key === 'a') { mainWindow.webContents.selectAll(); }
+    else if (key === 'x') { mainWindow.webContents.cut(); }
+  });
 
   // Open target="_blank" links: confirm external URLs with the user
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
@@ -623,7 +664,7 @@ async function init() {
   }
 
   const archived = db.autoArchive();
-  if (archived > 0) console.log(`Auto-archived ${archived} closed cases`);
+  if (isDev && archived > 0) console.log(`Auto-archived ${archived} closed cases`);
 
   // ─── DB IPC Handlers ───
 
@@ -654,7 +695,7 @@ async function init() {
       try {
         if (fs.existsSync(caseDir)) {
           fs.rmSync(caseDir, { recursive: true, force: true });
-          console.log(`Deleted storage for case #${id}`);
+          if (isDev) console.log(`Deleted storage for case #${id}`);
         }
       } catch (err) {
         console.error(`Failed to delete storage for case #${id}:`, err);
@@ -679,6 +720,12 @@ async function init() {
     await db.deleteClient(id);
     db.addLog('delete_client', `حذف موكل ${c ? c.name : '#' + id}`);
     await db.flushWrites();
+  }));
+  mutateIpc('db:updateClient', withPerm('edit_case')(async (_e, data) => {
+    if (!data || !data.id) return { error: 'معرف الموكل مطلوب' };
+    db.updateClient(data);
+    await db.flushWrites();
+    return { ok: true };
   }));
   safeIpc('db:getAllTasks', withPerm('manage_tasks')((_e, includeArchived) => db.getAllTasks(includeArchived)));
   safeIpc('db:getTask', withPerm('manage_tasks')((_e, id) => db.getTask(id)));
@@ -805,12 +852,6 @@ async function init() {
         return { ok: true };
       }
     } catch (e) { logToLogger(2, 'downloadDocument', e.message); return { error: e.message }; }
-  }));
-  mutateIpc('db:updateDocNotes', withPerm('upload_doc')(async (_e, args) => {
-    const { id, notes } = nullGuard(args);
-    if (id == null) return;
-    db.updateDocument(id, { notes: notes || '' });
-    db.addLog('update_doc_notes', `تحديث ملاحظات الوثيقة #${id}`);
   }));
   mutateIpc('db:deleteDocument', withPerm('delete_document')(async (_e, id) => {
     if (id == null) return { ok: false, error: 'معرف الوثيقة مطلوب' };
@@ -1011,8 +1052,10 @@ async function runApp() {
 
   mainWindow.webContents.once('did-finish-load', () => {
     checkAndNotify();
+    checkTodayEvents();
     checkUpcomingEvents();
     setInterval(checkAndNotify, 3600000);
+    setInterval(checkTodayEvents, 3600000);
     setInterval(checkUpcomingEvents, 21600000);
     setInterval(() => { try { db.cleanOldSentNotifications(); } catch (e) { /* ignore */ } }, 86400000);
     try { db.cleanExpiredRevokedTokens(); } catch (e) { /* ignore */ }
@@ -1108,6 +1151,41 @@ function checkUpcomingEvents() {
   } catch (e) { console.error('checkUpcomingEvents error:', e); }
 }
 
+function checkTodayEvents() {
+  try {
+    const today = new Date().toLocaleDateString('en-CA');
+    const events = db.getEventsByDate(today);
+    const hearings = db.getTodayHearings();
+
+    events.forEach(ev => {
+      const key = 'today_event_' + ev.id;
+      if (db.isSent(key)) return;
+      db.markSent(key);
+      const caseInfo = ev.case_number ? `قضية ${ev.case_number}` : '';
+      const body = `تذكير: عندك ${ev.type} — ${ev.title}${caseInfo ? ` فـ ${caseInfo}` : ''}${ev.court ? ` فـ ${ev.court}` : ''}`;
+      const n = new Notification({ title: 'تذكير بموعد اليوم', body });
+      n.on('click', () => {
+        if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
+        if (ev.case_id) mainWindow?.webContents.send('app:navigateToCase', ev.case_id);
+      });
+      n.show();
+    });
+
+    hearings.forEach(h => {
+      const key = 'today_hearing_' + h.id;
+      if (db.isSent(key)) return;
+      db.markSent(key);
+      const body = `تذكير: عندك جلسة اليوم فـ قضية ${h.case_number}${h.court ? ` فـ ${h.court}` : ''}`;
+      const n = new Notification({ title: 'تذكير بجلسة اليوم', body });
+      n.on('click', () => {
+        if (mainWindow) { mainWindow.show(); mainWindow.focus(); }
+        if (h.case_id) mainWindow?.webContents.send('app:navigateToCase', h.case_id);
+      });
+      n.show();
+    });
+  } catch (e) { if (isDev) console.error('checkTodayEvents error:', e); }
+}
+
 async function indexDocument(docId) {
   const Tesseract = ensureTesseract();
   if (!Tesseract) return;
@@ -1128,7 +1206,7 @@ async function indexDocument(docId) {
         const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs');
         const buf = new Uint8Array(await fsp.readFile(doc.file_path));
         const pdfDoc = await pdfjsLib.getDocument({ data: buf }).promise;
-        console.log('indexDocument: PDF loaded, pages:', pdfDoc.numPages, 'for doc', docId);
+        if (isDev) console.log('indexDocument: PDF loaded, pages:', pdfDoc.numPages, 'for doc', docId);
         let pdfText = '';
         for (let i = 1; i <= pdfDoc.numPages; i++) {
           const page = await pdfDoc.getPage(i);
@@ -1137,12 +1215,12 @@ async function indexDocument(docId) {
           page.cleanup();
         }
         pdfDoc.cleanup();
-        console.log('indexDocument: pdfjs text length:', pdfText.trim().length, 'for doc', docId);
+        if (isDev) console.log('indexDocument: pdfjs text length:', pdfText.trim().length, 'for doc', docId);
         if (pdfText.trim().length > 50) {
           text = pdfText.trim();
-          console.log('indexDocument: using extracted PDF text for doc', docId, '(' + text.length + ' chars)');
+          if (isDev) console.log('indexDocument: using extracted PDF text for doc', docId, '(' + text.length + ' chars)');
         } else {
-          console.log('indexDocument: PDF text insufficient (' + pdfText.trim().length + ' chars), falling back to OCR for doc', docId);
+          if (isDev) console.log('indexDocument: PDF text insufficient (' + pdfText.trim().length + ' chars), falling back to OCR for doc', docId);
           const { createCanvas } = require('canvas');
           const pdfDoc2 = await pdfjsLib.getDocument({ data: buf }).promise;
           let ocrText = '';
@@ -1158,7 +1236,7 @@ async function indexDocument(docId) {
             const { data } = await worker.recognize(pngBuf);
             await worker.terminate();
             ocrText += (data.text || '') + '\n';
-            console.log('indexDocument: OCR page', i, '/', pdfDoc2.numPages, 'got', (data.text || '').trim().length, 'chars for doc', docId);
+            if (isDev) console.log('indexDocument: OCR page', i, '/', pdfDoc2.numPages, 'got', (data.text || '').trim().length, 'chars for doc', docId);
           }
           pdfDoc2.cleanup();
           text = ocrText.trim();
@@ -1172,15 +1250,15 @@ async function indexDocument(docId) {
       const { data } = await worker.recognize(doc.file_path);
       await worker.terminate();
       text = data.text || '';
-      console.log('indexDocument: OCR for image doc', docId, 'got', text.trim().length, 'chars');
+      if (isDev) console.log('indexDocument: OCR for image doc', docId, 'got', text.trim().length, 'chars');
     }
     if (text.trim()) {
       db.addDocumentText(docId, text.trim());
-      console.log('indexDocument: saved to document_text for doc', docId, '(' + text.trim().length + ' chars)');
+      if (isDev) console.log('indexDocument: saved to document_text for doc', docId, '(' + text.trim().length + ' chars)');
       if (doc.case_id) db.syncSearchIndex(doc.case_id);
       notifyUser('indexSuccess', `تم فهرسة ${doc.filename} (${text.trim().length} حرف)`);
     } else {
-      console.log('indexDocument: no text extracted for doc', docId, doc.filename);
+      if (isDev) console.log('indexDocument: no text extracted for doc', docId, doc.filename);
       if (ext === '.pdf') {
         notifyUser('indexWarning', `تعذر استخراج نص من ${doc.filename}. قد يكون الملف ممسوحاً ضوئياً أو تالفاً.`);
       }
@@ -1223,6 +1301,7 @@ mutateIpc('events:delete', withPerm('edit_case')(async (_e, id) => {
 
 const BCRYPT_SALT_ROUNDS = 12;
 const AI_CONFIG_PATH = path.join(app.getPath('userData'), 'storage', 'ai_config.json');
+const SAFE_KEY_BACKUP_PATH = path.join(app.getPath('userData'), 'storage', 'safe_key_backup.json');
 
 // Login rate limiting (per userId)
 const loginAttempts = new Map();
@@ -1367,7 +1446,7 @@ ipcMain.handle('auth:login', (_e, { email, password, remember }) => {
   }
 });
 
-ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openAtLogin, securityQ1, securityA1, securityQ2, securityA2, securityQ3, securityA3 }) => {
+ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openAtLogin, pin }) => {
   try {
     const existing = db.getAllUsers() || [];
     const hasPassword = existing.some(u => u.password_hash && u.password_hash !== '');
@@ -1388,15 +1467,12 @@ ipcMain.handle('auth:setup', async (_e, { officeName, adminName, password, openA
       id = db.addUser({ name: adminName.trim(), email: cleanEmail, password_hash: hash, role: 'admin' });
     }
     if (!id) return { ok: false, error: 'فشل إنشاء حساب المدير' };
+    if (pin && typeof pin === 'string' && /^\d{4,6}$/.test(pin)) {
+      const pinHash = await hashBcrypt(pin);
+      db.setUserPin(id, pinHash);
+    }
     const user = db.getUserById(id);
     if (!user) return { ok: false, error: 'فشل استرجاع المستخدم' };
-    const questions = [];
-    if (securityQ1 && securityA1) questions.push({ question: securityQ1, answerHash: await hashBcrypt(securityA1) });
-    if (securityQ2 && securityA2) questions.push({ question: securityQ2, answerHash: await hashBcrypt(securityA2) });
-    if (securityQ3 && securityA3) questions.push({ question: securityQ3, answerHash: await hashBcrypt(securityA3) });
-    if (questions.length) {
-      db.setSecurityQuestions(id, questions);
-    }
     currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
     db.addLog('setup', `إعداد المكتب: ${officeName} — المدير: ${adminName}`);
     if (openAtLogin && app.setLoginItemSettings) {
@@ -1472,18 +1548,20 @@ safeIpc('auth:resetPassword', withPerm('manage_users')(async (_e, { userId, newP
     db.updateUser(userId, { password_hash: hash });
     const user = db.getUserById(userId);
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
-    currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const isSelf = currentUser && currentUser.id === userId;
+    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    if (isSelf) currentUser = sessionUser;
     db.addLog('reset_password', `إعادة تعيين كلمة السر للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
-    const sessionToken = (remember !== false) ? signToken(userId, Date.now() + SESSION_DURATION_MS) : null;
-    return { ok: true, user: currentUser, sessionToken: sessionToken };
+    const sessionToken = (isSelf && remember !== false) ? signToken(userId, Date.now() + SESSION_DURATION_MS) : null;
+    return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetPassword', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
 }));
 
-safeIpc('auth:resetWithMasterKey', withPerm('manage_users')(async (_e, { userId, newPassword, masterKey }) => {
+safeIpc('auth:resetWithMasterKey', async (_e, { userId, newPassword, masterKey }) => {
   try {
     if (!userId || typeof userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
     if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 8) return { ok: false, error: 'كلمة السر يجب أن تكون 8 أحرف على الأقل' };
@@ -1493,16 +1571,17 @@ safeIpc('auth:resetWithMasterKey', withPerm('manage_users')(async (_e, { userId,
     db.updateUser(userId, { password_hash: hash });
     const user = db.getUserById(userId);
     if (!user || !user.active) return { ok: false, error: 'المستخدم غير موجود أو غير نشط' };
-    currentUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    const sessionUser = { id: user.id, name: user.name, email: user.email, role: user.role };
+    currentUser = sessionUser;
     db.addLog('reset_password', `إعادة تعيين كلمة السر (مفتاح الاستعادة) للمستخدم ${user.name}`, user.id, user.name);
     await db.flushWrites();
     const sessionToken = signToken(userId, Date.now() + SESSION_DURATION_MS);
-    return { ok: true, user: currentUser, sessionToken: sessionToken };
+    return { ok: true, user: sessionUser, sessionToken: sessionToken };
   } catch (e) {
     handleError('resetWithMasterKey', e);
     return { ok: false, error: 'حدث خطأ في إعادة تعيين كلمة السر' };
   }
-}));
+});
 
 ipcMain.handle('auth:checkRemembered', (_e, token) => {
   try {
@@ -1549,6 +1628,49 @@ ipcMain.handle('auth:verifyPassword', (_e, pwd) => {
   } catch (e) {
     handleError('verifyPassword', e);
     return { ok: false, error: 'حدث خطأ في التحقق من كلمة السر' };
+  }
+});
+
+ipcMain.handle('auth:getMasterKey', () => {
+  try {
+    const key = process.env.MASTER_KEY;
+    if (!key) return { ok: false, error: 'مفتاح الاستعادة غير متوفر' };
+    return { ok: true, masterKey: key };
+  } catch (e) {
+    handleError('getMasterKey', e);
+    return { ok: false, error: 'حدث خطأ في استرجاع المفتاح' };
+  }
+});
+
+ipcMain.handle('auth:checkPin', async (_e, data) => {
+  try {
+    if (!data || !data.userId || typeof data.userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
+    if (!data.pin || typeof data.pin !== 'string') return { ok: false, error: 'الرمز السري مطلوب' };
+    const storedPinHash = db.checkUserPin(data.userId);
+    if (!storedPinHash) return { ok: false, error: 'الرمز السري غير مكوّن' };
+    const ok = bcrypt.compareSync(data.pin, storedPinHash);
+    if (!ok) return { ok: false, error: 'الرمز السري غير صحيح' };
+    return { ok: true };
+  } catch (e) {
+    handleError('checkPin', e);
+    return { ok: false, error: 'حدث خطأ في التحقق من الرمز السري' };
+  }
+});
+
+ipcMain.handle('auth:getForgotMasterKey', async (_e, data) => {
+  try {
+    if (!data || !data.userId || typeof data.userId !== 'number') return { ok: false, error: 'معرف المستخدم مطلوب' };
+    if (!data.pin || typeof data.pin !== 'string') return { ok: false, error: 'الرمز السري مطلوب' };
+    const storedPinHash = db.checkUserPin(data.userId);
+    if (!storedPinHash) return { ok: false, error: 'الرمز السري غير مكوّن' };
+    const ok = bcrypt.compareSync(data.pin, storedPinHash);
+    if (!ok) return { ok: false, error: 'الرمز السري غير صحيح' };
+    const key = process.env.MASTER_KEY;
+    if (!key) return { ok: false, error: 'مفتاح الاستعادة غير متوفر' };
+    return { ok: true, masterKey: key };
+  } catch (e) {
+    handleError('getForgotMasterKey', e);
+    return { ok: false, error: 'حدث خطأ في استرجاع المفتاح' };
   }
 });
 
@@ -2157,6 +2279,7 @@ const HMAC_KEY = deriveKey('hmac-v1', 32);
 const ENCRYPTION_KEY = deriveKey('encryption-v1', 32);
 
 async function getAiConfig() {
+  // 1. محاولة قراءة الملف المشفر بـ MASTER_KEY الحالي
   try {
     if (fs.existsSync(AI_CONFIG_PATH)) {
       const data = JSON.parse(fs.readFileSync(AI_CONFIG_PATH, 'utf8'));
@@ -2166,12 +2289,10 @@ async function getAiConfig() {
           const apiKey = await decrypt(data.encrypted);
           return { apiKey, provider: data.provider || 'groq', model: data.model || '' };
         } catch (e) {
-          console.warn('فشل فك تشفير مفتاح API');
-          return { provider: data.provider || 'groq', model: data.model || '' };
+          console.error('AI config decrypt failed (MASTER_KEY mismatch?):', e.message);
+          try { fs.unlinkSync(AI_CONFIG_PATH); } catch (err) {}
         }
-      }
-      
-      if (data.apiKey) {
+      } else if (data.apiKey) {
         console.warn('تم اكتشاف مفتاح API غير مشفر');
         const encrypted = await encrypt(data.apiKey);
         try {
@@ -2183,10 +2304,30 @@ async function getAiConfig() {
         } catch (e) { /* ignore */ }
         return { apiKey: data.apiKey, provider: data.provider || 'groq', model: data.model || '' };
       }
-      
-      return data;
     }
-  } catch (e) { /* ignore */ }
+  } catch (e) {
+    console.error('getAiConfig read error:', e.message);
+  }
+
+  // 2. محاولة الـ Fallback عبر safeStorage
+  if (safeStorage && safeStorage.isAvailable && safeStorage.isAvailable()) {
+    try {
+      if (fs.existsSync(SAFE_KEY_BACKUP_PATH)) {
+        const hexBuf = fs.readFileSync(SAFE_KEY_BACKUP_PATH, 'utf8');
+        const decrypted = safeStorage.decryptString(Buffer.from(hexBuf, 'hex'));
+        const config = JSON.parse(decrypted);
+        if (config && config.apiKey) {
+          console.log('تم استرجاع المفتاح من safeStorage — إعادة حفظ بال MASTER_KEY الجديد');
+          await saveAiConfig(config);
+          return { apiKey: config.apiKey, provider: config.provider || 'groq', model: config.model || '' };
+        }
+      }
+    } catch (e) {
+      console.error('safeStorage fallback failed:', e.message);
+      try { fs.unlinkSync(SAFE_KEY_BACKUP_PATH); } catch (err) {}
+    }
+  }
+
   return {};
 }
 
@@ -2195,6 +2336,7 @@ async function saveAiConfig(config) {
   if (!fs.existsSync(dir)) { fs.mkdirSync(dir, { recursive: true }); try { fs.chmodSync(dir, 0o700); } catch (e) {} }
   
   const apiKey = config.apiKey;
+  if (!apiKey || typeof apiKey !== 'string') throw new Error('مفتاح API غير صالح');
   
   const encrypted = await encrypt(apiKey);
   
@@ -2203,27 +2345,67 @@ async function saveAiConfig(config) {
     provider: config.provider || 'groq',
     model: config.model || ''
   }, null, 2), { mode: 0o600 });
+
+  if (!fs.existsSync(AI_CONFIG_PATH)) throw new Error('فشل حفظ ملف المفتاح');
+
+  if (safeStorage && safeStorage.isAvailable && safeStorage.isAvailable()) {
+    try {
+      const backup = JSON.stringify({ apiKey: apiKey, provider: config.provider || 'groq', model: config.model || '' });
+      const encBuf = safeStorage.encryptString(backup);
+      fs.writeFileSync(SAFE_KEY_BACKUP_PATH, encBuf.toString('hex'), { mode: 0o600 });
+      if (isDev) console.log('تم حفظ backup المفتاح في safeStorage');
+    } catch (e) {
+      if (isDev) console.warn('safeStorage backup failed:', e.message);
+    }
+  }
   
-  console.log('تم حفظ مفتاح API مشفراً بنجاح');
+  if (isDev) console.log('تم حفظ مفتاح API مشفراً بنجاح');
 }
 
-safeIpc('ai:getConfig', withPerm('use_ai')(() => {
+safeIpc('ai:getConfig', withPerm('use_ai')(async () => {
+  console.log('[AI] ai:getConfig called');
   try {
-    const config = getAiConfig();
+    const config = await getAiConfig();
+    console.log('[AI] getAiConfig result:', { hasKey: !!config.apiKey, provider: config.provider });
     return { provider: config.provider || 'groq', model: config.model || '', hasKey: !!config.apiKey };
   } catch (e) {
-    console.warn('ai:getConfig error:', e.message);
+    console.error('[AI] ai:getConfig error:', e.message);
     return { provider: 'groq', model: '', hasKey: false };
   }
 }));
 safeIpc('ai:saveConfig', withPerm('use_ai')(async (_e, config) => {
+  console.log('[AI] ai:saveConfig called, apiKey length:', config?.apiKey?.length);
   try {
-    saveAiConfig(config);
+    await saveAiConfig(config);
+    console.log('[AI] saveAiConfig completed successfully');
     return { ok: true };
   } catch (e) {
+    console.error('[AI] saveAiConfig failed:', e.message);
     return { ok: false, error: e.message || 'فشل حفظ مفتاح API' };
   }
 }));
+
+ipcMain.handle('help:getSystemHealth', () => {
+  try {
+    const os = require('os');
+    return {
+      ok: true,
+      health: {
+        uptime: process.uptime(),
+        memoryUsage: process.memoryUsage(),
+        platform: process.platform,
+        electronVersion: process.versions.electron,
+        nodeVersion: process.versions.node,
+        cpuUsage: process.cpuUsage(),
+        totalMemory: os.totalmem(),
+        freeMemory: os.freemem()
+      }
+    };
+  } catch (e) {
+    handleError('getSystemHealth', e);
+    return { ok: false, error: 'خطأ في جلب بيانات النظام' };
+  }
+});
 
 app.on('window-all-closed', async () => {
   await saveDbOnQuit();

@@ -153,7 +153,7 @@ async function initDb() {
         const buf = decryptDbBuffer(fs.readFileSync(path.join(BACKUP_DIR, files[0].name)));
         db = new SQL.Database(buf);
         db.exec('SELECT count(*) FROM sqlite_master');
-        console.log('Auto-restored from:', files[0].name);
+        if (process.env.NODE_ENV !== 'production') console.log('Auto-restored from:', files[0].name);
       } catch (re) {
         console.error('Auto-restore failed, creating fresh DB:', re.message);
         db = new SQL.Database();
@@ -383,7 +383,7 @@ async function initDb() {
       db.run(
         'UPDATE cases SET honoraires_totaux = COALESCE(NULLIF(total_fees, 0), honoraires_totaux) WHERE honoraires_totaux > 0 AND paid_fees > 0 AND ABS(honoraires_totaux - paid_fees) < 0.01'
       );
-      console.log('Migrated honoraires_totaux for', corrupted.length, 'corrupted cases');
+      if (process.env.NODE_ENV !== 'production') console.log('Migrated honoraires_totaux for', corrupted.length, 'corrupted cases');
     }
   } catch (e) {
     console.error('honoraires_totaux migration error:', e.message);
@@ -537,7 +537,8 @@ function saveDbSync() {
         }
         const final = cipher.final();
         if (final.length) fs.writeSync(fd, final);
-        fs.writeSync(fd, cipher.getAuthTag());
+        const authTag = cipher.getAuthTag();
+        fs.writeSync(fd, authTag);
         fs.closeSync(fd);
       } catch (e) {
         fs.closeSync(fd);
@@ -660,14 +661,14 @@ function rebuildSearchIndex() {
     db.run('DELETE FROM search_index');
     const cases = query('SELECT id FROM cases WHERE archived = 0 OR archived IS NULL');
     cases.forEach(c => syncSearchIndex(c.id));
-    console.log('Rebuilt search index for', cases.length, 'cases');
+    if (process.env.NODE_ENV !== 'production') console.log('Rebuilt search index for', cases.length, 'cases');
   } catch (e) {
     console.error('rebuildSearchIndex error:', e.message);
   }
 }
 
 function getAllCases(includeArchived = false, userId = null, userRole = null) {
-  let sql = 'SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id';
+  let sql = 'SELECT cases.id, cases.case_number, cases.title, cases.court, cases.status, cases.description, cases.created_date, cases.next_hearing, cases.client_id, cases.total_fees, cases.paid_fees, cases.expenses, cases.archived, cases.priority, cases.case_type, cases.deadline_date, cases.honoraires_totaux, cases.notes, cases.access_level, COALESCE(clients.name, cases.client_name) as client_name FROM cases LEFT JOIN clients ON cases.client_id = clients.id';
   const params = [];
   const conditions = [];
 
@@ -755,7 +756,7 @@ function autoArchive() {
   const stale = query("SELECT id FROM cases WHERE status = 'closed' AND (archived = 0 OR archived IS NULL) AND created_date < date('now', 'localtime', '-90 days') LIMIT 100");
   if (!stale.length) return 0;
   for (let i = 0; i < stale.length; i++) {
-    db.run("UPDATE cases SET archived = 1, archived_date = date('now','localtime') WHERE id = ?", [stale[i].id]);
+    mutate("UPDATE cases SET archived = 1, archived_date = date('now','localtime') WHERE id = ?", [stale[i].id]);
   }
   return stale.length;
 }
@@ -819,7 +820,7 @@ function updateClient(data) {
   const old = query('SELECT name FROM clients WHERE id = ?', [data.id]);
   if (!old.length) return null;
   return transaction(() => {
-    const allowed = ['name', 'phone', 'email', 'address', 'notes', 'national_id', 'tags'];
+    const allowed = ['name', 'phone', 'email', 'address', 'notes', 'national_id', 'tags', 'status'];
     const fields = [];
     const values = [];
     for (const key of allowed) {
@@ -1691,12 +1692,12 @@ function isSent(key) {
 
 function markSent(key) {
   try {
-    db.run('INSERT OR IGNORE INTO sent_notifications (key) VALUES (?)', [key]);
+    mutate('INSERT OR IGNORE INTO sent_notifications (key) VALUES (?)', [key]);
   } catch (e) {}
 }
 
 function cleanOldSentNotifications() {
-  db.run("DELETE FROM sent_notifications WHERE datetime(sent_at) < datetime('now', '-30 days')");
+  mutate("DELETE FROM sent_notifications WHERE datetime(sent_at) < datetime('now', '-30 days')");
 }
 
 var WINDOWS_RESERVED_FILE = /^(con|prn|aux|nul|com[0-9]|lpt[0-9])(\$|\.)/i;
@@ -1758,11 +1759,23 @@ function getTomorrowHearings() {
   const fromProcedures = query(`SELECT p.id, p.date as hearing_date, p.type, p.description,
     c.id as case_id, c.case_number, c.title as case_title, c.court
     FROM procedures p JOIN cases c ON p.affaire_id = c.id
-    WHERE p.date = date('now', '+1 day') AND c.status != 'closed'`);
+    WHERE p.date = date('now', 'localtime', '+1 day') AND c.status != 'closed'`);
   const fromEvents = query(`SELECT e.id, e.date as hearing_date, e.type, e.notes as description,
     c.id as case_id, c.case_number, c.title as case_title, c.court
     FROM events e JOIN cases c ON e.case_id = c.id
-    WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date = date('now', '+1 day') AND c.status != 'closed'`);
+    WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date = date('now', 'localtime', '+1 day') AND c.status != 'closed'`);
+  return [...fromProcedures, ...fromEvents];
+}
+
+function getTodayHearings() {
+  const fromProcedures = query(`SELECT p.id, p.date as hearing_date, p.type, p.description,
+    c.id as case_id, c.case_number, c.title as case_title, c.court
+    FROM procedures p JOIN cases c ON p.affaire_id = c.id
+    WHERE p.date = date('now', 'localtime') AND c.status != 'closed'`);
+  const fromEvents = query(`SELECT e.id, e.date as hearing_date, e.type, e.notes as description,
+    c.id as case_id, c.case_number, c.title as case_title, c.court
+    FROM events e JOIN cases c ON e.case_id = c.id
+    WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date = date('now', 'localtime') AND c.status != 'closed'`);
   return [...fromProcedures, ...fromEvents];
 }
 
@@ -2242,15 +2255,15 @@ function updateAlertSettings(data) {
 }
 function getUpcomingDeadlines() {
   return query(
-    `SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(ROUND(julianday(c.deadline_date) - julianday('now')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL) AND julianday(c.deadline_date) - julianday('now') > -1 ORDER BY days_remaining ASC`
+    `SELECT c.id as case_id, c.case_number, c.title, c.deadline_date, CAST(julianday(c.deadline_date) - julianday(date('now', 'localtime')) AS INTEGER) as days_remaining FROM cases c WHERE c.deadline_date IS NOT NULL AND c.deadline_date != '' AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL) AND julianday(c.deadline_date) - julianday(date('now', 'localtime')) > -1 ORDER BY days_remaining ASC`
   );
 }
 function getUpcomingHearings() {
   const fromProcedures = query(
-    `SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(p.date) - julianday('now')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
+    `SELECT p.id, p.date as hearing_date, p.type, p.description, c.id as case_id, c.case_number, c.title as case_title, CAST(julianday(p.date) - julianday(date('now', 'localtime')) AS INTEGER) as days_remaining FROM procedures p JOIN cases c ON p.affaire_id = c.id WHERE p.date >= date('now', 'localtime') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
   );
   const fromEvents = query(
-    `SELECT e.id, e.date as hearing_date, e.type, e.notes as description, c.id as case_id, c.case_number, c.title as case_title, CAST(ROUND(julianday(e.date) - julianday('now')) AS INTEGER) as days_remaining FROM events e JOIN cases c ON e.case_id = c.id WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date >= date('now') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
+    `SELECT e.id, e.date as hearing_date, e.type, e.notes as description, c.id as case_id, c.case_number, c.title as case_title, CAST(julianday(e.date) - julianday(date('now', 'localtime')) AS INTEGER) as days_remaining FROM events e JOIN cases c ON e.case_id = c.id WHERE e.type = 'hearing' AND e.status != 'cancelled' AND e.date >= date('now', 'localtime') AND c.status != 'closed' AND (c.archived = 0 OR c.archived IS NULL)`
   );
   const merged = [...fromProcedures, ...fromEvents];
   merged.sort((a, b) => (a.days_remaining || 0) - (b.days_remaining || 0));
@@ -2628,5 +2641,6 @@ module.exports = {
   revokeToken,
   isTokenRevoked,
   cleanExpiredRevokedTokens,
-  flushWrites
+  flushWrites,
+  mutate
 };

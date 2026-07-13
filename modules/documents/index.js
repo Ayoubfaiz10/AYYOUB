@@ -2,8 +2,6 @@ var A = (window.App = window.App || {});
 
 A.state.allDocs = [];
 A.state.docViewMode = 'grid';
-A.state.currentDocViewerId = null;
-A.state._docViewerToken = 0;
 
 A.loadDocuments = async function () {
   if (!A.state.ipc) return;
@@ -17,129 +15,6 @@ A.loadDocuments = async function () {
     A.logError('loadDocuments', error);
     A.showError('documentsGrid', _t('failedLoadDocuments'), () => A.loadDocuments());
   }
-};
-
-A.openDocViewer = async function (docId) {
-  if (!A.state.ipc || !docId) return;
-  const _token = ++A.state._docViewerToken;
-  const docs = (await A.cachedInvoke('db:getAllDocuments')) || [];
-  if (_token !== A.state._docViewerToken) return;
-  const doc = docs.find(d => d && d.id === docId);
-  if (!doc) {
-    A.showToast(_t('docNotFound'), 'error');
-    return;
-  }
-  if (A.addRecentItem) A.addRecentItem('document', doc.id, doc.filename, (doc.case_number || '') + ' · ' + (doc.doc_type || ''), 'documents');
-  A.state.currentDocViewerId = docId;
-
-  const dvTitle = document.getElementById('docViewerTitle');
-  if (dvTitle) dvTitle.textContent = doc.filename;
-  const dvType = document.getElementById('docViewerType');
-  if (dvType) dvType.textContent = doc.doc_type;
-  const dvCase = document.getElementById('docVCase');
-  if (dvCase) dvCase.textContent = doc.case_number || '—';
-  const dvClient = document.getElementById('docVClient');
-  if (dvClient) dvClient.textContent = doc.client_name || '—';
-  const dvDate = document.getElementById('docVDate');
-  if (dvDate) dvDate.textContent = doc.upload_date ? A.formatDate(doc.upload_date) : '—';
-  const dvSize = document.getElementById('docVSize');
-  if (dvSize) dvSize.textContent = doc.file_size || '—';
-  const dvPreview = document.getElementById('docVPreview');
-  if (dvPreview) dvPreview.textContent = doc.filename;
-  const dvTags = document.getElementById('docVTags');
-  if (dvTags)
-    A.safeSet(
-      dvTags,
-      esc =>
-        (doc.tags || '')
-          .split(',')
-          .filter(Boolean)
-          .map(t => `<span class="doc-viewer-tag">${esc(t.trim())}</span>`)
-          .join('') || `<span style="font-size:12px;color:var(--muted-foreground);">${_t('noTagsLabel')}</span>`
-    );
-  const dvVersions = document.getElementById('docVVersions');
-  if (dvVersions)
-    A.safeSetStatic(
-      dvVersions,
-      `<div class="doc-version-item current"><span class="doc-version-label">${_t('currentVersionLabel')}</span><span class="doc-version-date">${doc.upload_date ? A.formatDate(doc.upload_date) : ''}</span></div>`
-    );
-  const dvNotes = document.getElementById('docVNotes');
-  if (dvNotes) dvNotes.value = doc.notes || '';
-
-  const dvOpen = document.getElementById('docViewerOpen');
-  if (dvOpen)
-    dvOpen.onclick = async () => {
-      try {
-        await A.state.ipc.invoke('db:openDocument', docId);
-      } catch (e) {
-        A.logError('openDoc', e);
-        A.showToast(_t('failedOpenFile'), 'error');
-      }
-    };
-  const dvDownload = document.getElementById('docViewerDownload');
-  if (dvDownload)
-    dvDownload.onclick = async () => {
-      try {
-        const r = await A.state.ipc.invoke('db:downloadDocument', docId);
-        if (r && r.error) A.showToast(r.error, 'error');
-        else A.showToast(_t('docDownloaded'), 'success');
-      } catch (e) {
-        A.logError('downloadDoc', e);
-        A.showToast(_t('failedLoadFile'), 'error');
-      }
-    };
-  const dvAnalyze = document.getElementById('docViewerAnalyze');
-  if (dvAnalyze)
-    dvAnalyze.onclick = () => {
-      if (A.analyzeDoc) A.analyzeDoc(docId);
-    };
-  const dvDelete = document.getElementById('docViewerDelete');
-  if (dvDelete)
-    dvDelete.onclick = async () => {
-      if (!(await A.showConfirm(_t('docDeleteConfirm'), _t('delete'), 'danger'))) return;
-      try {
-        await A.mutate('db:deleteDocument', docId);
-        const overlay = document.getElementById('docViewerOverlay');
-        if (overlay) overlay.style.display = 'none';
-        A.loadDocuments();
-        A.showToast(_t('docDeleted'), 'success');
-      } catch (e) {
-        A.logError('deleteDocument', e);
-        A.showToast(_t('docDeleteFailed'), 'error');
-      }
-    };
-  const dvSaveNotes = document.getElementById('docVSaveNotes');
-  if (dvSaveNotes)
-    dvSaveNotes.onclick = async () => {
-      const notesEl = document.getElementById('docVNotes');
-      const notes = notesEl ? notesEl.value : '';
-      try {
-        await A.mutate('db:updateDocNotes', { id: docId, notes });
-        A.showToast(_t('notesSaved'), 'success');
-        if (A.AutoSave) A.AutoSave.clear('doc_notes_' + docId);
-      } catch (e) {
-        A.logError('saveDocNotes', e);
-        A.showToast(_t('failedSaveNotes'), 'error');
-      }
-    };
-  const docVNotesEl = document.getElementById('docVNotes');
-  if (docVNotesEl && A.AutoSave) {
-    docVNotesEl.addEventListener('input', () => {
-      if (A.AutoSave) A.AutoSave.markDirty('doc_notes_' + docId);
-    });
-    A.AutoSave.register('doc_notes_' + docId, {
-      getValue: () => document.getElementById('docVNotes')?.value || '',
-      setValue: v => {
-        const el = document.getElementById('docVNotes');
-        if (el) el.value = v;
-      },
-      indicator: 'docVNotes',
-      debounce: 2000
-    });
-  }
-
-  const overlay = document.getElementById('docViewerOverlay');
-  if (overlay) overlay.style.display = 'flex';
 };
 
 A.initDocuments = function () {
@@ -213,5 +88,3 @@ A.initDocuments = function () {
       });
   });
 };
-
-window.openDocViewer = A.openDocViewer;

@@ -33,6 +33,7 @@ const VALID_CHANNELS = [
   'auth:resetPassword',
   'auth:resetWithMasterKey',
   'auth:getMasterKey',
+  'auth:getForgotMasterKey',
   'auth:checkPin',
   'db:getAllCases',
   'db:addCase',
@@ -41,6 +42,7 @@ const VALID_CHANNELS = [
   'db:getAllClients',
   'db:addClient',
   'db:deleteClient',
+  'db:updateClient',
   'db:updateClientNotes',
   'db:getAllTasks',
   'db:getTask',
@@ -71,7 +73,6 @@ const VALID_CHANNELS = [
   'db:getSearchIndex',
   'db:openDocument',
   'db:downloadDocument',
-  'db:updateDocNotes',
   'db:deleteDocument',
   'db:getProcedures',
   'db:addProcedure',
@@ -191,12 +192,7 @@ const IPC_SCHEMAS = {
         adminName: s_string({ minLength: 1 }),
         password: s_string({ minLength: 8 }),
         openAtLogin: s_opt(s_boolean()),
-        securityQ1: s_string({ minLength: 1 }),
-        securityA1: s_string({ minLength: 1 }),
-        securityQ2: s_opt(s_string({ minLength: 1 })),
-        securityA2: s_opt(s_string({ minLength: 1 })),
-        securityQ3: s_opt(s_string({ minLength: 1 })),
-        securityA3: s_opt(s_string({ minLength: 1 }))
+        pin: s_opt(s_string({ minLength: 1 }))
       })
     ],
     strict: true
@@ -231,7 +227,8 @@ const IPC_SCHEMAS = {
       s_object({
         userId: s_integer({ positive: true }),
         newPassword: s_string({ minLength: 8 }),
-        remember: s_opt(s_boolean())
+        remember: s_opt(s_boolean()),
+        pin: s_opt(s_string())
       })
     ],
     strict: true
@@ -353,6 +350,22 @@ const IPC_SCHEMAS = {
     strict: true
   },
   'db:deleteClient': { args: [s_integer({ positive: true })], strict: true },
+  'db:updateClient': {
+    args: [
+      s_object({
+        id: s_integer({ positive: true }),
+        name: s_opt(s_string()),
+        phone: s_opt(s_string()),
+        email: s_opt(s_string()),
+        address: s_opt(s_string()),
+        notes: s_opt(s_string()),
+        national_id: s_opt(s_string()),
+        tags: s_opt(s_string()),
+        status: s_opt(s_string())
+      })
+    ],
+    strict: true
+  },
   'db:updateClientNotes': {
     args: [
       s_object({
@@ -540,15 +553,6 @@ const IPC_SCHEMAS = {
   'db:rebuildSearchIndex': { args: [], strict: true },
   'db:openDocument': { args: [s_integer({ positive: true })], strict: true },
   'db:downloadDocument': { args: [s_integer({ positive: true })], strict: true },
-  'db:updateDocNotes': {
-    args: [
-      s_object({
-        id: s_integer({ positive: true }),
-        notes: s_string()
-      })
-    ],
-    strict: true
-  },
   'db:deleteDocument': { args: [s_integer({ positive: true })], strict: true },
 
   // ───── DB Procedures ─────

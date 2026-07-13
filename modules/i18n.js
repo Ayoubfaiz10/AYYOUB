@@ -620,7 +620,6 @@ A.i18n = {
   // ─── Document Viewer ───
   docVUploadDate: { ar: 'تاريخ الرفع', fr: 'Date de téléversement' },
   docVSize: { ar: 'الحجم', fr: 'Taille' },
-  docVNotesPlaceholder: { ar: 'ملاحظات قانونية...', fr: 'Notes juridiques...' },
 
   // ─── Settings Backup ───
   backupHoursLabel: { ar: 'عدد الساعات بين النسخ', fr: 'Heures entre les sauvegardes' },
@@ -810,10 +809,8 @@ A.i18n = {
   docDeleteFailed: { ar: 'فشل حذف الوثيقة', fr: 'Échec de la suppression du document' },
   docDownloaded: { ar: 'تم تحميل الوثيقة', fr: 'Document téléchargé' },
   noTagsLabel: { ar: 'لا توجد', fr: 'Aucun' },
-  currentVersionLabel: { ar: 'الإصدار الحالي', fr: 'Version actuelle' },
   failedOpenFile: { ar: 'تعذر فتح الملف', fr: "Impossible d'ouvrir le fichier" },
   failedLoadFile: { ar: 'تعذر تحميل الملف', fr: 'Impossible de télécharger le fichier' },
-  notesSaved: { ar: 'تم حفظ الملاحظات', fr: 'Notes enregistrées' },
   failedSaveNotes: { ar: 'فشل حفظ الملاحظات', fr: "Échec de l'enregistrement des notes" },
   uploadDocTitle: { ar: 'رفع وثيقة', fr: 'Téléverser un document' },
   caseSelectLabel: { ar: 'القضية', fr: 'Affaire' },
@@ -1547,14 +1544,6 @@ A.i18n = {
 
   // ─── Profile Avatar ───
   changePhotoTooltip: { ar: 'انقر لتغيير الصورة', fr: 'Cliquez pour changer la photo' },
-
-  // ─── Document Viewer ───
-  docViewerOpenBtn: { ar: 'فتح', fr: 'Ouvrir' },
-  docViewerDownloadBtn: { ar: 'تحميل', fr: 'Télécharger' },
-  docViewerAnalyzeBtn: { ar: 'تحليل', fr: 'Analyser' },
-  docViewerAnalyzeTitle: { ar: 'تحليل بالذكاء الاصطناعي', fr: 'Analyser avec IA' },
-  docViewerDeleteBtn: { ar: 'حذف', fr: 'Supprimer' },
-  docViewerDeleteTitle: { ar: 'حذف الوثيقة', fr: 'Supprimer le document' },
 
   // ─── Pre-existing HTML keys ───
   authLoginHeading: { ar: 'تسجيل الدخول', fr: 'Connexion' },

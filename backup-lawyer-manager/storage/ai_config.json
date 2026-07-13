@@ -1,5 +1,0 @@
-{
-  "encrypted": "{\"salt\":\"3bbd608265c81d60a9a83cf4851b83f860096e63be8826faff30befdcc412a63\",\"iv\":\"8ff3a0f3debcaf8617fd88e1e9fb44b4\",\"encrypted\":\"6a27b6e8d3e9b6fb564f3737a6efbcc1ec34360804705166f95778ced02fcde05d46faf0073df000139beaa052f6fbc26cb9b5a5413df235\",\"authTag\":\"e8b1a1846290acfa3481d3ed973664ec\"}",
-  "provider": "groq",
-  "model": "llama-3.1-8b-instant"
-}

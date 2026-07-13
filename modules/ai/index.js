@@ -65,7 +65,8 @@ window.selectAiProvider = function (provider) {
   populateModels(provider, '');
 };
 
-A.initAI = function () {
+A.initAi = function () {
+  if (A.state._aiInited) return;
   const saveKeyBtn = document.getElementById('aiSaveKey');
   const sendBtn = document.getElementById('aiSendBtn');
   const aiInput = document.getElementById('aiInput');
@@ -73,8 +74,11 @@ A.initAI = function () {
   const aiChat = document.getElementById('aiChat');
   const apiKeyEl = document.getElementById('aiApiKey');
   if (!saveKeyBtn || !aiInput || !aiSetup || !aiChat || !apiKeyEl) return;
+  A.state._aiInited = true;
 
   if (A.state.ipc) {
+    aiSetup.style.display = 'none';
+    aiChat.style.display = 'none';
     A.state.ipc.invoke('ai:getConfig').then(config => {
       const provider = config.provider || 'groq';
       const model = config.model || '';
@@ -82,13 +86,13 @@ A.initAI = function () {
       A.state.aiModel = model;
       if (config.hasKey) {
         A.state.aiConfigured = true;
-        aiSetup.style.display = 'none';
         document.getElementById('aiMessages') && (document.getElementById('aiMessages').innerHTML = '');
         aiChat.style.display = 'flex';
         selectAiProvider(provider);
         if (model) populateModels(provider, model);
         A.updateModelBar();
       } else {
+        aiSetup.style.display = 'block';
         selectAiProvider(provider);
         populateModels(provider, '');
       }
@@ -104,7 +108,9 @@ A.initAI = function () {
       return;
     }
     A.state.aiModel = model;
+    console.log('[AI-Renderer] Calling ai:saveConfig, key length:', key.length, 'provider:', A.state.aiProvider, 'model:', model);
     const result = await A.mutate('ai:saveConfig', { apiKey: key, provider: A.state.aiProvider, model: model });
+    console.log('[AI-Renderer] ai:saveConfig result:', JSON.stringify(result));
     if (result && result.ok) {
       A.state.aiConfigured = true;
       aiSetup.style.display = 'none';
@@ -373,8 +379,21 @@ A.loadAI = async function () {
     A.showSkeleton('aiMessages', 3, 'aiMsg');
   }
   try {
-    await A.cachedInvoke('ai:getConfig');
+    console.log('[AI-Renderer] Calling ai:getConfig...');
+    const config = await A.state.ipc.invoke('ai:getConfig');
+    console.log('[AI-Renderer] ai:getConfig result:', JSON.stringify(config));
+    if (config && config.hasKey) {
+      A.state.aiConfigured = true;
+      A.state.aiProvider = config.provider || 'groq';
+      A.state.aiModel = config.model || '';
+      const aiSetup = document.getElementById('aiSetup');
+      const aiChat = document.getElementById('aiChat');
+      if (aiSetup) aiSetup.style.display = 'none';
+      if (aiChat) aiChat.style.display = 'flex';
+      A.updateModelBar();
+    }
   } catch (e) {
+    console.error('[AI-Renderer] loadAI error:', e);
     A.logError('loadAI', e);
   }
 };
