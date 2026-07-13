@@ -1,97 +1,159 @@
+<div dir="rtl">
+
 # LexOffece v2.0
 
-**منصة إدارة مكاتب المحاماة** — Law Office Management Platform
+**منصة إدارة مكاتب المحاماة** | Law Office Management Platform
 
-> تطبيق ديسكتوب متكامل لإدارة القضايا، الموكلين، الجلسات، الوثائق، المهام، والمصاريف مع مساعد ذكي بتقنية AI.
-> Full-featured desktop app for managing clients, cases, hearings, documents, tasks, and expenses with AI assistant.
+![Version](https://img.shields.io/badge/version-2.0.1-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Electron](https://img.shields.io/badge/Electron-42-47848F)
+![Node](https://img.shields.io/badge/Node-%3E%3D18-339933)
+![Platform](https://img.shields.io/badge/Platform-Windows-0078D4)
+
+</div>
+
+<p align="center">
+  <img src="icon.png" width="120" alt="LexOffece Logo">
+</p>
+
+<div dir="rtl">
+
+> تطبيق ديسكتوب متكامل لإدارة القضايا، الموكلين، الجلسات، الوثائق، المهام، والمصاريف مع مساعد ذكي بالذكاء الاصطناعي.
+>
+> Full-featured desktop app for managing clients, cases, hearings, documents, tasks, and expenses with an AI assistant.
 
 ---
 
-## Stack
+## المميزات | Features
 
-| التقنية   | Technology                                          |
-| --------- | --------------------------------------------------- |
-| **App**   | Electron 42 + Vanilla JS + CSS3 + HTML5             |
-| **DB**    | SQLite via sql.js (in-memory + file persist)        |
-| **AI**    | Groq API — llama-3.1-8b-instant (OpenAI-compatible) |
-| **Build** | electron-builder NSIS (Windows)                     |
+<div dir="rtl">
 
-## Features
+### الإدارة | Management
+- **لوحة القيادة** — إحصائيات، جدول أعمال، مواعيد نهائية، ملخص مالي، رؤى AI
+- **الموكلون (CRM)** — عرض جدول/بطاقات/segments، مساحة عمل بـ 8 تبويبات
+- **القضايا** — عرض جدول/بطاقات/kanban، مساحة عمل بـ 10 تبويبات، سحب وإفلات
+- **الجلسات** — قائمة قابلة للتصفية، مرتبطة بالتقويم
+- **التقويم** — شهري/أسبوعي/يومي/جدول أحداث، كشف التعارضات
+- **المهام** — قائمة/kanban/priorities/تحليلات، مهام فرعية، تعليقات، قوالب
+- **الوثائق** — شبكة/جددول/مجلدات، رفع ملفات، OCR، تلخيص AI
+- **المصاريف** — تتبع المدفوعات، ملخص الأتعاب
 
-- **Dashboard** — Stats, agenda, deadlines, activity timeline, financial summary, AI insights
-- **Clients (CRM)** — Table/card/segment views, workspace with 8 tabs (overview, cases, docs, comms, payments, timeline, notes, analytics)
-- **Cases** — Table/card/kanban views, workspace with 10 tabs, drag-and-drop kanban, archive
-- **Hearings** — Filterable list, connected to calendar
-- **Calendar** — Month/week/day/agenda views, event CRUD, conflict detection
-- **Tasks** — List/kanban/priority/analytics views, subtasks, comments, workflows, templates
-- **Documents** — Grid/table/folder views, upload, OCR (tesseract.js), AI summarization
-- **Expenses** — Payment tracking, fee summaries
-- **AI Assistant** — 7 modes: chat, summarize, draft, analyze, strategy, risk, hearing prep
-- **Search** — Global search (Ctrl+K), command palette, advanced search
-- **Settings** — Users (6 roles), activity log, backup/restore, alerts, password change
-- **Notifications** — System notifications for deadlines & hearings
+### الذكاء الاصطناعي | AI
+- 7 أوضاع: محادثة، تلخيص، صياغة، تحليل، استراتيجية، مخاطر، تحضير جلسة
+- تحليل الوثائق بالذكاء الاصطناعي
+- رؤى ذكية في لوحة القيادة
 
-## Quick Start
+### البحث | Search
+- بحث عالمي (Ctrl+K)
+- لوحة أوامر
+- بحث متقدم
+
+### الأمان | Security
+- فصل السياق (contextIsolation)
+- تشفير AES-256-GCM لمفاتيح API
+- تشفير bcrypt لكلمات المرور (12 جولة)
+- CSP headers + حماية XSS
+- التحقق من قنوات IPC + rate limiting
+
+</div>
+
+---
+
+## التقنيات | Tech Stack
+
+| التقنية | Technology |
+|---------|-----------|
+| **التطبيق** | Electron 42 + Vanilla JS + CSS3 + HTML5 |
+| **قاعدة البيانات** | SQLite عبر sql.js (ذاكرة + ملف) |
+| **الذكاء الاصطناعي** | Groq API — llama-3.1-8b-instant |
+| **البناء** | electron-builder NSIS (Windows) |
+| **الاختبارات** | Mocha + Playwright |
+
+---
+
+## التشغيل السريع | Quick Start
 
 ```bash
-# Install dependencies
+# تثبيت التبعيات
 npm install
 
-# Run in development
+# تشغيل التطبيق
 npm start
 
-# Run tests (196 unit tests)
+# تشغيل الاختبارات (222 اختبار)
 npm test
 
-# Build Windows installer
+# بناء ملف التثبيت
 npm run build
 ```
 
-## Project Structure
-
-```
-├── main.js                 # Electron main process (IPC, AI, auth)
-├── preload.js              # Context bridge + IPC validation
-├── renderer.js             # Init orchestrator
-├── database.js             # SQLite DB layer (22 tables)
-├── index.html              # SPA shell (23 sections)
-├── style.css               # All component styles
-├── design-tokens.css       # Design system (192 CSS variables)
-├── modules/
-│   ├── shared.js           # Core utilities (safeSet, toast, etc.)
-│   ├── modal.js            # Modal/confirm system
-│   ├── navigation.js       # Section switching + lazy loading
-│   ├── ipc-cache.js        # IPC caching (30s TTL)
-│   ├── clients/            # Client CRUD + workspace
-│   ├── cases/              # Case CRUD + workspace + kanban
-│   ├── dashboard/          # Dashboard widgets
-│   ├── calendar/           # Calendar (4 views)
-│   ├── documents/          # Document management
-│   ├── tasks/              # Tasks + workflows
-│   ├── hearings/           # Hearings list
-│   ├── expenses/           # Expenses tracking
-│   ├── search/             # Global search + command palette
-│   ├── ai/                 # AI chat + insights
-│   ├── settings/           # Settings panels
-│   └── notifications/      # Notification feed
-├── db/                     # Modular DB helpers
-├── tests/                  # Unit tests (196 tests)
-└── storage/                # [gitignored] passwords, API keys, uploads
-```
-
-## Security
-
-- **contextIsolation: true** — no node access in renderer
-- **preload.js** — validated channels list, rate limiting, argument validation
-- **bcrypt** password hashing (12 rounds)
-- **AES-256-GCM** encrypted AI API key
-- **CSP headers** — restricted script/style sources
-- **XSS prevention** via `A.escapeHtml()` + `A.safeSet()` pattern
-
-## Architecture
-
-All modules use the `window.App` namespace (`const A = window.App`). Modules are loaded via `<script>` tags in `index.html` and initialized in order by `renderer.js`. IPC follows `main.js ↔ preload.js ↔ renderer.js` with `safeIpc()` wrapper on all handlers.
+**متطلبات:**
+- Node.js >= 18
+- Windows 10/11
 
 ---
 
-**Built with ❤️ for Moroccan law offices.**
+## هيكل المشروع | Project Structure
+
+```
+├── main.js                 # العملية الرئيسية (IPC, AI, Auth)
+├── preload.js              # Context bridge + التحقق من IPC
+├── renderer.js             # منسق التهيئة
+├── db.js                   # طبقة SQLite (22 جدول)
+├── index.html              # هيكل SPA (23 قسم)
+├── style.css               # أنماط المكونات
+├── modules/
+│   ├── shared.js           # أدوات أساسية
+│   ├── navigation.js       # تبديل الأقسام + lazy loading
+│   ├── ipc-cache.js        # تخزين مؤقت للـ IPC
+│   ├── clients/            # إدارة الموكلين
+│   ├── cases/              # إدارة القضايا + kanban
+│   ├── dashboard/          # لوحة القيادة
+│   ├── calendar/           # التقويم (4 عروض)
+│   ├── documents/          # إدارة الوثائق
+│   ├── tasks/              # المهام + سير العمل
+│   ├── hearings/           # الجلسات
+│   ├── expenses/           # المصاريف
+│   ├── search/             # البحث العالمي
+│   ├── ai/                 # مساعد AI
+│   ├── settings/           # الإعدادات
+│   └── notifications/      # الإشعارات
+├── db/                     # مساعدات DB модулярية
+└── tests/                  # اختبارات الوحدة
+```
+
+---
+
+## الأدوار | User Roles
+
+| الدور | الصلاحيات |
+|-------|----------|
+| **مدير** | كل الصلاحيات |
+| **محامي** | القضايا، الموكلون، الجلسات، الوثائق، AI |
+| **مساعد** | المهام، التقويم، الوثائق (قراءة) |
+| **محاسب** | المصاريف، التقارير المالية |
+| **متتبع** | متابعة فقط (قراءة) |
+| **زائر** | محدود جداً |
+
+---
+
+## الترخيص | License
+
+هذا المشروع مرخص بـ [MIT License](LICENSE).
+
+This project is licensed under the [MIT License](LICENSE).
+
+---
+
+## المساهمة | Contributing
+
+مرحبا بالمساهمات! شوف [CONTRIBUTING.md](CONTRIBUTING.md) للتفاصيل.
+
+Contributions are welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
+
+---
+
+<p align="center">
+  <b>صُنع بـ ❤️ للمكاتب القانونية المغربية</b><br>
+  <sub>Built with ❤️ for Moroccan law offices</sub>
+</p>

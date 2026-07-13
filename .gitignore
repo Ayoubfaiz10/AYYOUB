@@ -5,19 +5,31 @@ node_modules/
 dist/
 *.exe
 *.dmg
+*.nsis
 
-# Storage (all sensitive data)
+# Storage (sensitive data: passwords, API keys, uploads)
 storage/
-
-# Backups
 backups/
-*.backup
+
+# Database files
 *.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment variables
+.env
+.env.local
+.env.production
 
 # OS files
 Thumbs.db
 .DS_Store
+desktop.ini
+
+# Logs
 *.log
+logs/
 
 # IDE
 .idea/
@@ -26,26 +38,15 @@ Thumbs.db
 *.swo
 *~
 
-# Environment variables
-.env
-.env.local
+# Temp files
+*.tmp
+
+# Test results
+test-results/
+playwright-report/
 
 # OpenCode config
 .opencode/
 
-# Temp files (password .tmp, editor swap, etc.)
-*.tmp
-
-# Playwright test results
-test-results/
-
-# Git-tracked modules snapshot
+# Dev artifacts
 modules_backup/
-
-# Generated/backup files
-backup-lawyer-manager/
-main.backup.js
-lawyer-manager@2.0.0
-cd
-electron
-npm
